@@ -1,20 +1,16 @@
-(local
-  {: handle
-   : send-message
-   : receive-message}
-  (require "fennel-ls"))
+(local fennel (require :fennel))
+(local {: read-message : write-message} (require :lsp-io))
+(local {: handle} (require :fennel-ls))
+
+(λ main-loop [in out]
+  (let [msg (read-message in)]
+    (when msg
+      (let [response (handle msg)]
+        (when response
+          (write-message out response))
+        (main-loop in out)))))
 
 (λ main []
-  (local in (io.input))
-  (local out (io.output))
-  (while
-    (match (receive-message in)
-      msg
-      (do
-       (let [response (handle msg)]
-         (if msg.id
-           (send-message out response)))
-       true)
-      _ nil)))
+  (main-loop (io.input) (io.output)))
 
 (main)

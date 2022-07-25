@@ -1,86 +1,87 @@
-(local {: encode : decode} (require :json.json))
-(local {: split} (require :pl.stringx))
+(local requests [])
+(local notifications [])
 
-(local capabilities {:positionEncoding nil ; "utf-8"
-                     :textDocumentSync nil
-                     :notepookDocumentSync nil
-                     :completionProvider nil
-                     :hoverProvider nil
-                     :signatureHelpProvider nil
-                     :declarationProvider nil
-                     :definitionProvider nil
-                     :typeDefinitionProvider nil
-                     :implementationProvider nil
-                     :referencesProvider nil
-                     :documentHighlightProvider nil
-                     :documentSymbolProvider nil
-                     :codeActionProvider nil
-                     :codeLensProvider nil
-                     :documentLinkProvider nil
-                     :colorProvider nil
-                     :documentFormattingProvider nil
-                     :documentRangeFormattingProvider nil
-                     :documentOnTypeFormattingProvider nil
-                     :renameProvider nil
-                     :foldingRangeProvider nil
-                     :executeCommandProvider nil
-                     :selectionRangeProvider nil
-                     :linkedEditingRangeProvider nil
-                     :callHierarchyProvider nil
-                     :semanticTokensProvider nil
-                     :monikerProvider nil
-                     :typeHierarchyProvider nil
-                     :inlineValueProvider nil
-                     :inlayHintProvider nil
-                     :diagnosticProvider nil
-                     :workspaceSymbolProvider nil
-                     :workspace nil})
+(local capabilities
+  {:positionEncoding "utf-8"
+   :textDocumentSync nil
+   :notebookDocumentSync nil
+   :completionProvider nil
+   :hoverProvider nil
+   :signatureHelpProvider nil
+   :declarationProvider nil
+   :definitionProvider nil
+   :typeDefinitionProvider nil
+   :implementationProvider nil
+   :referencesProvider nil
+   :documentHighlightProvider nil
+   :documentSymbolProvider nil
+   :codeActionProvider nil
+   :codeLensProvider nil
+   :documentLinkProvider nil
+   :colorProvider nil
+   :documentFormattingProvider nil
+   :documentRangeFormattingProvider nil
+   :documentOnTypeFormattingProvider nil
+   :renameProvider nil
+   :foldingRangeProvider nil
+   :executeCommandProvider nil
+   :selectionRangeProvider nil
+   :linkedEditingRangeProvider nil
+   :callHierarchyProvider nil
+   :semanticTokensProvider nil
+   :monikerProvider nil
+   :typeHierarchyProvider nil
+   :inlineValueProvider nil
+   :inlayHintProvider nil
+   :diagnosticProvider nil
+   :workspaceSymbolProvider nil
+   :workspace {:workspaceFolders nil
+               :fileOperations {:didCreate nil
+                                :willCreate nil
+                                :didRename nil
+                                :willRename nil
+                                :didDelete nil
+                                :willDelete nil}}})
 
-(local handlers {})
+(λ requests.initialize [params]
+  {:capabilities capabilities
+   :serverInfo {:name "fennel-ls" :version "0.0.0"}})
 
-(λ handlers.initialize [params]
-    {:capabilities capabilities
-     :serverInfo {:name "fennel-ls" :version "0.0.0"}})
+(λ requests.shutdown [])
+  ;; no op
 
-(λ receive-message [in]
-  (local header {})
-  (while
-    (match (in:read)
-      "\r" false
-       header-line
-       (let [[k v] (split header-line ": " 2)]
-         (tset header k v)
-         true)
-       _ nil))
-  (let [len (tonumber header.Content-Length)
-        buffer []]
-    (var sofar 0)
-    (while (< sofar len)
-      (let [r (in:read (- len sofar))]
-        (set sofar (+ sofar (length r)))
-        (table.insert buffer r)))
-    (decode (table.concat buffer))))
+(λ notifications.exit []
+  (os.exit 0))
 
-(λ send-message [out msg]
-  (let [content (encode msg)
-        msg-stringified (.. "Content-Length: " (length content) "\r\n\r\n" content)]
-    (out:write msg-stringified)))
+(λ handle-request [id method ?params]
+  (let [callback (. requests method)
+        result {: id :jsonrpc "2.0"}]
+    (if callback
+      (tset result :result (callback ?params))
+      (tset result :error (.. "Unknown message type: " method)))
+    result))
 
-(λ handle [{: jsonrpc : method : params : id &as msg}]
-  (assert (= jsonrpc "2.0"))
-  ;; Right now, if the callback crashes, the whole server does.
-  ;; It would be nice to turn this into an error message
-  (match (. handlers method)
-    callback
-    (let [result (callback params)]
-      {: id
-       : method
-       :params result
-       :jsonrpc "2.0"})
-    _ {: id
-       : method
-       :error (.. "unknown method " msg.method)}))
+(λ handle-response [id result])
+  ;; Do nothing
 
-{: receive-message
- : send-message
- : handle}
+(λ handle-bad-response [id err]
+  (error (.. "oopsie: " err.code)))
+
+(λ handle-notification [method ?params]
+  (let [callback (. notifications method)]
+    (if callback
+      (callback ?params))))
+
+(λ handle [msg]
+  "The entry point for all messages."
+  (assert (= msg.jsonrpc "2.0") "Aha! You forgot to repeat that jsonrpc is version 2.0!")
+  (match msg
+    {: id : method :params ?params} (handle-request id method ?params)
+    {: method :params ?params}      (handle-notification method ?params)
+    {: id : result}                 (handle-response id result)
+    {: id :error err}               (handle-bad-response id err)
+    _ {:id msg.id
+       :error "I just received a message that doesn't make sense to me"
+       :jsonrpc "2.0"}))
+
+{: handle}
