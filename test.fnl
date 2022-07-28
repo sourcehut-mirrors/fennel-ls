@@ -1,9 +1,10 @@
-(local {: handle} (require :fennel-ls))
-(local {: read-message : write-message} (require :lsp-io))
+(local fennel (require :fennel))
+(local fls (require :fls))
 (local stringio (require :pl.stringio))
-(local {: view} (require :fennel))
-(local busted (require :busted))
+(local stringx (require :pl.stringx))
+(local {: run} (require :fennel-ls))
 
+(local busted (require :busted))
 ((require :busted.runner))
 
 (macro it! [title ...]       `(busted.it ,title (fn [] ,...)))
@@ -11,32 +12,45 @@
 
 (describe! "fennel-ls"
 
-  (it! "parses incoming messages"
-    (let [out (stringio.open "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}")]
-      (assert.same {"my json content" "is cool"}
-                   (read-message out))))
+  (describe! "fls.io"
+    (it! "parses incoming messages"
+      (let [out (stringio.open "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}")]
+        (assert.same {"my json content" "is cool"}
+                     (fls.io.read out))))
 
-  (it! "serializes outgoing messages"
-    (let [in (stringio.create)]
-      (write-message in {"my json content" "is cool"})
-      (assert.same "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}"
-                   (in:value))))
+    (it! "serializes outgoing messages"
+      (let [in (stringio.create)]
+        (fls.io.write in {"my json content" "is cool"})
+        (assert.same "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}"
+                     (in:value))))
 
-  (it! "can read multiple messages"
-    (let [out (stringio.open "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}")]
-      (assert.same {"my json content" "is cool"}
-                   (read-message out))
-      (assert.same {"my json content" "is cool"}
-                   (read-message out))
-      (assert.same nil
-                   (read-message out))))
+    (it! "can read multiple incoming messages"
+      (let [out (stringio.open "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}")]
+        (assert.same {"my json content" "is cool"}
+                     (fls.io.read out))
+        (assert.same {"my json content" "is cool"}
+                     (fls.io.read out))
+        (assert.same nil
+                     (fls.io.read out))))
 
-  (it! "responds to initialize"
-    (local initialize-message
-      {:id 1
-       :jsonrpc "2.0"
-       :method "initialize"
-       :params
+    (it! "can report the ParseError code"
+      (let [out (stringio.open "Content-Length: 9\r\n\r\n{{{{{}}}}")]
+        (assert
+          (match (run [] (fls.io.read out))
+            {:error {:code -32700} :jsonrpc "2.0"}
+            true
+            otherwise (values false (fennel.view otherwise)))))))
+
+    ;; FIXME all of the other RPC codes
+
+  (describe! "initialization"
+    ;; TODO get rid of hardcoded paths here
+    (it! "responds to initialize"
+      (local initialize
+        {:id 1
+         :jsonrpc "2.0"
+         :method "initialize"
+         :params
          {:capabilities {}
           :clientInfo {:name "Neovim" :version "0.7.2"}
           :initializationOptions {}
@@ -46,12 +60,28 @@
           :trace "off"
           :workspaceFolders [{:name "/home/xerool/Documents/projects/fennel-ls"
                               :uri "file:///home/xerool/Documents/projects/fennel-ls"}]}})
-    (assert
-      (match (handle initialize-message)
-        {:id 1
-         :jsonrpc "2.0"
-         :result {:capabilities {}
-                  :serverInfo {:name "fennel-ls" : version}}}
-        true
-        otherwise (values false (view otherwise))))))
+      (assert
+        (match (run [] initialize)
+          {:id 1
+           :jsonrpc "2.0"
+           :result {:capabilities {}
+                    :serverInfo {:name "fennel-ls" : version}}}
+          true
+          otherwise (values false (fennel.view otherwise))))))
+
+  (describe! "file syncing"
+    (it! "can open files from disk"
+      (local state (fls.state.new-state))
+      (assert state)
+      (local uri
+        (-> (io.popen "pwd")
+          (: :read :*a)
+          (stringx.strip)
+          (->> (.. "file://"))
+          (.. "/test.fnl")))
+
+      (fls.state.add-file state uri)
+      (assert (. state :files uri))
+      (assert.equal (. state :files uri :lines 1)
+                    "(local fennel (require :fennel))"))))
 

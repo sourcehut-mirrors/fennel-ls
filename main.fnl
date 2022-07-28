@@ -1,16 +1,21 @@
 (local fennel (require :fennel))
-(local {: read-message : write-message} (require :lsp-io))
-(local {: handle} (require :fennel-ls))
+(local fls (require :fls))
+(local {: run} (require :fennel-ls))
+(local {: make-error-message} (require :fls.error))
 
-(λ main-loop [in out]
-  (let [msg (read-message in)]
-    (when msg
-      (let [response (handle msg)]
-        (when response
-          (write-message out response))
-        (main-loop in out)))))
+(λ main-loop [in out state]
+  (while
+    (let [msg (fls.io.read in)]
+        (fls.log.log msg)
+        (-?>> msg
+          (run state)
+          (fls.io.write out))
+      msg)))
 
 (λ main []
-  (main-loop (io.input) (io.output)))
+  (main-loop
+    (io.input)
+    (io.output)
+    (fls.state.new-state)))
 
 (main)

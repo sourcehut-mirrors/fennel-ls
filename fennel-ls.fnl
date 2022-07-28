@@ -1,9 +1,11 @@
+(local fennel (require :fennel))
+(local {: make-error-message} (require :fls.error))
+
 (local requests [])
 (local notifications [])
 
 (local capabilities
-  {:positionEncoding "utf-8"
-   :textDocumentSync nil
+  {:textDocumentSync 2
    :notebookDocumentSync nil
    :completionProvider nil
    :hoverProvider nil
@@ -34,54 +36,54 @@
    :inlineValueProvider nil
    :inlayHintProvider nil
    :diagnosticProvider nil
-   :workspaceSymbolProvider nil
-   :workspace {:workspaceFolders nil
-               :fileOperations {:didCreate nil
-                                :willCreate nil
-                                :didRename nil
-                                :willRename nil
-                                :didDelete nil
-                                :willDelete nil}}})
+   :workspaceSymbolProvider nil})
+;   :workspace {:workspaceFolders nil
+;               :fileOperations {:didCreate nil
+;                                :willCreate nil
+;                                :didRename nil
+;                                :willRename nil
+;                                :didDelete nil
+;                                :willDelete nil})
 
-(λ requests.initialize [params]
+(λ requests.initialize [self params]
   {:capabilities capabilities
    :serverInfo {:name "fennel-ls" :version "0.0.0"}})
 
-(λ requests.shutdown [])
-  ;; no op
+(λ requests.shutdown [self])
+  ;; Okay, I'll wait for the exit notification to actaully exit
 
-(λ notifications.exit []
+(λ notifications.exit [self]
   (os.exit 0))
 
-(λ handle-request [id method ?params]
-  (let [callback (. requests method)
-        result {: id :jsonrpc "2.0"}]
-    (if callback
-      (tset result :result (callback ?params))
-      (tset result :error (.. "Unknown message type: " method)))
-    result))
+(λ run-request [self id method ?params]
+  (match (. requests method)
+    callback {:jsonrpc "2.0"
+              : id
+              :result (callback self ?params)}
+    nil (make-error-message
+          :MethodNotFound
+          (.. "\"" method "\" is not in the requests table")
+          id)))
 
-(λ handle-response [id result])
-  ;; Do nothing
+(λ run-response [self id result])
+  ;; I don't care about responses yet
 
-(λ handle-bad-response [id err]
+(λ run-bad-response [self id err]
   (error (.. "oopsie: " err.code)))
 
-(λ handle-notification [method ?params]
-  (let [callback (. notifications method)]
-    (if callback
-      (callback ?params))))
+(λ run-notification [self method ?params]
+  (match (. notifications method)
+    callback (callback self ?params)
+    nil nil)) ;; Silent error for unknown notifications
 
-(λ handle [msg]
+(λ run [self msg]
   "The entry point for all messages."
-  (assert (= msg.jsonrpc "2.0") "Aha! You forgot to repeat that jsonrpc is version 2.0!")
-  (match msg
-    {: id : method :params ?params} (handle-request id method ?params)
-    {: method :params ?params}      (handle-notification method ?params)
-    {: id : result}                 (handle-response id result)
-    {: id :error err}               (handle-bad-response id err)
-    _ {:id msg.id
-       :error "I just received a message that doesn't make sense to me"
-       :jsonrpc "2.0"}))
+  (match (values msg (type msg))
+    {:jsonrpc "2.0" : id : method :params ?params} (run-request      self id method ?params)
+    {:jsonrpc "2.0" : method :params ?params}      (run-notification self method ?params)
+    {:jsonrpc "2.0" : id : result}                 (run-response     self id result)
+    {:jsonrpc "2.0" : id :error err}               (run-bad-response self id err)
+    (str :string)                                  (make-error-message :ParseError str)
+    _                                              (make-error-message :BadMessage nil msg.id)))
 
-{: handle}
+{: run}
