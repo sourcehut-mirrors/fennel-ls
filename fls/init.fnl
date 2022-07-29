@@ -1,4 +1,4 @@
 {:error (require :fls.error)
- :io (require :fls.io)
- :state (require :fls.state)
- :log (require :fls.log)}
+ :log (require :fls.log)
+ :protocol (require :fls.protocol)
+ :file (require :fls.file)}
