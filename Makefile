@@ -9,6 +9,5 @@ fennel-ls: $(SOURCES)
 	fennel --compile-binary main.fnl fennel-ls $(STATIC_LUA_LIB) $(LUA_INCLUDE_PATH)
 
 test:
-	@echo testing
 	fennel test.fnl
 

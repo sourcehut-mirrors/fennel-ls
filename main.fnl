@@ -2,7 +2,8 @@
 (local fls (require :fls))
 (local {: run} (require :fennel-ls))
 
-(λ main-loop [in out state]
+(λ main-loop [in out]
+  (var state {})
   (while
     (let [msg (fls.protocol.read in)]
         (fls.log.log msg)
@@ -14,7 +15,6 @@
 (λ main []
   (main-loop
     (io.input)
-    (io.output)
-    (fls.state.new-state)))
+    (io.output)))
 
 (main)

@@ -17,6 +17,13 @@
       (icollect [line (file:lines)]
          line))))
 
-{: make-file
- : make-file-from-disk}
+(λ sub [self start-line start-char end-line end-char replacement]
+  (local index (+ 1 start-line))
+  (tset self.lines index
+    (.. (string.sub (. self.lines index) 1 start-char)
+        replacement
+        (string.sub (. self.lines index) (+ 1 end-char)))))
 
+{: make-file
+ : make-file-from-disk
+ : sub}
