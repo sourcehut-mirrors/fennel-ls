@@ -1,13 +1,14 @@
-STATIC_LUA_LIB=/usr/lib/liblua.so.5.4
+LUA_LIB=/usr/lib/liblua.so.5.4
 LUA_INCLUDE_PATH=$(shell lua5.4 -e 'print(package.cpath:match("[^;]+"))')
-SOURCES=$(wildcard *.fnl)
-SOURCES+=$(wildcard fls/*.fnl)
+SOURCES=$(wildcard src/*.fnl)
+SOURCES+=$(wildcard src/fennel-ls/*.fnl)
 
 .PHONY: test
 
 fennel-ls: $(SOURCES)
-	fennel --compile-binary main.fnl fennel-ls $(STATIC_LUA_LIB) $(LUA_INCLUDE_PATH)
+	FENNEL_PATH=src/?.fnl fennel --compile-binary src/fennel-ls.fnl fennel-ls $(LUA_LIB) $(LUA_INCLUDE_PATH)
 
 test:
-	fennel test.fnl
+	fennel --correlate test/init.fnl
+
 

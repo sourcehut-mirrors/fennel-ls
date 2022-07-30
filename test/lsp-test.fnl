@@ -1,29 +1,50 @@
 (import-macros {: assert-matches : describe : it} :test.macros)
 (local assert (require :luassert))
 
-(local {: run} (require :fennel-ls))
-(local fennel (require :fennel))
+(local dispatch (require :fennel-ls.dispatch))
+(local stringx (require :pl.stringx))
 
-(describe "initialization"
-  ;; TODO get rid of hardcoded paths here
+(local ROOT-PATH
+  (-> (io.popen "pwd")
+      (: :read :*a)
+      (stringx.strip)))
+(local ROOT-URI
+  (.. "document://" ROOT-PATH))
+
+(local server-initialize-message
+  {:id 1
+   :jsonrpc "2.0"
+   :method "initialize"
+   :params
+   {:capabilities {}
+    :clientInfo {:name "Neovim" :version "0.7.2"}
+    :initializationOptions {}
+    :processId 16245
+    :rootPath ROOT-PATH
+    :rootUri ROOT-URI
+    :trace "off"
+    :workspaceFolders [{:name ROOT-PATH
+                        :uri ROOT-URI}]}})
+
+(describe "language server"
   (it "responds to initialize"
-    (local initialize
-      {:id 1
-       :jsonrpc "2.0"
-       :method "initialize"
-       :params
-       {:capabilities {}
-        :clientInfo {:name "Neovim" :version "0.7.2"}
-        :initializationOptions {}
-        :processId 16245
-        :rootPath "/home/xerool/Documents/projects/fennel-ls"
-        :rootUri "file:///home/xerool/Documents/projects/fennel-ls"
-        :trace "off"
-        :workspaceFolders [{:name "/home/xerool/Documents/projects/fennel-ls"
-                            :uri "file:///home/xerool/Documents/projects/fennel-ls"}]}})
     (assert-matches
-      (run [] initialize)
-      {:id 1
-       :jsonrpc "2.0"
-       :result {:capabilities {}
-                :serverInfo {:name "fennel-ls" : version}}})))
+      (dispatch.handle* [] server-initialize-message)
+      [{:id 1
+        :jsonrpc "2.0"
+        :result {:capabilities {}
+                 :serverInfo {:name "fennel-ls" : version}}}]))
+
+  (it "can jump to definition"
+    (local state [])
+    (dispatch.handle* state server-initialize-message)
+    (assert-matches
+      (dispatch.handle* state
+       {:id 2
+        :jsonrpc "2.0"
+        :method "textDocument/definition"
+        :params {:position {:character 5 :line 0}
+                 :textDocument {:uri (.. ROOT-URI "/test.fnl")}}})
+      [{:id 2
+        :jsonrpc "2.0"
+        :result {: uri : range}}]))) ;; FIXME: test whether the location is correct

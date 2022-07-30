@@ -1,12 +1,17 @@
-(fn it [title ...]
-  `((. (require :busted) :it)
-    ,title (fn [] ,...)))
+"This document does not include tests. Instead it includes macros that are used for tests."
 
-(fn describe [title ...]
+(fn it [desc ...]
+  "busted's `it` function"
+  `((. (require :busted) :it)
+    ,desc (fn [] ,desc ,...)))
+
+(fn describe [desc ...]
+  "busted's `describe` function"
   `((. (require :busted) :describe)
-    ,title (fn [] ,...)))
+    ,desc (fn [] ,desc ,...)))
 
 (fn assert-matches [item pattern]
+  "check if item matches a pattern according to fennel's `match` builtin"
   `(match ,item
     ,pattern nil
     ?otherwise#
