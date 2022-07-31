@@ -8,7 +8,7 @@
   (local state [])
   (while true
     (let [msg (json-rpc.read in)]
-      (log msg)
+      ;; (log msg)
       (dispatch.handle state send msg))))
 
 (λ main []

@@ -7,9 +7,10 @@
 (local ROOT-PATH
   (-> (io.popen "pwd")
       (: :read :*a)
-      (stringx.strip)))
+      (stringx.strip)
+      (.. "/test/test-project")))
 (local ROOT-URI
-  (.. "document://" ROOT-PATH))
+  (.. "file://" ROOT-PATH))
 
 (local server-initialize-message
   {:id 1
@@ -35,16 +36,41 @@
         :result {:capabilities {}
                  :serverInfo {:name "fennel-ls" : version}}}]))
 
-  (it "can jump to definition"
-    (local state [])
-    (dispatch.handle* state server-initialize-message)
-    (assert-matches
-      (dispatch.handle* state
-       {:id 2
-        :jsonrpc "2.0"
-        :method "textDocument/definition"
-        :params {:position {:character 5 :line 0}
-                 :textDocument {:uri (.. ROOT-URI "/test.fnl")}}})
-      [{:id 2
-        :jsonrpc "2.0"
-        :result {: uri : range}}]))) ;; FIXME: test whether the location is correct
+  (describe "jump to definition"
+    (it "handles (local _ (require XXX)"
+      (local state [])
+      (dispatch.handle* state server-initialize-message)
+      (assert-matches
+        (dispatch.handle* state
+         {:id 2
+          :jsonrpc "2.0"
+          :method "textDocument/definition"
+          :params {:position {:character 11 :line 0}
+                   :textDocument {:uri (.. ROOT-URI "/example.fnl")}}})
+        (where [{:id 2
+                 :jsonrpc "2.0"
+                 :result {: uri :range {:start {:line 0 :character 0}
+                                        :end {:line 0 :character 0}}}}]
+               (stringx.endswith uri "foo.fnl"))))
+
+    (it "handles (require XXX))"
+      (local state [])
+      (dispatch.handle* state server-initialize-message)
+      (assert-matches
+        (dispatch.handle* state
+         {:id 2
+          :jsonrpc "2.0"
+          :method "textDocument/definition"
+          :params {:position {:character 5 :line 1}
+                   :textDocument {:uri (.. ROOT-URI "/example.fnl")}}})
+        (where [{:id 2
+                 :jsonrpc "2.0"
+                 :result {: uri :range {:start {:line 0 :character 0}
+                                        :end {:line 0 :character 0}}}}]
+               (stringx.endswith uri "bar.fnl"))))))
+
+    ;; (it "can go to a fn")
+    ;; (it "can go to a local")
+    ;; (it "can go to a table and its field")
+    ;; (it "can go to a destructured local")
+    ;; (it "can go to a table field in another file")))
