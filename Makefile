@@ -6,7 +6,7 @@ SOURCES+=$(wildcard src/fennel-ls/*.fnl)
 .PHONY: test
 
 fennel-ls: $(SOURCES)
-	LUA_PATH="./?.lua;./?/init.lua" FENNEL_PATH="src/?.fnl;src/?/init.fnl" ./fennel --compile-binary src/fennel-ls.fnl fennel-ls $(LUA_LIB) $(LUA_INCLUDE_DIR)
+	LUA_PATH="./src/?.lua;./src/?/init.lua" FENNEL_PATH="./src/?.fnl;./src/?/init.fnl" ./fennel --compile-binary src/fennel-ls.fnl fennel-ls $(LUA_LIB) $(LUA_INCLUDE_DIR)
 clean:
 	rm -f fennel-ls
 test:
