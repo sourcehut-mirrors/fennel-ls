@@ -4,7 +4,7 @@
 (local {: log} (require :fennel-ls.log))
 
 (λ main-loop [in out]
-  (local send #(json-rpc.write out $))
+  (local send (partial json-rpc.write out))
   (local state [])
   (while true
     (let [msg (json-rpc.read in)]

@@ -1,8 +1,5 @@
-(import-macros {: assert-matches : describe : it} :test.macros)
-(local assert (require :luassert))
-
-(local dispatch (require :fennel-ls.dispatch))
 (local stringx (require :pl.stringx))
+(local dispatch (require :fennel-ls.dispatch))
 
 (local ROOT-PATH
   (-> (io.popen "pwd")
@@ -12,7 +9,7 @@
 (local ROOT-URI
   (.. "file://" ROOT-PATH))
 
-(local server-initialize-message
+(local initialization-message
   {:id 1
    :jsonrpc "2.0"
    :method "initialize"
@@ -27,11 +24,7 @@
     :workspaceFolders [{:name ROOT-PATH
                         :uri ROOT-URI}]}})
 
-(describe "language server"
-  (it "responds to initialize"
-    (assert-matches
-      (dispatch.handle* [] server-initialize-message)
-      [{:jsonrpc "2.0" :id 1
-        :result {:capabilities {}
-                 :serverInfo {:name "fennel-ls" : version}}}])))
+(fn setup-server [state]
+  (dispatch.handle* state initialization-message))
 
+{: ROOT-URI : setup-server}

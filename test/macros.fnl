@@ -10,6 +10,12 @@
   `((. (require :busted) :describe)
     ,desc (fn [] ,desc ,...)))
 
+(fn before-each [...]
+  "busted's `describe` function"
+  `((. (require :busted) :before_each)
+    (fn [] ,...)))
+
+
 (fn assert-matches [item pattern]
   "check if item matches a pattern according to fennel's `match` builtin"
   `(match ,item
@@ -24,4 +30,5 @@
 
 {: it
  : describe
- : assert-matches}
+ : assert-matches
+ : before-each}
