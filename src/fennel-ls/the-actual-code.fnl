@@ -5,7 +5,6 @@ Every time the client sends a message, it gets handled by a function in the corr
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
  and a textDocument/defintion request will call requests.textDocument/didChange)"
 (local fennel (require :fennel))
-(local dir (require :pl.dir))
 
 (local parser  (require :fennel-ls.parser))
 (local util    (require :fennel-ls.util))

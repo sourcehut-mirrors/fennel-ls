@@ -71,8 +71,8 @@ and `./src/fennel-ls/json-rpc.fnl` is where messages are being converted to json
 ## License
 fennel-ls is licensed under the MIT license. See LICENSE for more info.
 However, this project contains files from other projects:
-* src/pl comes from [Penlight](https://github.com/lunarmodules/Penlight)
+* test/pl comes from [Penlight](https://github.com/lunarmodules/Penlight)
 * src/json comes from [json.lua](https://github.com/rxi/json.lua)
 * fennel and src/fennel.lua are built from [fennel](https://git.sr.ht/~technomancy/fennel)
 
-fennel-ls's MIT license may not apply to these files; check those projects for their respective code licenses.
+fennel-ls's license does not apply to these files; check those projects for their respective code licenses.

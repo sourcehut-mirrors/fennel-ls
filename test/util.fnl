@@ -1,10 +1,9 @@
-(local stringx (require :pl.stringx))
 (local dispatch (require :fennel-ls.dispatch))
 
 (local ROOT-PATH
   (-> (io.popen "pwd")
       (: :read :*a)
-      (stringx.strip)
+      (: :sub 1 -2) ;; take off newline
       (.. "/test/test-project")))
 (local ROOT-URI
   (.. "file://" ROOT-PATH))

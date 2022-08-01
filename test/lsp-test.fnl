@@ -1,16 +1,9 @@
 (import-macros {: assert-matches : describe : it} :test.macros)
 (local assert (require :luassert))
 
+(local {: ROOT-PATH : ROOT-URI} (require :test.util))
 (local dispatch (require :fennel-ls.dispatch))
-(local stringx (require :pl.stringx))
 
-(local ROOT-PATH
-  (-> (io.popen "pwd")
-      (: :read :*a)
-      (stringx.strip)
-      (.. "/test/test-project")))
-(local ROOT-URI
-  (.. "file://" ROOT-PATH))
 
 (local server-initialize-message
   {:id 1

@@ -2,8 +2,7 @@
 (local assert (require :luassert))
 
 (local fennel (require :fennel))
-(local stringio (require :pl.stringio))
-
+(local stringio (require :test.pl.stringio))
 (local json-rpc (require :fennel-ls.json-rpc))
 
 (describe "json-rpc"

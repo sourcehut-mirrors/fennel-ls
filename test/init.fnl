@@ -1,5 +1,5 @@
 ((require :busted.runner))
-(tset (require :fennel) :path "./?.fnl;./src/?.fnl")
+
 (require :test.json-rpc-test)
 (require :test.string-processing-test)
 (require :test.lsp-test)

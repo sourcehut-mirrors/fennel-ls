@@ -3,7 +3,9 @@ A collection of utility functions. Many of these convert data between a
 Language-Server-Protocol representation and a Lua representation.
 These functions are all pure functions, which makes me happy."
 
-(local {: startswith} (require :pl.stringx))
+(λ startswith [str pre]
+  (let [len (length pre)]
+    (= (str:sub 1 len) pre)))
 
 (λ uri->path [uri]
   (local prefix "file://")

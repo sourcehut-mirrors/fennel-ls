@@ -12,7 +12,6 @@ Luckily, I'm testing with Neovim, so I can pretend these problems don't exist fo
 
 ;; TODO find json library that doesn't conflate missing fields with null
 (local {: encode : decode} (require :json.json))
-(local {: split} (require :pl.stringx))
 
 (λ read-header [in ?header]
   "Reads the header of a JSON-RPC message"
@@ -22,7 +21,9 @@ Luckily, I'm testing with Neovim, so I can pretend these problems don't exist fo
       nil nil ;; hit end of stream, return nil
       ;; reading an actual line
       header-line
-      (let [[k v] (split header-line ": " 2)]
+      (let [sep (string.find header-line ": ")
+            k (string.sub header-line 1 (- sep 1))
+            v (string.sub header-line (+ sep 2))]
         (tset header k (string.sub v 1 -2))
         (read-header in header)))))
 

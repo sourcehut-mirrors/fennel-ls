@@ -2,8 +2,6 @@
 (local assert (require :luassert))
 
 (local fennel (require :fennel))
-(local stringx (require :pl.stringx))
-
 (local util (require :fennel-ls.util))
 
 (describe "document"
