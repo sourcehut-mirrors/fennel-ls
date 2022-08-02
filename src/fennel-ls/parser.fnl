@@ -18,20 +18,16 @@
   (and (= (type ast) :table)
        (< byte (get-ast-info ast :bytestart))))
 
-(fn range [ast]
+(fn range [text ast]
   "create a LSP range representing the span of an AST object"
   (if (= (type ast) :table)
     (match (values (get-ast-info ast :bytestart) (get-ast-info ast :byteend))
       (i j)
-      (let [(start-line start-col) (util.byte->pos i)
-            (end-line   end-col)   (util.byte->pos j)]
+      (let [(start-line start-col) (util.byte->pos text i)
+            (end-line   end-col)   (util.byte->pos text j)]
         {:start {:line start-line :character start-col}
          :end   {:line end-line   :character end-col}}))))
 
-(fn from-fennel [file]
-  (icollect [k v (fennel.parser file.text file.uri)]
-      v))
-
-{: from-fennel
- : contains?
- : past?}
+{: contains?
+ : past?
+ : range}

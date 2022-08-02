@@ -1,7 +1,7 @@
 (local util (require :fennel-ls.util))
 (local mod (require :fennel-ls.mod))
 
-(λ analyze [] "TODO")
+(local {: analyze} (require :fennel-ls.plugin))
 
 (λ init-state [self params]
   (set self.files {})

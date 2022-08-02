@@ -35,16 +35,15 @@
       (dispatch.handle* state (request-definition-at 1 5 "example.fnl"))
       [{:jsonrpc "2.0" :id 2
         :result {: uri :range {:start {:line 0 :character 0}
-                               :end {:line 0 :character 0}}}}])))
+                               :end {:line 0 :character 0}}}}]))
 
-  ;; TODO
-  ;; (it "can go to a fn"
-  ;;   (local uri (.. ROOT-URI "/" "example.fnl"))
-  ;;   (assert-matches
-  ;;     (dispatch.handle* state (request-definition-at 8 2 "example.fnl"))
-  ;;     [{:jsonrpc "2.0" :id 2
-  ;;       :result {: uri :range {:start {:line 4 :character 0}
-  ;;                              :end {:line 6 :character 17}}}}])))
+  (it "can go to a fn"
+    (local uri (.. ROOT-URI "/" "example.fnl"))
+    (assert-matches
+      (dispatch.handle* state (request-definition-at 9 3 "example.fnl"))
+      [{:jsonrpc "2.0" :id 2
+        :result {: uri :range {:start {:line 4 :character 0}
+                               :end {:line 7 :character 19}}}}])))
 
    ;; (it "can open a require with a custom fennelpath")
    ;; (it "can go to a fn")

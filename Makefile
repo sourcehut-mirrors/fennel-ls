@@ -10,4 +10,4 @@ fennel-ls: $(SOURCES)
 clean:
 	rm -f fennel-ls
 test:
-	FENNEL_PATH="./src/?.fnl;./src/?/init.fnl" ./fennel --correlate test/init.fnl
+	FENNEL_PATH="./src/?.fnl;./src/?/init.fnl" ./fennel --correlate test/init.fnl --verbose

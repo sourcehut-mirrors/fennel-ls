@@ -4,7 +4,8 @@
 
 (fn bar [a b]
   (print a b)
-  (foo.my-export))
+  (local c 10)
+  (foo.my-export c))
 
 (bar 1 2)
 

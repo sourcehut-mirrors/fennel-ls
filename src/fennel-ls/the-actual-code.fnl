@@ -68,39 +68,19 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local local* (fennel.sym :local))
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
-
-  (set file.ast (or file.ast
-                    (parser.from-fennel (. self.files uri))))
-  (local ast file.ast)
-
   (local byte (util.pos->byte file.text position.line position.character))
+  (accumulate [result nil
+               _ reference (ipairs file.references) &until (or result (parser.past? reference.from byte))]
+      (if (parser.contains? reference.from byte)
+        (match reference
+          {: from : to}
+          {:range (parser.range file.text to)
+           :uri file.uri}
 
-  (var result nil)
-  (λ check [ast]
-    (log (fennel.view ast))
-    (each [_ item (ipairs ast) :until (or result (parser.past? item byte))]
-      (log (fennel.view ast))
-      (if (parser.contains? item byte)
-        (match item
-          (where [require* module &as l]
-                 (and (fennel.list? l)
-                      (string? module)))
-          (set result module)
-          (where [local* _ [require* module &as l1] &as l2]
-                 (and (fennel.list? l1)
-                      (fennel.list? l2)
-                      (string? module)))
-          (set result module)
-          (where obj (fennel.list? obj))
-          (check obj)))))
-
-  (check ast)
-
-  (if result
-    {:uri (mod.lookup self result)
-     :range {:start {:line 0 :character 0}
-             :end {:line 0 :character 0}}}))
-
+          {: from : to-other-module}
+          {:range {:start {:line 0 :character 0}
+                   :end   {:line 0 :character 0}}
+           :uri (mod.lookup self (. to-other-module 1))}))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
