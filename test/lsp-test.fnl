@@ -4,7 +4,6 @@
 (local {: ROOT-PATH : ROOT-URI} (require :test.util))
 (local dispatch (require :fennel-ls.dispatch))
 
-
 (local server-initialize-message
   {:id 1
    :jsonrpc "2.0"
@@ -27,4 +26,3 @@
       [{:jsonrpc "2.0" :id 1
         :result {:capabilities {}
                  :serverInfo {:name "fennel-ls" : version}}}])))
-

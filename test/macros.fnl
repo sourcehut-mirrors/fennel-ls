@@ -16,7 +16,7 @@
     (fn [] ,...)))
 
 
-(fn assert-matches [item pattern]
+(fn assert-matches [item pattern ?msg]
   "check if item matches a pattern according to fennel's `match` builtin"
   `(match ,item
     ,pattern nil
@@ -26,7 +26,8 @@
           (let [fennel# (require :fennel)]
             (fennel#.view ?otherwise#))
           "\ndid not match pattern:\n"
-          ,(view pattern)))))
+          ,(view pattern)
+          (and ,?msg (.. "\n" ,?msg))))))
 
 {: it
  : describe
