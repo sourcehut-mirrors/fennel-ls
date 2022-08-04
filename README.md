@@ -5,16 +5,20 @@ THIS PROJECT IS NOT IN A USABLE STATE YET. CHECK BACK LATER.
 A language server for fennel-ls.
 
 (Planned) Features:
+[ ] for planned features
+[X] for implemented features
+
 * [X] Able to connect to a client
 * [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
 * [ ] Settings to configure lua / fennel path, allowed globals, etc
 * [ ] Builds for anything other than arch linux
 * [X] Go-to-definition for (require) statements
-* [ ] Go-to-definition for in-file definitions
+* [X] basic go-to-definition for in-file definitions
+* [ ] Go-to-definition for in-file definitions in all cases
 * [ ] Go-to-definition for definitions in other files
 * [ ] Go-to-definition into lua code
-* [ ] Report compiler errors
-* [ ] Report linting issues
+* [ ] Reports compiler errors
+* [ ] Reports linting issues
 * [ ] basic completion suggestions
 * [ ] Hover over a symbol for documentation
 * [ ] Signature help

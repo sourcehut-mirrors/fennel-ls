@@ -48,14 +48,15 @@
     (check "example.fnl" 19 12 "example.fnl" 17 8 17 9))
 
   (it "can sort out the unification rule with match (variable introduced)"
-    (check "example.fnl" 20 12 "example.fnl" 20 9 20 10)))
+    (check "example.fnl" 20 12 "example.fnl" 20 9 20 10))
 
-  ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")
-  ;; (it "can go to a reference that occurs in a macro")
+  (it "can go to a destructured local"
+    (check "example.fnl" 21 9 "example.fnl" 16 13 16 16)))
   ;; (it "can go to a function inside a table")
-  ;; (it "can go to an field inside of a table")
-  ;; (it "can go to a destructured local")
+  ;; (it "can go to a field inside of a table")
   ;; (it "can go to a destructured function argument")
+  ;; (it "can go to a reference that occurs in a macro")
+  ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")
   ;; (it "can go to a function in another file when accessed by multisym")
   ;; (it "can go to a function in another file imported via destructuring assignment")
   ;; (it "can work with a custom fennelpath")

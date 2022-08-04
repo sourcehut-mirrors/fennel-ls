@@ -69,7 +69,6 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (local byte (util.pos->byte file.text position.line position.character))
-  (log file)
   (accumulate [result nil
                _ reference (ipairs file.references) &until (or result (parser.past? reference.from byte))]
       (if (parser.contains? reference.from byte)

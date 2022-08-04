@@ -44,13 +44,21 @@
   (λ reference [ast scope]
     "called whenever a variable is referenced"
     (assert (fennel.sym? ast))
-    (let [name (string.match (tostring ast) "[^%.:]+")]
-      (table.insert file.references {:from ast :to (find-reference name scope)})))
+    (let [name (string.match (tostring ast) "[^%.:]+")
+          target (find-reference name scope)]
+      (table.insert file.references {:from ast :to target})))
 
   (λ define [?definition binding scope]
     "called whenever a local variable or destructure statement is introduced"
-    (when (fennel.sym? binding) ;; for now, I am going to bury my head in the sand and ignore destructure logic
-      (tset (. scope-notes scope) (tostring binding) binding)))
+    ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
+    (λ recurse [binding]
+      (if (fennel.sym? binding)
+        ;; this seems to defeat match's symbols in specifically the one case I've tested
+        (if (not (?. scope :parent :gensyms (tostring binding)))
+          (tset (. scope-notes scope) (tostring binding) binding))
+        (each [k v ((if (fennel.list? binding) ipairs pairs) binding)]
+         (recurse v))))
+    (recurse binding))
 
   (λ define-function-name [ast scope]
     (match ast
@@ -66,7 +74,7 @@
         (where [_fn args] (fennel.sequence? args)) args
         (where [_fn _name args] (fennel.sequence? args)) args))
     (each [_ argument (ipairs args)]
-      (define nil argument scope))) ;; we say arguments are bound to "nil" for now
+      (define nil argument scope))) ;; we say function arguments are "nil" for now
 
   (λ define-function [ast scope]
     "Introduces the various symbols exported by a function.
