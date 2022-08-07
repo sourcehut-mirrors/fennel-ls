@@ -21,4 +21,10 @@
       [0 b] b))
   (print foo))
 
-{: bar}
+(fn b []
+  (print "function"))
+
+(local obj {: bar :a b})
+
+(obj.bar 2 3)
+(obj:a)

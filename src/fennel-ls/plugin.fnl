@@ -15,11 +15,20 @@
 (λ table? [t]
   (= :table (type t)))
 
+(λ string? [t]
+  (= :string (type t)))
+
 (λ multisym? [t]
   (and (fennel.sym? t)
     (let [t (tostring t)]
        (or (t:find "%.")
            (t:find ":")))))
+
+(λ iter [t]
+  (if (or (fennel.list? t)
+          (fennel.sequence? t))
+    (ipairs t)
+    (pairs t)))
 
 
 (λ analyze [file]
@@ -27,7 +36,7 @@
   (assert file.uri)
   (set file.references [])
 
-  (local scope-notes
+  (local definitions
     (doto {}
       (setmetatable
         {:__index
@@ -36,27 +45,29 @@
              (tset self key val)
              val))})))
 
-  (λ find-reference [name ?scope]
+  (λ find-variable [name ?scope]
     (when ?scope
-      (or (. scope-notes ?scope (tostring name))
-          (find-reference name ?scope.parent))))
+      (or (. definitions ?scope name)
+          (find-variable name ?scope.parent))))
 
   (λ reference [ast scope]
     "called whenever a variable is referenced"
     (assert (fennel.sym? ast))
+    ;; find reference
     (let [name (string.match (tostring ast) "[^%.:]+")
-          target (find-reference name scope)]
-      (table.insert file.references {:from ast :to target})))
+          target (find-variable (tostring name) scope)]
+      (tset file.references ast target)))
 
   (λ define [?definition binding scope]
     "called whenever a local variable or destructure statement is introduced"
     ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
     (λ recurse [binding]
       (if (fennel.sym? binding)
-        ;; this seems to defeat match's symbols in specifically the one case I've tested
-        (if (not (?. scope :parent :gensyms (tostring binding)))
-          (tset (. scope-notes scope) (tostring binding) binding))
-        (each [k v ((if (fennel.list? binding) ipairs pairs) binding)]
+        (tset (. definitions scope)
+              (tostring binding)
+              {: binding :definition ?definition})
+        (table? binding)
+        (each [k v (iter binding)]
          (recurse v))))
     (recurse binding))
 
@@ -66,7 +77,10 @@
         (and (fennel.sym? name)
              (not (multisym? name)) ;; not dealing with multisym for now
              (fennel.sequence? args)))
-      (tset (. scope-notes scope.parent) (tostring name) ast)))
+      (tset (. definitions scope.parent)
+            (tostring name)
+            {:binding name
+             :definition ast})))
 
   (λ define-function-args [ast scope]
     (local args
@@ -79,15 +93,13 @@
   (λ define-function [ast scope]
     "Introduces the various symbols exported by a function.
 This cannot be done through the :fn feature of the compiler plugin system, because it needs to be
-called before the body of the function happens"
+called *before* the body of the function is processed."
     (define-function-name ast scope)
     (define-function-args ast scope))
 
   (λ call [ast scope]
-    "called for every function call. Most calls aren't interesting, but (require) and (local) are"
+    "called for every function call. Most calls aren't interesting, but fn is"
     (match ast
-      (where [-require- mod] (= :string (type mod)))
-      (insert file.references {:from ast :to-other-module [mod]})
       [-fn-]
       (define-function ast scope)
       [-λ-]
@@ -102,8 +114,13 @@ called before the body of the function happens"
      : call
      :destructure define})
 
-  (pcall fennel.compileString file.text
-    {:filename file.uri
-     :plugins [plugin]}))
+  (set file.ast (icollect [ok ast (fennel.parser file.text)]
+                 ast))
+  (local scope (fennel.scope))
+  (each [_i form (ipairs file.ast)]
+    (fennel.compile form
+      {:filename file.uri
+       : scope
+       :plugins [plugin]})))
 
 {: analyze}

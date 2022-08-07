@@ -4,28 +4,30 @@ THIS PROJECT IS NOT IN A USABLE STATE YET. CHECK BACK LATER.
 
 A language server for fennel-ls.
 
-(Planned) Features:
-[ ] for planned features
-[X] for implemented features
+Features / To Do List / Things I would enjoy patches for:
 
-* [X] Able to connect to a client
-* [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
-* [ ] Settings to configure lua / fennel path, allowed globals, etc
-* [ ] Builds for anything other than arch linux
-* [X] Go-to-definition for (require) statements
-* [X] basic go-to-definition for in-file definitions
-* [ ] Go-to-definition for in-file definitions in all cases
-* [ ] Go-to-definition for definitions in other files
-* [ ] Go-to-definition into lua code
-* [ ] Reports compiler errors
-* [ ] Reports linting issues
-* [ ] basic completion suggestions
-* [ ] Hover over a symbol for documentation
-* [ ] Signature help
-* [ ] Go-to-references on definitions of things
-* [ ] integration with fnlfmt
-* [ ] Maybe some sort of type checking???
-    * [ ] completion suggestions for fields / methods
+- [X] Able to connect to a client
+- [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
+- [ ] Settings to configure lua / fennel path, allowed globals, etc
+- [ ] Builds for anything other than arch linux
+- [ ] Go-to-definition
+    - [ ] directly on require statements
+    - [X] for definitions in the same file
+    - [ ] for definitions in other files
+    - [ ] follows multisyms through table constructor
+    - [ ] follows multisyms through mutations (difficult)
+    - [ ] for methods/metamethods (difficult, in the general case may require type annotations or some insane global type inference logic)
+    - [ ] into lua files (maybe cheeseable with antifennel if it has --correlate?)
+
+- [ ] Reports compiler errors
+    - [ ] including in macro files
+- [ ] Reports linting issues
+- [ ] Completion Suggestions
+- [ ] Hover over a symbol for documentation
+- [ ] Signature help
+- [ ] Go-to-references on definition sites
+- [ ] integration with fnlfmt
+- [ ] Maybe some sort of type checking??
 
 
 ## Setup:

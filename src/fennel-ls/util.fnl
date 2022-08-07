@@ -69,8 +69,21 @@ These functions are all pure functions, which makes me happy."
       {: text}
       text)))
 
+(fn multi-sym-split [sym ?offset]
+  (local sym (tostring sym))
+  (local offset (or ?offset (length sym)))
+  (local next-separator (or (sym:find ".[%.:]" offset)
+                            (length sym)))
+  (local sym (sym:sub 1 next-separator))
+  (icollect [word (: (.. sym ".") :gmatch "(.-)[%.:]")]
+    word))
+
+(fn reversed [tab])
+
+
 {: uri->path
  : path->uri
  : pos->byte
  : byte->pos
- : apply-changes}
+ : apply-changes
+ : multi-sym-split}

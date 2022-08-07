@@ -1,5 +1,5 @@
-(import-macros {: assert-matches : describe : it} :test.macros)
-(local assert (require :luassert))
+(import-macros {: is-matching : describe : it} :test.macros)
+(local is (require :luassert))
 
 (local {: ROOT-PATH : ROOT-URI} (require :test.util))
 (local dispatch (require :fennel-ls.dispatch))
@@ -21,7 +21,7 @@
 
 (describe "language server"
   (it "responds to initialize"
-    (assert-matches
+    (is-matching
       (dispatch.handle* [] server-initialize-message)
       [{:jsonrpc "2.0" :id 1
         :result {:capabilities {}

@@ -16,7 +16,7 @@
     (fn [] ,...)))
 
 
-(fn assert-matches [item pattern ?msg]
+(fn is-matching [item pattern ?msg]
   "check if item matches a pattern according to fennel's `match` builtin"
   `(match ,item
     ,pattern nil
@@ -31,5 +31,5 @@
 
 {: it
  : describe
- : assert-matches
+ : is-matching
  : before-each}

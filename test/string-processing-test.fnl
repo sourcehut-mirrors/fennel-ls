@@ -1,10 +1,10 @@
-(import-macros {: assert-matches : describe : it} :test.macros)
-(local assert (require :luassert))
+(import-macros {: is-matching : describe : it} :test.macros)
+(local is (require :luassert))
 
 (local fennel (require :fennel))
 (local util (require :fennel-ls.util))
 
-(describe "document"
+(describe "util"
 
     ;; fixme:
     ;; test for errors on out of bounds
@@ -17,7 +17,7 @@
     ;;   (document.replace my-document 0 0 0 0 "どれみふぁそらてぃど")
     ;;   (document.replace my-document 0 1 0 3 "😀")
     ;;   (document.replace my-document 0 11 0 11 "end")
-    ;;   (assert-matches my-document {:text "ど😀ふぁそらてぃどend"})))
+    ;;   (is-matching my-document {:text "ど😀ふぁそらてぃどend"})))
 
   (describe "apply-changes"
 
@@ -26,7 +26,7 @@
        :end   {:line end-line   :character end-col}})
 
     (it "updates the start of a line"
-      (assert.equal
+      (is.equal
         (util.apply-changes
           "replace beginning"
           [{:range (range 0 0 0 7)
@@ -34,7 +34,7 @@
         "the beginning"))
 
     (it "updates the end of a line"
-      (assert.equal
+      (is.equal
         (util.apply-changes
           "first line\nsecond line\nreplace end"
           [{:range (range 2 7 2 11)
@@ -42,7 +42,7 @@
         "first line\nsecond line\nreplacement"))
 
     (it "replaces a line"
-      (assert.equal
+      (is.equal
         (util.apply-changes
           "replace all"
           [{:range (range 0 0 0 11)
@@ -50,7 +50,7 @@
         "new string"))
 
     (it "can handle substituting things"
-      (assert.equal
+      (is.equal
         (util.apply-changes
           "replace beginning"
           [{:range {:start {:line 0 :character 0}
@@ -59,7 +59,7 @@
         "the beginning"))
 
     (it "can handle replacing everything"
-      (assert.equal
+      (is.equal
         (util.apply-changes
           "this is the\nold file"
           [{:text "And this is the\nnew file"}])
