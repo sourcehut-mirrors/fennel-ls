@@ -64,94 +64,76 @@ Every time the client sends a message, it gets handled by a function in the corr
   {:capabilities capabilities
    :serverInfo {:name "fennel-ls" :version "0.0.0"}})
 
-(λ string? [j]
-  (= (type j) :string))
-
-(λ get-assignment-of-symbol [file symbol]
-  ;; TODO inline
-  (. file.references symbol))
-
 ;; These three functions are mutually recursive
-(var (search-item
-      search-assignment
-      search-symbol)
+(var
+  (search-assignment
+   search-symbol
+   search)
   nil)
-
-(set search-item
-  (λ search-item [self file item stack]
-    (if ;; table
-        (fennelutils.table? item)
-        (if (. item (. stack (length stack)))
-          (search-item self file (. item (table.remove stack)) stack)
-          nil)
-        ;; symbol
-        (sym? item)
-        (search-symbol self file item stack)
-        ;; TODO
-        ;; functioncall (into body)
-        ;; require functioncall (into module)
-
-        ;; else
-        true (error (.. "I don't know what to do with " (fennel.view item))))))
 
 (set search-assignment
   (λ search-assignment [self file binding ?definition stack]
     (if (= 0 (length stack))
       binding
       ;; TODO sift down the binding
-      (search-item self file ?definition stack))))
+      (search self file ?definition stack))))
 
 (set search-symbol
   (λ search-symbol [self file symbol stack]
     (let [split (util.multi-sym-split symbol)]
       (for [i (length split) 2 -1]
         (table.insert stack (. split i))))
-    (match (get-assignment-of-symbol file symbol)
+    (match (. file.references symbol)
       to (search-assignment self file to.binding to.definition stack)
       nil nil)))
 
-(λ iter [t]
-  (if (or (fennel.list? t)
-          (fennel.sequence? t))
-    (ipairs t)
-    (pairs t)))
+(set search
+  (λ search [self file item stack]
+    (if (fennelutils.table? item)
+        (if (. item (. stack (length stack)))
+          (search self file (. item (table.remove stack)) stack)
+          nil)
+        (sym? item)
+        (search-symbol self file item stack)
+        ;; TODO
+        ;; functioncall (continue searching in body)
+        ;; require call (search in the new module)
+        :else (error (.. "I don't know what to do with " (fennel.view item))))))
 
-(λ find-symbol* [ast byte]
+(λ find-symbol [ast byte ?recursively-called]
   (if (not= :table (type ast))
       nil
       (parser.does-not-contain? ast byte)
       nil
       (sym? ast)
       ast
-      (or (fennel.list? ast)
+      (or (not ?recursively-called)
+          (fennel.list? ast)
           (fennel.sequence? ast))
       ;; TODO binary search
-      (accumulate [result nil
-                   _ v (ipairs ast) &until (or result (parser.past? v byte))]
-        (find-symbol* v byte))
-      :else (accumulate [result nil
-                         k v (pairs ast) &until result]
-              (or
-                (find-symbol* k byte)
-                (find-symbol* v byte)))))
-
-(λ find-symbol [ast byte]
-  ;; TODO binary search
-  (accumulate [result nil
-               _ v (ipairs ast) &until (or result (parser.past? v byte))]
-    (find-symbol* v byte)))
+      (accumulate
+        [result nil
+         _ v (ipairs ast)
+         &until (or result (parser.past? v byte))]
+        (find-symbol v byte true))
+      :else
+      (accumulate
+        [result nil
+         k v (pairs ast)
+         &until result]
+        (or
+          (find-symbol k byte true)
+          (find-symbol v byte true)))))
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (local byte (util.pos->byte file.text position.line position.character))
-  (local stack [])
   (match (find-symbol file.ast byte)
     symbol
-    (match (search-symbol self file symbol stack)
+    (match (search-symbol self file symbol [])
       definition
       {:range (parser.range file.text definition)
-       :uri uri})
-    nil nil))
+       :uri uri})))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
@@ -163,6 +145,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (set file.open? true))
 
 (λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
+  ;; TODO fix
   (local file (state.get-by-uri self uri))
   (set file.open? false))
 
@@ -175,4 +158,3 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 {: requests
  : notifications}
-

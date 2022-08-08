@@ -2,7 +2,7 @@
 (local util (require :fennel-ls.util))
 
 (λ get-ast-info [?ast info]
-  "find a given key of info from an AST object"
+  ;; find a given key of info from an AST object
   (or (?. (getmetatable ?ast) info)
       (. ?ast info)))
 

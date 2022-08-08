@@ -53,9 +53,10 @@ These functions are all pure functions, which makes me happy."
       (text:sub end))))
 
 (λ apply-changes [initial-text contentChanges]
-  "Take's a list of Language-Server-Protocol contentChanges and applies them to a piece of text. Doesn't yet handle UTF8 UTF16 magic from the protocol"
-  (accumulate [contents initial-text
-               _ change (ipairs contentChanges)]
+  "Takes a list of Language-Server-Protocol `contentChanges` and applies them to a piece of text. Doesn't yet handle UTF8 UTF16 magic from the protocol"
+  (accumulate
+    [contents initial-text
+     _ change (ipairs contentChanges)]
     (match change
       ;; Handle a change
       {:range {: start : end} : text}
@@ -77,9 +78,6 @@ These functions are all pure functions, which makes me happy."
   (local sym (sym:sub 1 next-separator))
   (icollect [word (: (.. sym ".") :gmatch "(.-)[%.:]")]
     word))
-
-(fn reversed [tab])
-
 
 {: uri->path
  : path->uri

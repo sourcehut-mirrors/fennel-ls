@@ -8,70 +8,62 @@
 (local -λ- (fennel.sym :λ))
 (local -lambda- (fennel.sym :lambda))
 
-;; types of things in the file.references list
-{:from "a literal range" :to "a literal range"}
-{:from "a literal range" :to-other-module ["modname" "key1" "key2" "key3" "key4" "etc"]}
-
-(λ table? [t]
-  (= :table (type t)))
-
-(λ string? [t]
-  (= :string (type t)))
-
 (λ multisym? [t]
+  ;; check if t is a symbol with multiple parts, eg. foo.bar.baz
   (and (fennel.sym? t)
     (let [t (tostring t)]
        (or (t:find "%.")
            (t:find ":")))))
 
 (λ iter [t]
+  ;; iterate through a list, sequence, or table
   (if (or (fennel.list? t)
           (fennel.sequence? t))
     (ipairs t)
     (pairs t)))
 
+(local has-tables-mt
+  {:__index
+   (λ [self key]
+     (let [val {}]
+       (tset self key val)
+       val))})
 
 (λ analyze [file]
-  (assert file.text (fennel.view file))
-  (assert file.uri)
-  (set file.references [])
+  "Compile the file, and record all the useful information from the compiler into the file object"
 
-  (local definitions
-    (doto {}
-      (setmetatable
-        {:__index
-         (λ [self key]
-           (let [val {}]
-             (tset self key val)
-             val))})))
+  (local references [])
+  (local definitions (doto {} (setmetatable has-tables-mt)))
 
-  (λ find-variable [name ?scope]
+  (λ find-definition [name ?scope]
     (when ?scope
       (or (. definitions ?scope name)
-          (find-variable name ?scope.parent))))
+          (find-definition name ?scope.parent))))
 
   (λ reference [ast scope]
-    "called whenever a variable is referenced"
+    ;; Add a reference to the references
     (assert (fennel.sym? ast))
     ;; find reference
     (let [name (string.match (tostring ast) "[^%.:]+")
-          target (find-variable (tostring name) scope)]
-      (tset file.references ast target)))
+          target (find-definition (tostring name) scope)]
+      (tset references ast target)))
 
   (λ define [?definition binding scope]
-    "called whenever a local variable or destructure statement is introduced"
+    ;; Add a definition to the definitions
+    ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
     ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
     (λ recurse [binding]
       (if (fennel.sym? binding)
-        (tset (. definitions scope)
-              (tostring binding)
-              {: binding :definition ?definition})
-        (table? binding)
-        (each [k v (iter binding)]
-         (recurse v))))
+          (tset (. definitions scope)
+                (tostring binding)
+                {: binding :definition ?definition})
+          (= :table (type binding))
+          (each [k v (iter binding)]
+           (recurse v))))
     (recurse binding))
 
   (λ define-function-name [ast scope]
+    ;; add a function definition to the definitions
     (match ast
       (where [_fn name args]
         (and (fennel.sym? name)
@@ -83,23 +75,26 @@
              :definition ast})))
 
   (λ define-function-args [ast scope]
+    ;; add the definitions of function arguments to the definitions
     (local args
       (match ast
         (where [_fn args] (fennel.sequence? args)) args
         (where [_fn _name args] (fennel.sequence? args)) args))
     (each [_ argument (ipairs args)]
-      (define nil argument scope))) ;; we say function arguments are "nil" for now
+      (define nil argument scope))) ;; we say function arguments are set to nil
 
   (λ define-function [ast scope]
-    "Introduces the various symbols exported by a function.
-This cannot be done through the :fn feature of the compiler plugin system, because it needs to be
-called *before* the body of the function is processed."
+    ;; handle the definitions of a function
     (define-function-name ast scope)
     (define-function-args ast scope))
 
   (λ call [ast scope]
-    "called for every function call. Most calls aren't interesting, but fn is"
+    ;; handles every function call
+    ;; Most calls aren't interesting, but here's the list of the ones that are:
     (match ast
+      ;; This cannot be done through the :fn feature of the compiler plugin system
+      ;; because it needs to be called *before* the body of the function is processed.
+      ;; TODO check if hashfn needs to be here
       [-fn-]
       (define-function ast scope)
       [-λ-]
@@ -111,16 +106,25 @@ called *before* the body of the function is processed."
     {:name "fennel-ls"
      :versions ["1.2.0"]
      :symbol-to-expression reference
-     : call
+     :call call
      :destructure define})
 
-  (set file.ast (icollect [ok ast (fennel.parser file.text)]
-                 ast))
+  (local ast
+    (icollect [ok ast (fennel.parser file.text)]
+      ast))
+
   (local scope (fennel.scope))
-  (each [_i form (ipairs file.ast)]
+  (each [_i form (ipairs ast)]
     (fennel.compile form
       {:filename file.uri
        : scope
-       :plugins [plugin]})))
+       :plugins [plugin]}))
+
+  ;; write things back to the file object
+  (set file.references references)
+  ;; (set file.definitions definitions) ;; not needed yet
+  (set file.ast ast))
+  ;; (set file.analyzed? true))
+
 
 {: analyze}
