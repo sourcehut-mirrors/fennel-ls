@@ -2,9 +2,9 @@
 (local is (require :luassert))
 
 (local fennel (require :fennel))
-(local util (require :fennel-ls.util))
+(local utils (require :fennel-ls.utils))
 
-(describe "util"
+(describe "utils"
 
     ;; fixme:
     ;; test for errors on out of bounds
@@ -27,7 +27,7 @@
 
     (it "updates the start of a line"
       (is.equal
-        (util.apply-changes
+        (utils.apply-changes
           "replace beginning"
           [{:range (range 0 0 0 7)
             :text "the"}])
@@ -35,7 +35,7 @@
 
     (it "updates the end of a line"
       (is.equal
-        (util.apply-changes
+        (utils.apply-changes
           "first line\nsecond line\nreplace end"
           [{:range (range 2 7 2 11)
             :text "ment"}])
@@ -43,7 +43,7 @@
 
     (it "replaces a line"
       (is.equal
-        (util.apply-changes
+        (utils.apply-changes
           "replace all"
           [{:range (range 0 0 0 11)
             :text "new string"}])
@@ -51,7 +51,7 @@
 
     (it "can handle substituting things"
       (is.equal
-        (util.apply-changes
+        (utils.apply-changes
           "replace beginning"
           [{:range {:start {:line 0 :character 0}
                     :end   {:line 0 :character 7}}
@@ -60,7 +60,7 @@
 
     (it "can handle replacing everything"
       (is.equal
-        (util.apply-changes
+        (utils.apply-changes
           "this is the\nold file"
           [{:text "And this is the\nnew file"}])
         "And this is the\nnew file"))))

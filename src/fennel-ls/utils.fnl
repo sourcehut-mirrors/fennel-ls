@@ -70,6 +70,11 @@ These functions are all pure functions, which makes me happy."
       {: text}
       text)))
 
+(λ get-ast-info [?ast info]
+  ;; find a given key of info from an AST object
+  (or (?. (getmetatable ?ast) info)
+      (. ?ast info)))
+
 (fn multi-sym-split [sym ?offset]
   (local sym (tostring sym))
   (local offset (or ?offset (length sym)))
@@ -84,4 +89,5 @@ These functions are all pure functions, which makes me happy."
  : pos->byte
  : byte->pos
  : apply-changes
- : multi-sym-split}
+ : multi-sym-split
+ : get-ast-info}

@@ -1,9 +1,9 @@
-"Mod
+"Searcher
 This file has all the logic needed to take the name of a module and find the corresponding URI.
 I suspect this file is going to be gone after a bit of refactoring."
 
 (local fennel (require :fennel))
-(local util (require :fennel-ls.util))
+(local utils (require :fennel-ls.utils))
 
 "works on my machine >:)"
 (local luapath "?.lua;src/?.lua")
@@ -36,13 +36,13 @@ I suspect this file is going to be gone after a bit of refactoring."
       (if (is_absolute path)
         (table.insert result path)
         (each [_ workspace (ipairs (or ?workspaces []))]
-          (table.insert result (join (util.uri->path workspace) path)))))
+          (table.insert result (join (utils.uri->path workspace) path)))))
     (table.concat result ";")))
 
 (λ lookup [{: root-uri} mod]
   (match (or (fennel.searchModule mod (add-workspaces-to-path luapath [root-uri]))
              (fennel.searchModule mod (add-workspaces-to-path fennelpath [root-uri])))
-    modname (util.path->uri modname)
+    modname (utils.path->uri modname)
     nil nil))
 
 {: lookup}

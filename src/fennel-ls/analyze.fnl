@@ -1,5 +1,10 @@
 (local fennel (require :fennel))
+(local fennelutils (require :fennel.utils))
+(local utils (require :fennel-ls.utils))
 (local insert table.insert)
+
+(local sym? fennel.sym?)
+(local list? fennel.list?)
 
 ;; words surrounded by - are symbols,
 ;; because fennel doesn't allow 'require in a runtime file
@@ -7,6 +12,33 @@
 (local -fn- (fennel.sym :fn))
 (local -λ- (fennel.sym :λ))
 (local -lambda- (fennel.sym :lambda))
+
+(λ contains? [?ast byte]
+  ;; check if an ast contains a byte
+  (and (= (type ?ast) :table)
+       (utils.get-ast-info ?ast :bytestart)
+       (utils.get-ast-info ?ast :byteend)
+       (<= (utils.get-ast-info ?ast :bytestart)
+           byte
+           (+ 1 (utils.get-ast-info ?ast :byteend)))))
+
+(λ does-not-contain? [?ast byte]
+  ;; check if a byte is in range of the ast
+  (and (= (type ?ast) :table)
+       (utils.get-ast-info ?ast :bytestart)
+       (utils.get-ast-info ?ast :byteend)
+       (not
+         (<= (utils.get-ast-info ?ast :bytestart)
+             byte
+             (+ 1 (utils.get-ast-info ?ast :byteend))))))
+
+
+(λ past? [?ast byte]
+  ;; check if a byte is past an ast object
+  (and (= (type ?ast) :table)
+       (utils.get-ast-info ?ast :bytestart)
+       (< byte (utils.get-ast-info ?ast :bytestart))
+       false))
 
 (λ multisym? [t]
   ;; check if t is a symbol with multiple parts, eg. foo.bar.baz
@@ -126,5 +158,66 @@
   (set file.ast ast))
   ;; (set file.analyzed? true))
 
+(var
+  (search-assignment
+   search-symbol
+   search)
+  nil)
 
-{: analyze}
+(set search-assignment
+  (λ search-assignment [self file binding ?definition stack]
+    (if (= 0 (length stack))
+      binding
+      ;; TODO sift down the binding
+      (search self file ?definition stack))))
+
+(set search-symbol
+  (λ search-symbol [self file symbol stack]
+    (let [split (utils.multi-sym-split symbol)]
+      (for [i (length split) 2 -1]
+        (table.insert stack (. split i))))
+    (match (. file.references symbol)
+      to (search-assignment self file to.binding to.definition stack)
+      nil nil)))
+
+(set search
+  (λ search [self file item stack]
+    (if (fennelutils.table? item)
+        (if (. item (. stack (length stack)))
+          (search self file (. item (table.remove stack)) stack)
+          nil)
+        (sym? item)
+        (search-symbol self file item stack)
+        ;; TODO
+        ;; functioncall (continue searching in body)
+        ;; require call (search in the new module)
+        :else (error (.. "I don't know what to do with " (fennel.view item))))))
+
+(λ find-symbol [ast byte ?recursively-called]
+  (if (not= :table (type ast))
+      nil
+      (does-not-contain? ast byte)
+      nil
+      (sym? ast)
+      ast
+      (or (not ?recursively-called)
+          (fennel.list? ast)
+          (fennel.sequence? ast))
+      ;; TODO binary search
+      (accumulate
+        [result nil
+         _ v (ipairs ast)
+         &until (or result (past? v byte))]
+        (find-symbol v byte true))
+      :else
+      (accumulate
+        [result nil
+         k v (pairs ast)
+         &until result]
+        (or
+          (find-symbol k byte true)
+          (find-symbol v byte true)))))
+
+{: analyze
+ : find-symbol
+ : search-symbol}

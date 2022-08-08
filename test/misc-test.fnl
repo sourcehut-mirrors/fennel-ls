@@ -2,7 +2,7 @@
 (local is (require :luassert))
 
 (local fennel (require :fennel))
-(local {: multi-sym-split} (require :fennel-ls.util))
+(local {: multi-sym-split} (require :fennel-ls.utils))
 
 (describe "multi-sym-split"
   (it "should be 1 on regular syms"

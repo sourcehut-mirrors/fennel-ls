@@ -14,7 +14,7 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] directly on require statements
     - [X] for definitions in the same file
     - [ ] for definitions in other files
-    - [ ] follows multisyms through table constructor
+    - [X] follows multisyms through table constructor
     - [ ] follows multisyms through mutations (difficult)
     - [ ] for methods/metamethods (difficult, in the general case may require type annotations or some insane global type inference logic)
     - [ ] into lua files (maybe cheeseable with antifennel if it has --correlate?)

@@ -1,4 +1,4 @@
-(local dispatch (require :fennel-ls.dispatch))
+(local core (require :fennel-ls.core))
 
 (local ROOT-PATH
   (-> (io.popen "pwd")
@@ -24,6 +24,6 @@
                         :uri ROOT-URI}]}})
 
 (fn setup-server [state]
-  (dispatch.handle* state initialization-message))
+  (core.handle* state initialization-message))
 
 {: ROOT-URI : setup-server}

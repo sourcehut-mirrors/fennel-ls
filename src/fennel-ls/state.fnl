@@ -1,7 +1,7 @@
-(local util (require :fennel-ls.util))
-(local mod (require :fennel-ls.mod))
+(local utils (require :fennel-ls.utils))
+(local searcher (require :fennel-ls.searcher))
 
-(local {: analyze} (require :fennel-ls.plugin))
+(local {: analyze} (require :fennel-ls.analyze))
 
 (λ init-state [self params]
   (set self.files {})
@@ -9,7 +9,7 @@
   (set self.root-uri params.rootUri))
 
 (λ read-file [uri]
-  (with-open [fd (io.open (util.uri->path uri))]
+  (with-open [fd (io.open (utils.uri->path uri))]
     {:uri uri
      :text (fd:read :*a)}))
 
@@ -26,7 +26,7 @@
           ;; if the cached uri isn't found, clear the cache and try again
           (do (tset self.modules module nil)
               (get-by-module self module)))
-    nil (let [uri (mod.lookup self module)]
+    nil (let [uri (searcher.lookup self module)]
           (tset self.modules module uri)
           (get-by-uri self uri))))
 

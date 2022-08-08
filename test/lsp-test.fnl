@@ -2,7 +2,7 @@
 (local is (require :luassert))
 
 (local {: ROOT-PATH : ROOT-URI} (require :test.util))
-(local dispatch (require :fennel-ls.dispatch))
+(local core (require :fennel-ls.core))
 
 (local server-initialize-message
   {:id 1
@@ -22,7 +22,7 @@
 (describe "language server"
   (it "responds to initialize"
     (is-matching
-      (dispatch.handle* [] server-initialize-message)
+      (core.handle* [] server-initialize-message)
       [{:jsonrpc "2.0" :id 1
         :result {:capabilities {}
                  :serverInfo {:name "fennel-ls" : version}}}])))

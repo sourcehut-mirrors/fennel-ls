@@ -1,4 +1,4 @@
-"Dispatch
+"core
 This module is responsible for deciding which code to call in response
 to a given LSP request from the client.
 
@@ -7,12 +7,12 @@ In general, this involves:
 * determining the type of the message
 * calling the appropriate handler"
 
-(local handlers (require :fennel-ls.the-actual-code))
+(local handlers (require :fennel-ls.handlers))
 (local message (require :fennel-ls.message))
 
 (λ handle-request [self send id method ?params]
-  "Call the appropriate request handler.
-The return value of the request is sent back to the server."
+  ;; Call the appropriate request handler.
+  ;; The return value of the request is sent back to the server.
   (match (. handlers.requests method)
     callback
     (match (callback self send ?params)
@@ -26,15 +26,15 @@ The return value of the request is sent back to the server."
         id))))
 
 (λ handle-response [self send id result]
-  "I don't care about responses yet"
+  ;; I don't care about responses yet
   nil)
 
 (λ handle-bad-response [self send id err]
-  "Handle a message indicating an error. Right now, it just crashes the server."
+  ;; Handle a message indicating an error. Right now, it just crashes the server.
   (error (.. "oopsie: " err.code)))
 
 (λ handle-notification [self send method ?params]
-  "Call the appropriate notification handler."
+  ;; Call the appropriate notification handler.
   (match (. handlers.notifications method)
     callback (callback self send ?params)))
     ;; Silent error for unknown notifications
