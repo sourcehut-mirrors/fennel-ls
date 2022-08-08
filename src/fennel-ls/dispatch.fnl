@@ -1,4 +1,4 @@
-"core
+"Dispatch
 This module is responsible for deciding which code to call in response
 to a given LSP request from the client.
 

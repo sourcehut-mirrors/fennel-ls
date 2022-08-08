@@ -1,9 +1,11 @@
 "Message
-Here are all the constructors for the various JSON-RPC responses
-that may need to be sent to the client.
+Here are all the message constructor helpers for the various
+LSP and JSON-RPC responses that may need to be sent to the client.
 
-I have them all here because I have a feeling I am conflating missing fields with null fields,
-and I want to have one location to look to fix this in the future."
+I have them all here because I have a feeling I am conflating
+missing fields with null fields, and I want to have one location
+to look to fix this in the future."
+
 (local utils (require :fennel-ls.utils))
 
 (local error-codes

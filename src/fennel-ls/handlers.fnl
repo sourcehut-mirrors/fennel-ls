@@ -1,14 +1,13 @@
-"Big dispatch
+"Handlers
 You finally made it. Here is the main code that implements the language server protocol
 
 Every time the client sends a message, it gets handled by a function in the corresponding table type.
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
  and a textDocument/defintion request will call requests.textDocument/didChange)"
-(local utils    (require :fennel-ls.utils))
-(local message    (require :fennel-ls.message))
-
+(local {: pos->byte : apply-changes}   (require :fennel-ls.utils))
+(local message (require :fennel-ls.message))
 (local state   (require :fennel-ls.state))
-(local analyze (require :fennel-ls.analyze))
+(local language (require :fennel-ls.language))
 
 (local requests [])
 (local notifications [])
@@ -61,17 +60,17 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
-  (local byte (utils.pos->byte file.text position.line position.character))
-  (match (analyze.find-symbol file.ast byte)
+  (local byte (pos->byte file.text position.line position.character))
+  (match (language.find-symbol file.ast byte)
     symbol
-    (match (analyze.search-symbol self file symbol [])
+    (match (language.search-symbol self file symbol [])
       definition
       {:range (message.range file.text definition)
        :uri uri})))
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (assert file.open?)
-  (utils.apply-changes (. self.files uri) contentChanges))
+  (apply-changes (. self.files uri) contentChanges))
 
 (λ notifications.textDocument/didOpen [self send {:textDocument {: languageId : text : uri}}]
   (local file (state.set-uri-contents self uri text))

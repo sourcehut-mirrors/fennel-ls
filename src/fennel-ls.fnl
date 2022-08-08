@@ -1,4 +1,4 @@
-(local core (require :fennel-ls.core))
+(local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
 
 (λ main-loop [in out]
@@ -6,7 +6,7 @@
   (local state [])
   (while true
     (let [msg (json-rpc.read in)]
-      (core.handle state send msg))))
+      (dispatch.handle state send msg))))
 
 (λ main []
   (main-loop

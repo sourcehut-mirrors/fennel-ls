@@ -5,14 +5,14 @@
 (local {: ROOT-URI
         : setup-server} (require :test.util))
 
-(local core (require :fennel-ls.core))
+(local dispatch (require :fennel-ls.dispatch))
 (local message  (require :fennel-ls.message))
 
 (describe "jump to definition"
 
   (fn check [request-file line char response-file start-line start-col end-line end-col]
     (local state (doto [] setup-server))
-    (let [message (core.handle* state
+    (let [message (dispatch.handle* state
                      (message.create-request 2 "textDocument/definition"
                        {:position {:character char :line line}
                         :textDocument {:uri (.. ROOT-URI "/" request-file)}}))
@@ -47,13 +47,13 @@
     (check "example.fnl" 21 9 "example.fnl" 16 13 16 16))
 
   (it "can go to a function inside a table"
-    (check "example.fnl" 28 6 "example.fnl" 4 4 4 7)))
+    (check "example.fnl" 28 6 "example.fnl" 4 4 4 7))
 
-  ;; (it "handles (local _ (require XXX)"
-  ;;   (check "example.fnl" 0 11 "foo.fnl" 0 0 0 0))
+  (it "handles (local _ (require XXX))"
+    (check "example.fnl" 0 10 "foo.fnl" 0 0 0 0))
 
-  ;; (it "handles (require XXX))"
-  ;;   (check "example.fnl" 1 5 "bar.fnl" 0 0 0 0))
+  (it "handles (require XXX))"
+    (check "example.fnl" 1 5 "bar.fnl" 0 0 0 0)))
 
   ;; (it "can go to a field inside of a table")
   ;; (it "can go to a destructured function argument")
