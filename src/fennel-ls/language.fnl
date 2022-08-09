@@ -17,7 +17,8 @@
 (set search-assignment
   (λ search-assignment [self file binding ?definition stack]
     (if (= 0 (length stack))
-      binding
+      (values binding file) ;; BASE CASE!!
+
       ;; TODO sift down the binding
       (search self file ?definition stack))))
 
@@ -28,7 +29,7 @@
         (table.insert stack (. split i))))
     (match (. file.references symbol)
       to (search-assignment self file to.binding to.definition stack)
-      nil nil)))
+      nil nil))) ;; BASE CASE: Give up
 
 (set search
   (λ search [self file item stack]
@@ -36,7 +37,7 @@
       (fennelutils.table? item)
       (if (. item (. stack (length stack)))
         (search self file (. item (table.remove stack)) stack)
-        nil)
+        nil) ;; BASE CASE: Give up
       (sym? item)
       (search-symbol self file item stack)
       ;; TODO
@@ -45,7 +46,6 @@
         [-require- mod]
         (let [newfile (state.get-by-module self mod)
               newitem (. newfile.ast (length newfile.ast))]
-          (print newfile.uri mod)
           (search self newfile newitem stack))
         _ (error (.. "I don't know what to do with " (fennel.view item)))))))
 

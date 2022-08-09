@@ -7,6 +7,7 @@ missing fields with null fields, and I want to have one location
 to look to fix this in the future."
 
 (local utils (require :fennel-ls.utils))
+(local state (require :fennel-ls.state))
 
 (local error-codes
   {;; JSON-RPC errors
@@ -46,18 +47,21 @@ to look to fix this in the future."
    : id
    :result ?result})
 
-(λ range [text ?ast]
-  "create a LSP range representing the span of an AST object"
-  (if (= (type ?ast) :table)
-    (match (values (utils.get-ast-info ?ast :bytestart) (utils.get-ast-info ?ast :byteend))
-      (i j)
-      (let [(start-line start-col) (utils.byte->pos text i)
-            (end-line   end-col)   (utils.byte->pos text (+ j 1))]
-        {:start {:line start-line :character start-col}
-         :end   {:line end-line   :character end-col}}))))
+(λ range-and-uri [?ast file]
+  "if possible, returns the location of a symbol"
+  (match
+    (values
+      (utils.get-ast-info ?ast :bytestart)
+      (utils.get-ast-info ?ast :byteend))
+    (i j)
+    (let [(start-line start-col) (utils.byte->pos file.text i)
+          (end-line   end-col)   (utils.byte->pos file.text (+ j 1))]
+     {:range {:start {:line start-line :character start-col}
+              :end   {:line end-line   :character end-col}}
+      :uri file.uri})))
 
 {: create-notification
  : create-request
  : create-response
  : create-error
- : range}
+ : range-and-uri}

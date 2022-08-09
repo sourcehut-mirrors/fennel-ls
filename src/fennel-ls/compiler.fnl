@@ -110,14 +110,15 @@
      :call call
      :destructure define})
 
+  (local filename file.uri)
   (local ast
-    (icollect [ok ast (fennel.parser file.text)]
+    (icollect [ok ast (fennel.parser file.text filename)]
       ast))
 
   (local scope (fennel.scope))
   (each [_i form (ipairs ast)]
     (fennel.compile form
-      {:filename file.uri
+      {: filename
        : scope
        :plugins [plugin]}))
 

@@ -49,17 +49,21 @@
   (it "can go to a function inside a table"
     (check "example.fnl" 28 6 "example.fnl" 4 4 4 7))
 
-  (it "handles (local _ (require XXX))"
-    (check "example.fnl" 0 10 "foo.fnl" 0 0 0 0))
+  (it "can go to a function in another file when accessed by multisym"
+    (check "example.fnl" 7 7 "foo.fnl" 2 4 2 13)))
 
-  (it "handles (require XXX))"
-    (check "example.fnl" 1 5 "bar.fnl" 0 0 0 0)))
+  ;; (it "goes further if you go to definition on a binding")
+
+  ;; (it "handles (local _ (require XXX))")
+  ;; (check "example.fnl" 0 10 "foo.fnl" 0 0 0 0)
+
+  ;; (it "works directly on a require/include (require XXX))"
+  ;;   (check "example.fnl" 1 5 "bar.fnl" 0 0 0 0))
 
   ;; (it "can go to a field inside of a table")
   ;; (it "can go to a destructured function argument")
   ;; (it "can go to a reference that occurs in a macro")
   ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")
-  ;; (it "can go to a function in another file when accessed by multisym")
   ;; (it "can go to a function in another file imported via destructuring assignment")
   ;; (it "can work with a custom fennelpath")
   ;; (it "can go through more than one extra file")
@@ -68,3 +72,5 @@
   ;; (it "finds the definition of macros")
   ;; (it "can follow import-macros")
   ;; (it "can go to the definition even in a lua file")
+  ;; (it "can go to a function's arguments when they're available")
+

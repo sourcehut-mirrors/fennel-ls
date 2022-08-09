@@ -64,9 +64,9 @@ Every time the client sends a message, it gets handled by a function in the corr
   (match (language.find-symbol file.ast byte)
     symbol
     (match (language.search-symbol self file symbol [])
-      definition
-      {:range (message.range file.text definition)
-       :uri uri})))
+      (definition result-file) ;; curse you, magical match rules
+      (message.range-and-uri definition result-file))))
+
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (assert file.open?)

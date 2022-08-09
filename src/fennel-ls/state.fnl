@@ -20,6 +20,10 @@
         (tset self.files uri file)
         file)))
 
+(λ get-by-path [self path]
+  (get-by-uri (utils.path->uri path)))
+
+
 (λ get-by-module [self module]
   ;; check the cache
   (match (. self.modules module)
@@ -38,14 +42,16 @@
       (error (.. "cannot find module " module)))))
 
 (λ set-uri-contents [self uri text]
-  (if (. self.files uri)
+  (match (. self.files uri)
     ;; modify existing file
-    (let [file (. self.files uri)]
-      (when (not= text file.text)
-        (set file.text text)
-        (compile file)
-        file))
+    file
+    (when (not= text file.text)
+      (set file.text text)
+      (compile file)
+      file)
+
     ;; create new file
+    nil
     (let [file {: uri : text}]
         (tset self.files uri file)
         (compile file)
