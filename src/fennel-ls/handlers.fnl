@@ -63,7 +63,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (local byte (pos->byte file.text position.line position.character))
   (match (language.find-symbol file.ast byte)
     symbol
-    (match (language.search-symbol self file symbol [])
+    (match (language.search-main self file symbol [])
       (definition result-file) ;; curse you, magical match rules
       (message.range-and-uri definition result-file))))
 

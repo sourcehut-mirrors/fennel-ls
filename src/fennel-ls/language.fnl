@@ -15,21 +15,23 @@
   nil)
 
 (set search-assignment
-  (λ search-assignment [self file binding ?definition stack]
+  (λ search-assignment [self file {: binding : ?definition : ?keys} stack]
     (if (= 0 (length stack))
       (values binding file) ;; BASE CASE!!
-
-      ;; TODO sift down the binding
-      (search self file ?definition stack))))
+      (do
+        (if ?keys
+          (fcollect [i (length ?keys) 1 -1 &into stack]
+            (. ?keys i)))
+        (search self file ?definition stack)))))
 
 (set search-symbol
   (λ search-symbol [self file symbol stack]
     (let [split (utils.multi-sym-split symbol)]
-      (for [i (length split) 2 -1]
-        (table.insert stack (. split i))))
+      (fcollect [i (length split) 2 -1 &into stack]
+        (. split i))) ;; TODO test coverage for this line
     (match (. file.references symbol)
-      to (search-assignment self file to.binding to.definition stack)
-      nil nil))) ;; BASE CASE: Give up
+      to (search-assignment self file to stack))))
+
 
 (set search
   (λ search [self file item stack]
@@ -37,7 +39,9 @@
       (fennelutils.table? item)
       (if (. item (. stack (length stack)))
         (search self file (. item (table.remove stack)) stack)
-        nil) ;; BASE CASE: Give up
+        (= 0 (length stack))
+        (values item file) ;; BASE CASE !!
+        nil) ;; BASE CASE Give up
       (sym? item)
       (search-symbol self file item stack)
       ;; TODO
@@ -48,6 +52,22 @@
               newitem (. newfile.ast (length newfile.ast))]
           (search self newfile newitem stack))
         _ (error (.. "I don't know what to do with " (fennel.view item)))))))
+
+(λ search-main [self file symbol]
+  ;; TODO partial byting, go to different defitition sites depending on which section of the symbol the trigger happens on
+
+  ;; The stack is the multi-sym parts still to search
+  ;; for example, if I'm searching for "foo.bar.baz", my "item" or "symbol" is foo,
+  ;; and the stack has ["baz" "bar"], with "bar" at the "top"/"end" of the stack as the next key to search.
+  (local stack
+    (let [split (utils.multi-sym-split symbol)]
+      (fcollect [i (length split) 2 -1]
+        (. split i))))
+  (match (values (. file.references symbol) (. file.definitions symbol))
+    (ref _)
+    (search-assignment self file ref stack)
+    (_ def)
+    (search self file def.?definition stack)))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object
@@ -101,4 +121,5 @@
           (find-symbol v byte true)))))
 
 {: find-symbol
- : search-symbol}
+ : search-symbol
+ : search-main}

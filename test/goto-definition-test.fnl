@@ -49,19 +49,25 @@
   (it "can go to a function inside a table"
     (check "example.fnl" 28 6 "example.fnl" 4 4 4 7))
 
+  ;; (it "can go to a field inside of a table")
+
   (it "can go to a function in another file when accessed by multisym"
-    (check "example.fnl" 7 7 "foo.fnl" 2 4 2 13)))
+    (check "example.fnl" 7 7 "foo.fnl" 2 4 2 13))
 
-  ;; (it "goes further if you go to definition on a binding")
+  (it "goes further if you go to definition on a binding"
+    (check "example.fnl" 31 12 "example.fnl" 23 4 23 5))
 
-  ;; (it "handles (local _ (require XXX))")
-  ;; (check "example.fnl" 0 10 "foo.fnl" 0 0 0 0)
+
+  ;; (it "can go to a destructured function argument")
+
+  ;; it can go up and down destructuring
+  (it "can trace a variable that was introduced with destructuring assignment"
+    (check "example.fnl" 38 15 "example.fnl" 33 7 33 13)))
+
 
   ;; (it "works directly on a require/include (require XXX))"
   ;;   (check "example.fnl" 1 5 "bar.fnl" 0 0 0 0))
 
-  ;; (it "can go to a field inside of a table")
-  ;; (it "can go to a destructured function argument")
   ;; (it "can go to a reference that occurs in a macro")
   ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")
   ;; (it "can go to a function in another file imported via destructuring assignment")

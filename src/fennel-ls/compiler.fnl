@@ -32,12 +32,13 @@
 (λ compile [file]
   "Compile the file, and record all the useful information from the compiler into the file object"
 
-  (local references [])
-  (local definitions (doto {} (setmetatable has-tables-mt)))
+  (local references {})
+  (local definitions-by-scope (doto {} (setmetatable has-tables-mt)))
+  (local definitions {})
 
   (λ find-definition [name ?scope]
     (when ?scope
-      (or (. definitions ?scope name)
+      (or (. definitions-by-scope ?scope name)
           (find-definition name ?scope.parent))))
 
   (λ reference [ast scope]
@@ -53,15 +54,21 @@
     ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
     ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
     ;; also, there's no logic for (values)
-    (λ recurse [binding]
+    (λ recurse [binding keys]
       (if (fennel.sym? binding)
-          (tset (. definitions scope)
-                (tostring binding)
-                {: binding :definition ?definition})
+          (let [definition
+                {: binding
+                 : ?definition
+                 :?keys (fcollect [i 1 (length keys)]
+                          (. keys i))}]
+            (tset (. definitions-by-scope scope) (tostring binding) definition)
+            (tset definitions binding definition))
           (= :table (type binding))
           (each [k v (iter binding)]
-           (recurse v))))
-    (recurse binding))
+            (table.insert keys k)
+            (recurse v keys)
+            (table.remove keys))))
+    (recurse binding []))
 
   (λ define-function-name [ast scope]
     ;; add a function definition to the definitions
@@ -70,10 +77,10 @@
         (and (fennel.sym? name)
              (not (multisym? name)) ;; not dealing with multisym for now
              (fennel.sequence? args)))
-      (tset (. definitions scope.parent)
+      (tset (. definitions-by-scope scope) ;; !!! parent or child?
             (tostring name)
             {:binding name
-             :definition ast})))
+             :?definition ast})))
 
   (λ define-function-args [ast scope]
     ;; add the definitions of function arguments to the definitions
@@ -82,7 +89,7 @@
         (where [_fn args] (fennel.sequence? args)) args
         (where [_fn _name args] (fennel.sequence? args)) args))
     (each [_ argument (ipairs args)]
-      (define nil argument scope))) ;; we say function arguments are set to nil
+      (define nil argument scope))) ;; we say function arguments are set to nil ;; !!! parent or child?
 
   (λ define-function [ast scope]
     ;; handle the definitions of a function
@@ -124,7 +131,8 @@
 
   ;; write things back to the file object
   (set file.references references)
-  ;; (set file.definitions definitions) ;; not needed yet
+  (set file.definitions definitions)
+  ;; (set file.definitions-by-scope definitions-by-scope) ;; not needed yet
   (set file.ast ast))
   ;; (set file.compiled? true))
 {: compile}
