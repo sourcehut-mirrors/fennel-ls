@@ -59,8 +59,9 @@
           (let [definition
                 {: binding
                  : ?definition
-                 :?keys (fcollect [i 1 (length keys)]
-                          (. keys i))}]
+                 :?keys (if (not= 0 (length keys))
+                          (fcollect [i 1 (length keys)]
+                            (. keys i)))}]
             (tset (. definitions-by-scope scope) (tostring binding) definition)
             (tset definitions binding definition))
           (= :table (type binding))
@@ -77,7 +78,7 @@
         (and (fennel.sym? name)
              (not (multisym? name)) ;; not dealing with multisym for now
              (fennel.sequence? args)))
-      (tset (. definitions-by-scope scope) ;; !!! parent or child?
+      (tset (. definitions-by-scope scope) ;; !!! TODO somehow insert into child scope
             (tostring name)
             {:binding name
              :?definition ast})))

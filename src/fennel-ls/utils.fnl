@@ -84,10 +84,14 @@ These functions are all pure functions, which makes me happy."
   (icollect [word (: (.. sym ".") :gmatch "(.-)[%.:]")]
     word))
 
+(λ type= [val typ]
+  (= (type val) typ))
+
 {: uri->path
  : path->uri
  : pos->byte
  : byte->pos
  : apply-changes
  : multi-sym-split
- : get-ast-info}
+ : get-ast-info
+ : type=}

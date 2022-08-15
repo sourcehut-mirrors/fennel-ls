@@ -8,6 +8,8 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local message (require :fennel-ls.message))
 (local state   (require :fennel-ls.state))
 (local language (require :fennel-ls.language))
+(local formatter (require :fennel-ls.formatter))
+
 
 (local requests [])
 (local notifications [])
@@ -16,7 +18,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   {:textDocumentSync 1 ;; FIXME: upgrade to 2
    ;; :notebookDocumentSync nil
    ;; :completionProvider nil
-   ;; :hoverProvider nil
+   :hoverProvider {:workDoneProgress false}
    ;; :signatureHelpProvider nil
    ;; :declarationProvider nil
    :definitionProvider {:workDoneProgress false}})
@@ -63,9 +65,24 @@ Every time the client sends a message, it gets handled by a function in the corr
   (local byte (pos->byte file.text position.line position.character))
   (match (language.find-symbol file.ast byte)
     symbol
-    (match (language.search-main self file symbol [])
-      (definition result-file) ;; curse you, magical match rules
-      (message.range-and-uri definition result-file))))
+    (match (language.search-main self file symbol)
+      (result result-file) ;; curse you, magical match rules
+      (message.range-and-uri
+        (or result.binding result.?definition)
+        result-file))))
+
+(λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
+  (local file (state.get-by-uri self uri))
+  (local byte (pos->byte file.text position.line position.character))
+  (match (language.find-symbol file.ast byte)
+    symbol
+    (match (language.search-main self file symbol)
+     result
+     {:contents
+      {:kind
+       "markdown"
+       :value
+       (formatter.hover-format result)}})))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))

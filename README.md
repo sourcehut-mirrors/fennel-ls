@@ -13,7 +13,7 @@ Features / To Do List / Things I would enjoy patches for:
 - [ ] Go-to-definition
     - [ ] directly on require statements
     - [X] for definitions in the same file
-    - [ ] for definitions in other files
+    - [X] for definitions in other files
     - [X] follows multisyms through table constructor
     - [ ] follows multisyms through mutations (difficult)
     - [ ] for methods/metamethods (difficult, in the general case may require type annotations or some insane global type inference logic)
@@ -23,7 +23,7 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] including in macro files
 - [ ] Reports linting issues
 - [ ] Completion Suggestions
-- [ ] Hover over a symbol for documentation
+- [X] Hover over a symbol for documentation
 - [ ] Signature help
 - [ ] Go-to-references on definition sites
 - [ ] integration with fnlfmt

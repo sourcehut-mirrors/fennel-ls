@@ -26,47 +26,49 @@
         (.. "expected position: " start-line " " start-col " " end-line " " end-col))))
 
   (it "can go to a fn"
-    (check "example.fnl" 9 3 "example.fnl" 4 4 4 7))
+    (check :goto-definition.fnl 9 3 :goto-definition.fnl 4 4 4 7))
 
   (it "can go to a local"
-    (check "example.fnl" 7 17 "example.fnl" 6 9 6 10))
+    (check :goto-definition.fnl 7 17 :goto-definition.fnl 6 9 6 10))
 
   (it "can go to a function argument"
-    (check "example.fnl" 5 9 "example.fnl" 4 9 4 10))
+    (check :goto-definition.fnl 5 9 :goto-definition.fnl 4 9 4 10))
 
   (it "can handle variables shadowed with let"
-    (check "example.fnl" 14 10 "example.fnl" 13 6 13 9))
+    (check :goto-definition.fnl 14 10 :goto-definition.fnl 13 6 13 9))
 
   (it "can sort out the unification rule with match (variable unified)"
-    (check "example.fnl" 19 12 "example.fnl" 17 8 17 9))
+    (check :goto-definition.fnl 19 12 :goto-definition.fnl 17 8 17 9))
 
   (it "can sort out the unification rule with match (variable introduced)"
-    (check "example.fnl" 20 13 "example.fnl" 20 9 20 10))
+    (check :goto-definition.fnl 20 13 :goto-definition.fnl 20 9 20 10))
 
   (it "can go to a destructured local"
-    (check "example.fnl" 21 9 "example.fnl" 16 13 16 16))
+    (check :goto-definition.fnl 21 9 :goto-definition.fnl 16 13 16 16))
 
   (it "can go to a function inside a table"
-    (check "example.fnl" 28 6 "example.fnl" 4 4 4 7))
+    (check :goto-definition.fnl 28 6 :goto-definition.fnl 4 4 4 7))
 
-  ;; (it "can go to a field inside of a table")
+  (it "can go to a field inside of a table literal"
+    (check :goto-definition.fnl 35 19 :goto-definition.fnl 34 20 34 35))
 
   (it "can go to a function in another file when accessed by multisym"
-    (check "example.fnl" 7 7 "foo.fnl" 2 4 2 13))
+    (check :goto-definition.fnl 7 7 :foo.fnl 2 4 2 13))
 
   (it "goes further if you go to definition on a binding"
-    (check "example.fnl" 31 12 "example.fnl" 23 4 23 5))
-
+    (check :goto-definition.fnl 31 12 :goto-definition.fnl 23 4 23 5))
 
   ;; (it "can go to a destructured function argument")
 
-  ;; it can go up and down destructuring
-  (it "can trace a variable that was introduced with destructuring assignment"
-    (check "example.fnl" 38 15 "example.fnl" 33 7 33 13)))
+  (it "can go up and down destructuring"
+    (check :goto-definition.fnl 38 15 :goto-definition.fnl 33 7 33 13))
+
+  (it "can go up and down field accesses"
+    (check :goto-definition.fnl 45 15 :goto-definition.fnl 40 7 40 13)))
 
 
   ;; (it "works directly on a require/include (require XXX))"
-  ;;   (check "example.fnl" 1 5 "bar.fnl" 0 0 0 0))
+  ;;   (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 0)))
 
   ;; (it "can go to a reference that occurs in a macro")
   ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")

@@ -42,5 +42,5 @@
 (local deep {:a {:b {:field findme}}})
 (local shallow deep.a.b)
 (local mixed [{:key [5 {:foo shallow}]}])
-(local funny (. mixed 1 :key 2 foo))
+(local funny (. mixed 1 :key 2 :foo))
 (print funny.field)

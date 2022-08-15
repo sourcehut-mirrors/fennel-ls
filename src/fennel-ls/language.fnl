@@ -8,50 +8,53 @@
 (local sym? fennel.sym?)
 (local list? fennel.list?)
 
-(var
-  (search-assignment
-   search-symbol
-   search)
-  nil)
+(local -require- (fennel.sym :require))
+(local -dot- (fennel.sym :.))
 
-(set search-assignment
-  (λ search-assignment [self file {: binding : ?definition : ?keys} stack]
-    (if (= 0 (length stack))
-      (values binding file) ;; BASE CASE!!
-      (do
-        (if ?keys
-          (fcollect [i (length ?keys) 1 -1 &into stack]
-            (. ?keys i)))
-        (search self file ?definition stack)))))
+(var search nil) ;; all of the search functions are mutually recursive
 
-(set search-symbol
-  (λ search-symbol [self file symbol stack]
-    (let [split (utils.multi-sym-split symbol)]
+(λ search-assignment [self file {: binding : ?definition : ?keys &as assignment} stack]
+  (if (= 0 (length stack))
+    (values assignment file) ;; BASE CASE!!
+    (do
+      (if ?keys
+        (fcollect [i (length ?keys) 1 -1 &into stack]
+          (. ?keys i)))
+      (search self file ?definition stack))))
+
+(λ search-symbol [self file symbol stack]
+  (let [split (utils.multi-sym-split symbol)]
+    (fcollect [i (length split) 2 -1 &into stack]
+      (. split i))) ;; TODO test coverage for this line
+  (match (. file.references symbol)
+    to (search-assignment self file to stack)))
+
+(λ search-table [self file tbl stack]
+  (if (. tbl (. stack (length stack)))
+      (search self file (. tbl (table.remove stack)) stack)
+      (= 0 (length stack))
+      (values {:?definition tbl} file) ;; BASE CASE !!
+      nil)) ;; BASE CASE Give up
+
+(λ search-list [self file call stack]
+  (match call
+    [-require- mod]
+    (let [newfile (state.get-by-module self mod)
+          newitem (. newfile.ast (length newfile.ast))]
+      (search self newfile newitem stack))
+    [-dot- & split]
+    (do
       (fcollect [i (length split) 2 -1 &into stack]
-        (. split i))) ;; TODO test coverage for this line
-    (match (. file.references symbol)
-      to (search-assignment self file to stack))))
-
+        (. split i))
+      (search self file (. split 1) stack))))
 
 (set search
   (λ search [self file item stack]
-    (if
-      (fennelutils.table? item)
-      (if (. item (. stack (length stack)))
-        (search self file (. item (table.remove stack)) stack)
-        (= 0 (length stack))
-        (values item file) ;; BASE CASE !!
-        nil) ;; BASE CASE Give up
-      (sym? item)
-      (search-symbol self file item stack)
-      ;; TODO
-      ;; functioncall (continue searching in body with parameters bound)
-      (match item
-        [-require- mod]
-        (let [newfile (state.get-by-module self mod)
-              newitem (. newfile.ast (length newfile.ast))]
-          (search self newfile newitem stack))
-        _ (error (.. "I don't know what to do with " (fennel.view item)))))))
+    (if (fennelutils.table? item) (search-table self file item stack)
+        (sym? item)               (search-symbol self file item stack)
+        (list? item)              (search-list self file item stack)
+        (= 0 (length stack))      {:?definition item} ;; BASE CASE !!
+        (error (.. "I don't know what to do with " (fennel.view item))))))
 
 (λ search-main [self file symbol]
   ;; TODO partial byting, go to different defitition sites depending on which section of the symbol the trigger happens on
@@ -67,7 +70,12 @@
     (ref _)
     (search-assignment self file ref stack)
     (_ def)
-    (search self file def.?definition stack)))
+    (do
+      (if def.?keys
+        (fcollect [i (length def.?keys) 1 -1 &into stack]
+          (. def.?keys i)))
+      (search self file def.?definition stack))))
+      ;; (search self file def.?definition stack))))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object
@@ -96,9 +104,8 @@
              (+ 1 (get-ast-info ?ast :byteend))))))
 
 (λ find-symbol [ast byte ?recursively-called]
-  (if (not= :table (type ast))
-      nil
-      (does-not-contain? ast byte)
+  (if (or (not= :table (type ast))
+          (does-not-contain? ast byte))
       nil
       (and (sym? ast) (contains? ast byte))
       ast
@@ -121,5 +128,4 @@
           (find-symbol v byte true)))))
 
 {: find-symbol
- : search-symbol
  : search-main}
