@@ -1,4 +1,4 @@
-(import-macros {: is-matching : describe : it : before-each} :test.macros)
+(import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :luassert))
 
 (local fennel (require :fennel))

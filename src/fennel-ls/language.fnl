@@ -1,15 +1,12 @@
-(local fennel      (require :fennel))
-(local fennelutils (require :fennel.utils))
+(local {: sym? : list? : sequence? : sym : view} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
 (local get-ast-info utils.get-ast-info)
 
-(local sym? fennel.sym?)
-(local list? fennel.list?)
-
-(local -require- (fennel.sym :require))
-(local -dot- (fennel.sym :.))
+(local -require- (sym :require))
+(local -dot- (sym :.))
+(local -do- (sym :do))
 
 (var search nil) ;; all of the search functions are mutually recursive
 
@@ -23,11 +20,11 @@
       (search self file ?definition stack))))
 
 (λ search-symbol [self file symbol stack]
-  (let [split (utils.multi-sym-split symbol)]
-    (fcollect [i (length split) 2 -1 &into stack]
-      (. split i))) ;; TODO test coverage for this line
   (match (. file.references symbol)
-    to (search-assignment self file to stack)))
+    to (search-assignment self file to
+         (let [split (utils.multi-sym-split symbol)]
+           (fcollect [i (length split) 2 -1 &into stack]
+             (. split i)))))) ;; TODO test coverage for this line
 
 (λ search-table [self file tbl stack]
   (if (. tbl (. stack (length stack)))
@@ -42,19 +39,24 @@
     (let [newfile (state.get-by-module self mod)
           newitem (. newfile.ast (length newfile.ast))]
       (search self newfile newitem stack))
+    ; A . form  indexes into item 1 with the other items
     [-dot- & split]
-    (do
+    (search self file (. split 1)
       (fcollect [i (length split) 2 -1 &into stack]
-        (. split i))
-      (search self file (. split 1) stack))))
+        (. split i)))
+
+    ;; A do block returns the last form
+    [-do- & body]
+    (search self file (. body (length body)) stack)))
 
 (set search
   (λ search [self file item stack]
-    (if (fennelutils.table? item) (search-table self file item stack)
+    (if 
         (sym? item)               (search-symbol self file item stack)
         (list? item)              (search-list self file item stack)
+        (= :table (type item))    (search-table self file item stack)
         (= 0 (length stack))      {:?definition item} ;; BASE CASE !!
-        (error (.. "I don't know what to do with " (fennel.view item))))))
+        (error (.. "I don't know what to do with " (view item))))))
 
 (λ search-main [self file symbol]
   ;; TODO partial byting, go to different defitition sites depending on which section of the symbol the trigger happens on
@@ -103,29 +105,37 @@
              byte
              (+ 1 (get-ast-info ?ast :byteend))))))
 
-(λ find-symbol [ast byte ?recursively-called]
+(λ find-symbol [ast byte ?stack]
+  (local stack (or ?stack []))
   (if (or (not= :table (type ast))
           (does-not-contain? ast byte))
       nil
       (and (sym? ast) (contains? ast byte))
-      ast
-      (or (not ?recursively-called)
-          (fennel.list? ast)
-          (fennel.sequence? ast))
+      (values ast [])
+      (or (= 0 (length stack))
+          (list? ast)
+          (sequence? ast))
       ;; TODO binary search
       (accumulate
-        [result nil
+        [(result stack*) nil
          _ v (ipairs ast)
          &until (or result (past? v byte))]
-        (find-symbol v byte true))
-      :else
+        (do
+          (table.insert stack ast)
+          (match (find-symbol v byte stack)
+            ret (values ret stack)
+            nil (do (table.remove stack) nil))))
       (accumulate
-        [result nil
+        [(result stack*) nil
          k v (pairs ast)
          &until result]
-        (or
-          (find-symbol k byte true)
-          (find-symbol v byte true)))))
+        (do
+          (table.insert stack ast)
+          (match (or (find-symbol k byte stack)
+                     (find-symbol v byte stack))
+            ret (values ret stack)
+            nil (do (table.remove stack) nil))))))
 
 {: find-symbol
- : search-main}
+ : search-main
+ : search}

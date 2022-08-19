@@ -1,7 +1,6 @@
-(import-macros {: is-matching : describe : it} :test.macros)
+(import-macros {: is-matching : describe : it} :test)
 (local is (require :luassert))
 
-(local fennel (require :fennel))
 (local stringio (require :test.pl.stringio))
 (local json-rpc (require :fennel-ls.json-rpc))
 

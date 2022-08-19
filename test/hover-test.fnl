@@ -1,7 +1,7 @@
-(import-macros {: is-matching : describe : it : before-each} :test.macros)
+(import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :luassert))
 
-(local fennel (require :fennel))
+(local {: view} (require :fennel))
 (local {: ROOT-URI
         : setup-server} (require :test.util))
 
@@ -23,7 +23,7 @@
           {:contents
            {:kind "markdown"
             :value response-string}}}]
-        (.. "expected response: " (fennel.view response-string)))))
+        (.. "expected response: " (view response-string)))))
 
   (it "hovers over a function"
     (check "hover.fnl" 6 6 "```fnl\n(fn my-function [arg1 arg2 arg3] ...)\n```"))

@@ -7,7 +7,6 @@ missing fields with null fields, and I want to have one location
 to look to fix this in the future."
 
 (local utils (require :fennel-ls.utils))
-(local state (require :fennel-ls.state))
 
 (local error-codes
   {;; JSON-RPC errors
@@ -47,21 +46,38 @@ to look to fix this in the future."
    : id
    :result ?result})
 
-(λ range-and-uri [?ast file]
-  "if possible, returns the location of a symbol"
-  (match
-    (values
-      (utils.get-ast-info ?ast :bytestart)
-      (utils.get-ast-info ?ast :byteend))
+(λ pos->range [sl sc el ec]
+  {:start {:line sl :character sc}
+   :end   {:line el :character ec}})
+
+(λ ast->range [?ast file]
+  (match (values (utils.get-ast-info ?ast :bytestart)
+                 (utils.get-ast-info ?ast :byteend))
     (i j)
     (let [(start-line start-col) (utils.byte->pos file.text i)
           (end-line   end-col)   (utils.byte->pos file.text (+ j 1))]
-     {:range {:start {:line start-line :character start-col}
-              :end   {:line end-line   :character end-col}}
-      :uri file.uri})))
+      (pos->range start-line start-col end-line end-col))))
+
+(λ range-and-uri [?ast {: uri &as file}]
+  "if possible, returns the location of a symbol"
+  (match (ast->range ?ast file)
+    range {: range : uri}))
+
+(λ log [msg]
+  (create-notification :window/logMessage {: msg :type 4}))
+
+(λ diagnostics [file]
+  (create-notification
+    "textDocument/publishDiagnostics"
+    {:uri file.uri
+     :diagnostics file.diagnostics}))
 
 {: create-notification
  : create-request
  : create-response
  : create-error
- : range-and-uri}
+ : pos->range
+ : ast->range
+ : log
+ : range-and-uri
+ : diagnostics}

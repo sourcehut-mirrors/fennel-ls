@@ -6,3 +6,4 @@
 (require :test.goto-definition-test)
 (require :test.hover-test)
 (require :test.misc-test)
+(require :test.diagnostic-test)

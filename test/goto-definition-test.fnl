@@ -1,7 +1,6 @@
-(import-macros {: is-matching : describe : it : before-each} :test.macros)
+(import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :luassert))
 
-(local fennel (require :fennel))
 (local {: ROOT-URI
         : setup-server} (require :test.util))
 
@@ -64,11 +63,11 @@
     (check :goto-definition.fnl 38 15 :goto-definition.fnl 33 7 33 13))
 
   (it "can go up and down field accesses"
-    (check :goto-definition.fnl 45 15 :goto-definition.fnl 40 7 40 13)))
+    (check :goto-definition.fnl 45 15 :goto-definition.fnl 40 7 40 13))
 
 
-  ;; (it "works directly on a require/include (require XXX))"
-  ;;   (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 0)))
+  (it "works directly on a require/include (require XXX))"
+     (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 2)))
 
   ;; (it "can go to a reference that occurs in a macro")
   ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")

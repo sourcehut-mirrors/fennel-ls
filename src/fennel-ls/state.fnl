@@ -1,6 +1,5 @@
 (local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
-
 (local {: compile} (require :fennel-ls.compiler))
 
 (λ init-state [self params]
@@ -23,7 +22,6 @@
 (λ get-by-path [self path]
   (get-by-uri (utils.path->uri path)))
 
-
 (λ get-by-module [self module]
   ;; check the cache
   (match (. self.modules module)
@@ -45,18 +43,18 @@
   (match (. self.files uri)
     ;; modify existing file
     file
-    (when (not= text file.text)
-      (set file.text text)
-      (compile file)
+    (do
+      (when (not= text file.text)
+        (set file.text text)
+        (compile file))
       file)
 
     ;; create new file
     nil
     (let [file {: uri : text}]
-        (tset self.files uri file)
-        (compile file)
-        file)))
-
+      (tset self.files uri file)
+      (compile file)
+      file)))
 
 {: get-by-uri
  : get-by-module
