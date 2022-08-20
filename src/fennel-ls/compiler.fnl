@@ -120,7 +120,7 @@
         (table.insert diagnostics
           {:range range
            :message msg
-           :severity 3
+           :severity message.severity.ERROR
            :code 201
            :codeDescription "compiler error"}))
       (call-me-to-reset-the-compiler)
@@ -145,7 +145,11 @@
         (let [scope (fennel.scope)]
           (each [_i form (ipairs ast)]
             ;; COMPILE
-            (match (pcall fennel.compile form {:filename file.uri : scope :plugins [plugin]})
+            (match (pcall fennel.compile form {:filename file.uri
+                                               :plugins [plugin]
+                                               :allowedGlobals (icollect [k v (pairs _G)] k)
+                                               :requireAsInclude false
+                                               : scope})
               (where (nil err) (not= err "__NOT_AN_ERROR"))
               (error err)))
           (set file.ast ast))

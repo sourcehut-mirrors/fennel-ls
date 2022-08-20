@@ -51,7 +51,7 @@
 
 (set search
   (λ search [self file item stack]
-    (if 
+    (if
         (sym? item)               (search-symbol self file item stack)
         (list? item)              (search-list self file item stack)
         (= :table (type item))    (search-table self file item stack)

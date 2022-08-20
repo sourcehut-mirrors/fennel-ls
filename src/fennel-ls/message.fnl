@@ -23,6 +23,12 @@ to look to fix this in the future."
    :ContentModified      -32801 ;; I don't think this one is useful unless we do async things
    :RequestCancelled     -32800}) ;; I don't think I'm going to even support cancelling things, that sounds like a pain
 
+(local severity
+  {:ERROR 1
+   :WARN 2
+   :INFO 3
+   :HINT 4})
+
 (λ create-error [code message ?id ?data]
   {:jsonrpc "2.0"
    :id ?id
@@ -80,4 +86,5 @@ to look to fix this in the future."
  : ast->range
  : log
  : range-and-uri
- : diagnostics}
+ : diagnostics
+ : severity}

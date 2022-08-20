@@ -1,8 +1,7 @@
 # fennel-ls
-TO PROSPECTIVE USERS:
-THIS PROJECT IS NOT IN A USABLE STATE YET. CHECK BACK LATER.
-
 A language server for fennel-ls.
+Uses static analysis, and doesn't actually run your code, which makes it perfect for analyzing your (os.execute "rm -rf") code.
+If you want live analysis of your code as it runs, consider using a REPL.
 
 Features / To Do List / Things I would enjoy patches for:
 
@@ -10,24 +9,28 @@ Features / To Do List / Things I would enjoy patches for:
 - [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
 - [ ] Settings to configure lua / fennel path, allowed globals, etc
 - [ ] Builds for anything other than arch linux
-- [ ] Go-to-definition
-    - [ ] directly on require statements
-    - [X] for definitions in the same file
-    - [X] for definitions in other files
-    - [X] follows multisyms through table constructor
-    - [ ] follows multisyms through mutations (difficult)
-    - [ ] for methods/metamethods (difficult, in the general case may require type annotations or some insane global type inference logic)
-    - [ ] into lua files (maybe cheeseable with antifennel if it has --correlate?)
-
-- [ ] Reports compiler errors
+- [ ] Go-to-definition understands:
+    - [X] literal table constructor
+    - [X] table destructuring
+    - [X] require
+    - [X] multisyms
+    - [X] . builtin (when called with constants)
+    - [X] macros (a little bit)
+    - [ ] lua files
+    - [ ] setmetatable
+    - [ ] function arguments / function calls
+- [X] Reports compiler errors
     - [ ] including in macro files
 - [ ] Reports linting issues
 - [ ] Completion Suggestions
 - [X] Hover over a symbol for documentation
 - [ ] Signature help
-- [ ] Go-to-references on definition sites
-- [ ] integration with fnlfmt
-- [ ] Maybe some sort of type checking??
+- [ ] Go-to-references
+- [ ] rename
+- [ ] formatting with fnlfmt
+- [ ] Maybe some sort of type checking???
+
+{field: {}}
 
 
 ## Setup:
