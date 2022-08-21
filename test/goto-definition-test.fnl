@@ -65,19 +65,17 @@
   (it "can go up and down field accesses"
     (check :goto-definition.fnl 45 15 :goto-definition.fnl 40 7 40 13))
 
-
   (it "works directly on a require/include (require XXX))"
      (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 2)))
 
-  ;; (it "can go to a reference that occurs in a macro")
-  ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using")
-  ;; (it "can go to a function in another file imported via destructuring assignment")
-  ;; (it "can work with a custom fennelpath")
+  ;; TODO
+  ;; (it "can go to a function in another file imported via destructuring assignment") ;; WORKS, just needs a test case
+  ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using") ;; Unconfirmed, I saw some weird behavior a while ago
   ;; (it "can go through more than one extra file")
   ;; (it "will give up instead of freezing on recursive requires")
-  ;; (it "does slightly better in the presense of macros")
-  ;; (it "finds the definition of macros")
-  ;; (it "can follow import-macros")
+  ;; (it "finds the definition of in-file macros")
+  ;; (it "can follow import-macros (destructuring)")
+  ;; (it "can follow import-macros (namespaced)")
   ;; (it "can go to the definition even in a lua file")
   ;; (it "can go to a function's arguments when they're available")
-
+  ;; (it "can work with a custom fennelpath") ;; Wait until an options system is done
