@@ -8,35 +8,69 @@
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
 
+(macro find [t body ?sentinel]
+  (assert-compile (not ?sentinel) "you can only have one thing here, put a `(do)`")
+  (assert-compile (sequence? t) "[] square brackets please")
+  (local result (gensym :result))
+  (local nil* (sym :nil))
+  (table.insert t 1 result)
+  (table.insert t 2 nil*)
+  (table.insert t `&until)
+  (table.insert t result)
+  `(accumulate ,t ,body))
+
+(fn open-file [state text]
+  (dispatch.handle* state
+    (message.create-notification "textDocument/didOpen"
+      {:textDocument
+       {:uri (.. ROOT-URI "imaginary-file.fnl")
+        :languageId "fennel"
+        :version 1
+        : text}})))
+
 (describe "diagnostic messages"
   (it "handles compile errors"
     (local state (doto [] setup-server))
-    (let
-      [responses
-       (dispatch.handle* state
-         (message.create-notification "textDocument/didOpen"
-           {:textDocument
-            {:uri (.. ROOT-URI "imaginary-file.fnl")
-             :languageId "fennel"
-             :version 1
-             :text "(do do)"}}))]
-      (is-matching
-        responses
-        [{:params {:diagnostics [diagnostic]}}]
-        "")))
+    (let [responses (open-file state "(do do)")
+          diagnostic
+          (match responses
+            [{:params {: diagnostics}}]
+            (find [i v (ipairs diagnostics)]
+               (match v
+                 {:message "tried to reference a special form at runtime"
+                  :range {:start {:character 4 :line 0}
+                          :end   {:character 6 :line 0}}}
+                 v)))]
+      (is diagnostic "expected a diagnostic")))
 
   (it "handles parse errors"
     (local state (doto [] setup-server))
-    (let
-      [responses
-       (dispatch.handle* state
-         (message.create-notification "textDocument/didOpen"
-           {:textDocument
-            {:uri (.. ROOT-URI "imaginary-file.fnl")
-             :languageId "fennel"
-             :version 1
-             :text "(do (print :hello(]"}}))]
-      (is-matching
-        responses
-        [{:params {:diagnostics [diagnostic]}}]
-        ""))))
+    (let [responses (open-file state "(do (print :hello(]")
+          diagnostic
+          (match responses
+            [{:params {: diagnostics}}]
+            (find [i v (ipairs diagnostics)]
+             (match v
+               {:message "expected whitespace before opening delimiter ("
+                :range {:start {:character 17 :line 1}
+                        :end   {:character 17 :line 1}}}
+               v)))]
+      (is diagnostic "expected a diagnostic")))
+
+  (it "handles (match)"
+    (local state (doto [] setup-server))
+    (let [responses (open-file state "(match)")]
+      (is-matching responses
+        [{:params
+          {:diagnostics
+           [{:range {:start {:character a :line b}
+                     :end   {:character c :line d}}}]}}]
+        "diagnostics should always have a range"))))
+
+;; TODO lints:
+;; unnecessary (do) in body position
+;; Unused variables / fields (maybe difficult)
+;; discarding results to various calls
+;; unnecessary `do`/`values` with only one inner form
+;; mark when unification is happening on a `match` pattern (may be difficult)
+;; think of more lints

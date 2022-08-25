@@ -1,3 +1,10 @@
+"State
+This module keeps track of the state of the language server.
+There are helpers to get file objects, and in the future, there
+will be functions for managing user options. There is no global
+state in this project: all state will be stored in the \"self\"
+object."
+
 (local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
 (local {: compile} (require :fennel-ls.compiler))

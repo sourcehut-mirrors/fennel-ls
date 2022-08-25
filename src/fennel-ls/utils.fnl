@@ -75,14 +75,18 @@ These functions are all pure functions, which makes me happy."
   (or (?. (getmetatable ?ast) info)
       (. ?ast info)))
 
-(fn multi-sym-split [sym ?offset]
-  (local sym (tostring sym))
-  (local offset (or ?offset (length sym)))
-  (local next-separator (or (sym:find ".[%.:]" offset)
-                            (length sym)))
-  (local sym (sym:sub 1 next-separator))
-  (icollect [word (: (.. sym ".") :gmatch "(.-)[%.:]")]
-    word))
+(fn multi-sym-split [symbol ?offset]
+  (local symbol (tostring symbol))
+  (if (or (= symbol ".")
+          (= symbol "..")
+          (= symbol "..."))
+    [symbol]
+    (let [offset (or ?offset (length symbol))
+          next-separator (or (symbol:find ".[.:]" offset)
+                             (length symbol))
+          symbol (symbol:sub 1 next-separator)]
+      (icollect [word (: (.. symbol ".") :gmatch "(.-)[.:]")]
+        word))))
 
 (λ type= [val typ]
   (= (type val) typ))

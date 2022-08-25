@@ -70,12 +70,18 @@
 
   ;; TODO
   ;; (it "can go to a function in another file imported via destructuring assignment") ;; WORKS, just needs a test case
-  ;; (it "doesn't have ghost definitions from the same byte ranges as the macro files it's using") ;; Unconfirmed, I saw some weird behavior a while ago
   ;; (it "can go through more than one extra file")
   ;; (it "will give up instead of freezing on recursive requires")
   ;; (it "finds the definition of in-file macros")
   ;; (it "can follow import-macros (destructuring)")
   ;; (it "can follow import-macros (namespaced)")
   ;; (it "can go to the definition even in a lua file")
-  ;; (it "can go to a function's arguments when they're available")
+  ;; (it "finds (fn a.b [] ...) declarations")
+  ;; (it "finds (set a.b) definitions")
+  ;; (it "finds (tset a :b) definitions")
+  ;; (it "finds (setmetatable a {__index {:b def}) definitions")
+  ;; (it "finds definitions from inside a function (fn foo [] (local x 10) {: x}) (let [result (foo)] (print result.x)) finds result.x")
+  ;; (it "finds basic setmetatable definitions with an __index function")
+  ;; (it "can return to callsite and go through a function's arguments when they're available")
+  ;; (it "can go to a function's reference OR read type inference comments when callsite isn't available (PICK ONE)")
   ;; (it "can work with a custom fennelpath") ;; Wait until an options system is done

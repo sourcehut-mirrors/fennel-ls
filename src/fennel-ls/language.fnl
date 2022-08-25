@@ -1,3 +1,7 @@
+"Language
+The high level analysis system that does deep searches following
+the data provided by compiler.fnl."
+
 (local {: sym? : list? : sequence? : sym : view} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))

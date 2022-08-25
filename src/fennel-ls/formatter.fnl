@@ -1,3 +1,8 @@
+"Formatter
+This module is for formatting code that needs to be shown to the client
+in tooltips and other notification messages. It is NOT for formatting
+user code."
+
 (local {: sym
         : sym?
         : view
@@ -20,6 +25,7 @@
       (if docstring (.. "\n" docstring) "")))
 
 (λ hover-format [result]
+  "Format code that will appear when the user hovers over a symbol"
   (code-block
       (match result.?definition
         ;; name + docstring

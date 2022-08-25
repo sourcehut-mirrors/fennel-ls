@@ -1,3 +1,8 @@
+"Compiler
+This file is responsible for the low level tasks of analysis. Its main job
+is to recieve a file object and run all of the basic analysis that will be used
+later by fennel-ls.language to answer requests from the client."
+
 (local {: sym? : list? : sequence? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
 
@@ -32,6 +37,7 @@
 
 (λ compile [file]
   "Compile the file, and record all the useful information from the compiler into the file object"
+  ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
         definitions   {}
         diagnostics   {}
@@ -115,8 +121,9 @@
         [-require- modname]
         (tset require-calls ast true)))
 
-    (λ on-compiler-error [_ msg ast call-me-to-reset-the-compiler]
-      (let [range (message.ast->range ast file)]
+    (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
+      (let [range (or (message.ast->range ast file)
+                      (message.pos->range 0 0 0 0))]
         (table.insert diagnostics
           {:range range
            :message msg
@@ -124,6 +131,17 @@
            :code 201
            :codeDescription "compiler error"}))
       (call-me-to-reset-the-compiler)
+      (error "__NOT_AN_ERROR"))
+
+    (λ on-parse-error [msg file line byte]
+      ;; assume byte and char count is the same, ie no UTF-8
+      (let [range (message.pos->range line byte line byte)]
+        (table.insert diagnostics
+          {:range range
+           :message msg
+           :severity message.severity.ERROR
+           :code 201
+           :codeDescription "compiler error"}))
       (error "__NOT_AN_ERROR"))
 
     ;; TODO clean up this code. It's awful now that there is error handling
@@ -134,31 +152,23 @@
         :symbol-to-expression reference
         :call call
         :destructure define
-        :assert-compile on-compiler-error}]
-
-      ;; ATTEMPT TO PARSE AST
-      (match (pcall
-               #(icollect [ok ast (fennel.parser file.text file.uri {:plugins [plugin]})]
-                  ast))
-        ;; ON SUCCESS
-        (true ast)
-        (let [scope (fennel.scope)]
-          (each [_i form (ipairs ast)]
-            ;; COMPILE
-            (match (pcall fennel.compile form {:filename file.uri
-                                               :plugins [plugin]
-                                               :allowedGlobals (icollect [k v (pairs _G)] k)
-                                               :requireAsInclude false
-                                               : scope})
-              (where (nil err) (not= err "__NOT_AN_ERROR"))
-              (error err)))
-          (set file.ast ast))
-        ;; ON FAILURE
-        (false err)
-        ;; RECORD THE FAILURE
-        (table.insert diagnostics
-          {:range (message.pos->range 0 0 0 0)
-           :message err}))
+        :assert-compile on-compile-error
+        :parse-error on-parse-error}
+       scope (fennel.scope)
+       opts {:filename file.uri
+             :plugins [plugin]
+             :allowedGlobals (icollect [k v (pairs _G)] k)
+             :requireAsInclude false
+             : scope}
+       parser (partial pcall (fennel.parser file.text file.uri opts))
+       ast (icollect [ok ok2 ast parser &until (not (and ok ok2))] ast)
+       _compile-output (icollect [_i form (ipairs ast)]
+                         (match (pcall fennel.compile form opts)
+                           (where (nil err) (not= err "__NOT_AN_ERROR"))
+                           (table.insert diagnostics
+                             {:range (message.pos->range 0 0 0 0)
+                              :message err})))]
+      (set file.ast ast)
 
 
       ;; write things back to the file object
