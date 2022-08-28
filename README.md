@@ -32,18 +32,21 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] mutation on aliased tables (difficult)
 - [X] Reports compiler errors
 - [ ] Reports linting issues
-    - [ ] Think of more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
+    - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
     - [ ] Dead code. I'm not sure what sort of things would cause dead code in fennel
     - [ ] Unused variables / fields (maybe difficult)
     - [ ] Discarded results for some calls
     - [ ] `do`/`values` with only one inner form
     - [ ] Warning when unification is happening on a `match` pattern (may be difficult)
-
 - [ ] Completion Suggestions
-    - [ ] from standard library
-    - [ ] "dot completion" for multisyms
+    - [ ] from globals
     - [ ] from current scope
-    - [ ] `(: "foo" :` complete the string
+    - [ ] "dot completion" for multisyms
+    - [ ] pick the icon/type/whatever in suggestions
+    - [ ] docs in suggestions
+    - [ ] `(. obj ` special completions
+    - [ ] `(: "foo" :` special completions
+    - [ ] `(require :` special completions
     - [ ] snippets? I guess?
 - [X] Hover over a symbol for documentation
 - [ ] Signature help
@@ -73,18 +76,12 @@ Features / To Do List / Things I would enjoy patches for:
 ## Setup:
 You can match my environment to develop with the following steps.
 
-1. Install luafilesystem
-```sh
-# On Arch linux, this can be done with pacman:
-sudo pacman -S lua-filesystem
-```
-
-2. Build the binary
+1. Build the binary
 ```sh
 make
 ```
 
-3. Configure your editor to use this language server
+2. Configure your editor to use this language server
 LSP is editor-agnostic, but that's only if you're able to actually follow the spec, and I'm not sure that fennel-ls is compliant.
 
 So far, I've only ever tested it with Neovim using the native language client and `lspconfig`.
