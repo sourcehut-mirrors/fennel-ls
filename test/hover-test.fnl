@@ -3,7 +3,7 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : setup-server} (require :test.util))
+        : setup-server} (require :test.utils))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message  (require :fennel-ls.message))

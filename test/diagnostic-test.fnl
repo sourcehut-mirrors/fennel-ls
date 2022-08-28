@@ -3,7 +3,8 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : setup-server} (require :test.util))
+        : open-file
+        : setup-server} (require :test.utils))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
@@ -19,19 +20,12 @@
   (table.insert t result)
   `(accumulate ,t ,body))
 
-(fn open-file [state text]
-  (dispatch.handle* state
-    (message.create-notification "textDocument/didOpen"
-      {:textDocument
-       {:uri (.. ROOT-URI "imaginary-file.fnl")
-        :languageId "fennel"
-        :version 1
-        : text}})))
+(local filename (.. ROOT-URI "imaginary.fnl"))
 
 (describe "diagnostic messages"
   (it "handles compile errors"
     (local state (doto [] setup-server))
-    (let [responses (open-file state "(do do)")
+    (let [responses (open-file state filename "(do do)")
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
@@ -45,7 +39,7 @@
 
   (it "handles parse errors"
     (local state (doto [] setup-server))
-    (let [responses (open-file state "(do (print :hello(]")
+    (let [responses (open-file state filename "(do (print :hello(]")
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
@@ -59,7 +53,7 @@
 
   (it "handles (match)"
     (local state (doto [] setup-server))
-    (let [responses (open-file state "(match)")]
+    (let [responses (open-file state filename "(match)")]
       (is-matching responses
         [{:params
           {:diagnostics

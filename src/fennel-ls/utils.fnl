@@ -73,7 +73,7 @@ These functions are all pure functions, which makes me happy."
 (λ get-ast-info [?ast info]
   ;; find a given key of info from an AST object
   (or (?. (getmetatable ?ast) info)
-      (. ?ast info)))
+      (?. ?ast info)))
 
 (fn multi-sym-split [symbol ?offset]
   (local symbol (tostring symbol))

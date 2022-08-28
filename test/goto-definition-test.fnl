@@ -2,7 +2,7 @@
 (local is (require :luassert))
 
 (local {: ROOT-URI
-        : setup-server} (require :test.util))
+        : setup-server} (require :test.utils))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message  (require :fennel-ls.message))

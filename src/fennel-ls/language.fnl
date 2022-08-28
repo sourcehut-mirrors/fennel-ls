@@ -3,6 +3,7 @@ The high level analysis system that does deep searches following
 the data provided by compiler.fnl."
 
 (local {: sym? : list? : sequence? : sym : view} (require :fennel))
+(local {: table?} (require :fennel.utils))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
@@ -109,36 +110,36 @@ the data provided by compiler.fnl."
              byte
              (+ 1 (get-ast-info ?ast :byteend))))))
 
-(λ find-symbol [ast byte ?stack]
-  (local stack (or ?stack []))
-  (if (or (not= :table (type ast))
-          (does-not-contain? ast byte))
-      nil
-      (and (sym? ast) (contains? ast byte))
-      (values ast [])
-      (or (= 0 (length stack))
-          (list? ast)
-          (sequence? ast))
-      ;; TODO binary search
-      (accumulate
-        [(result stack*) nil
-         _ v (ipairs ast)
-         &until (or result (past? v byte))]
-        (do
-          (table.insert stack ast)
-          (match (find-symbol v byte stack)
-            ret (values ret stack)
-            nil (do (table.remove stack) nil))))
-      (accumulate
-        [(result stack*) nil
-         k v (pairs ast)
-         &until result]
-        (do
-          (table.insert stack ast)
-          (match (or (find-symbol k byte stack)
-                     (find-symbol v byte stack))
-            ret (values ret stack)
-            nil (do (table.remove stack) nil))))))
+(λ find-symbol [ast byte]
+  (local parents [])
+  (λ recurse [ast]
+    (if
+      (sym? ast)
+      (values ast parents)
+      (do
+        (table.insert parents ast)
+        (if
+          (or (sequence? ast) (list? ast))
+          (accumulate [(result done) nil
+                       i child (ipairs ast)
+                       &until result]
+            (if (contains? child byte)
+              (recurse child byte)))
+          (table? ast)
+          (accumulate [(result done) nil
+                       key value (pairs ast)
+                       &until done]
+            (if (contains? key byte)
+              (recurse key byte)
+              (contains? value byte)
+              (recurse value byte)))))))
+
+  (values
+    (accumulate [result nil i top-level-form (ipairs ast) &until result]
+      (if (contains? top-level-form byte)
+        (recurse top-level-form byte)))
+    parents))
+
 
 {: find-symbol
  : search-main
