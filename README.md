@@ -4,7 +4,7 @@ Uses static analysis, and doesn't actually run your code, which makes it perfect
 If you want live analysis of your code as it runs, consider using a REPL.
 
 Features / To Do List / Things I would enjoy patches for:
-([X] = complete,  [ ] = incomplete)
+([X] = complete,  [ ] = planned)
 
 - [X] Able to connect to a client
 - [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
@@ -15,48 +15,58 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] emacs
     - [ ] vscode
     - [ ] vim+coc
-- [ ] Go-to-definition understands:
+- [x] Go-to-definition:
     - [X] literal table constructor
     - [X] table destructuring
     - [X] multisyms
     - [X] `.` special form (when called with constants)
     - [ ] `do` special form
     - [X] `require` and cross-module definition lookups
-    - [X] macro bodies (a little bit)
-    - [ ] mutation via set/tset
-    - [ ] mutation from `fn`: `(fn obj.new-field [])`
-    - [ ] actual macro calls
-    - [ ] .lua files
+    - [ ] goes to a.method on `(: a :method)` when triggered at `:method`
+    - [X] expanded macros (a little bit)
+    - [ ] table mutation via `fn` special: `(fn obj.new-field [])`
+    - [ ] local/table mutation via set/tset
+    - [ ] macro calls / which macros are in scope
+    - [ ] .lua files (antifennel decompiler)
     - [ ] setmetatable
     - [ ] function arguments / function calls
     - [ ] mutation on aliased tables (difficult)
 - [X] Reports compiler errors
 - [ ] Reports linting issues
     - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
-    - [ ] Dead code. I'm not sure what sort of things would cause dead code in fennel
-    - [ ] Unused variables / fields (maybe difficult)
-    - [ ] Discarded results for some calls
+    - [ ] Unused locals
+    - [ ] Discarding results from pcall/xpcall/other functions.
+    - [ ] `unpack` or `values` into an operator special
     - [ ] `do`/`values` with only one inner form
-    - [ ] Warning when unification is happening on a `match` pattern (may be difficult)
+    - [ ] redundant `do` as the last/only item in a form that accepts a "body"
+    - [ ] Dead code. (I'm not sure what sort of things cause dead code)
+    - [ ] Unused fields (difficult)
+    - [ ] unification in a `match` pattern (difficult)
 - [ ] Completion Suggestions
-    - [ ] from globals
+    - [X] from globals
     - [ ] from current scope
-    - [ ] "dot completion" for multisyms
-    - [ ] pick the icon/type/whatever in suggestions
-    - [ ] docs in suggestions
-    - [ ] `(. obj ` special completions
-    - [ ] `(: "foo" :` special completions
-    - [ ] `(require :` special completions
+    - [ ] from macros (only on first form in a list)
+    - [ ] from specials (only on first form in a list)
+    - [ ] "dot completion" for table fields
+    - [ ] dot completion is aware of a string's fields
+    - [ ] from anywhere else that I'm forgetting right now
+    - [ ] actually compliant rules about lexical scope (only see things declared before, not after)
+    - [ ] show docs/icons on each suggestion
+    - [ ] "dot completion" for metatable `__index` fields
+    - [ ] `(. obj :` string completions
+    - [ ] `(: "foo" :` string completions
+    - [ ] `(require :` module completions
     - [ ] snippets? I guess?
 - [X] Hover over a symbol for documentation
 - [ ] Signature help
     - [ ] Regular help
-    - [ ] hide or grey out the `self` in a `a:b` multisym call
+    - [ ] hide or grey out the `self` in an `a:b` multisym call
 - [ ] Go-to-references
     - [ ] lexical scope in the same file
-    - [ ] fields, including when tables are aliased
+    - [ ] fields
+    - [ ] go to references of fields when tables are aliased
     - [ ] global search across other files
-- [ ] Options
+- [ ] Options / Configuration
     - [ ] Configure over LSP
     - [ ] Configure with some sort of per-project config file
     - [ ] Configure with environment variables I guess??
@@ -69,9 +79,6 @@ Features / To Do List / Things I would enjoy patches for:
 - [ ] rename arbitrary things (may affect code behavior, may modify other files)
 - [ ] formatting with fnlfmt
 - [ ] Type annotations? Global type inference?
-
-{field: {}}
-
 
 ## Setup:
 You can match my environment to develop with the following steps.
