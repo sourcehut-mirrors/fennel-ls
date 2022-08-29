@@ -3,13 +3,14 @@ You finally made it. Here is the main code that implements the language server p
 
 Every time the client sends a message, it gets handled by a function in the corresponding table type.
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
- and a textDocument/defintion request will call requests.textDocument/didChange)"
+ and a textDocument/defintion request will call requests.textDocument/definition)"
 
 (local {: pos->byte : apply-changes}   (require :fennel-ls.utils))
 (local message (require :fennel-ls.message))
 (local state   (require :fennel-ls.state))
 (local language (require :fennel-ls.language))
 (local formatter (require :fennel-ls.formatter))
+(local utils (require :fennel-ls.utils))
 
 (local {: view} (require :fennel))
 
@@ -19,8 +20,11 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local capabilities
   {:textDocumentSync 1 ;; FIXME: upgrade to 2
    ;; :notebookDocumentSync nil
-   ;; :completionProvider nil
-   :hoverProvider {:workDoneProgress false}
+   :completionProvider {:workDoneProgress false} ;; TODO
+   :hoverProvider {:workDoneProgress false
+                   :resolveProvider false
+                   :triggerCharacters ["(" "[" "{" "." ":" "\""]
+                   :completionItem {:labelDetailsSupport false}}
    ;; :signatureHelpProvider nil
    ;; :declarationProvider nil
    :definitionProvider {:workDoneProgress false}
@@ -63,29 +67,43 @@ Every time the client sends a message, it gets handled by a function in the corr
    :serverInfo {:name "fennel-ls" :version "0.0.0"}})
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
-  (local file (state.get-by-uri self uri))
-  (local byte (pos->byte file.text position.line position.character))
-  (match-try (language.find-symbol file.ast byte)
-    (symbol parents)
-    (match-try
-      (let [parent (. parents (length parents))]
-        (if (. file.require-calls parent)
-          (language.search self file parent [])))
-      nil
-      (language.search-main self file symbol))
-    (result result-file)
-    (message.range-and-uri
-      (or result.binding result.?definition)
-      result-file)
-    (catch _ nil)))
+  (let [file (state.get-by-uri self uri)
+        byte (pos->byte file.text position.line position.character)]
+    (match-try (language.find-symbol file.ast byte)
+      (symbol parents)
+      (match-try
+        (let [parent (. parents (length parents))]
+          (if (. file.require-calls parent)
+            (language.search self file parent [])))
+        nil
+        (language.search-main self file symbol))
+      (result result-file)
+      (message.range-and-uri
+        (or result.binding result.?definition)
+        result-file)
+      (catch _ nil))))
 
 (λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
-  (local file (state.get-by-uri self uri))
-  (local byte (pos->byte file.text position.line position.character))
-  (match-try (language.find-symbol file.ast byte)
-    symbol (language.search-main self file symbol)
-    result {:contents {:kind "markdown"
-                       :value (formatter.hover-format result)}}))
+  (let [file (state.get-by-uri self uri)
+        byte (pos->byte file.text position.line position.character)]
+    (match-try (language.find-symbol file.ast byte)
+      symbol (language.search-main self file symbol)
+      result {:contents {:kind "markdown"
+                         :value (formatter.hover-format result)}})))
+
+(λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
+  (let [file (state.get-by-uri self uri)
+        byte (pos->byte file.text position.line position.character)
+        (?symbol parents) (language.find-symbol file.ast byte)]
+    ;; TODO build a recursive searcher,
+    ;; store file scopes parents length parents as an intermediate
+    ;; potentially reverse parents order so it's only (. parents 1)
+    (let [begin (if (?. file.scopes (. parents (length parents)))
+                 (icollect [k (pairs (. file.scopes (. parents (length parents)) :manglings))]
+                   {:label k})
+                 [])]
+      (icollect [_ k (ipairs file.allowed-globals) &into begin] {:label k}))))
+
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))

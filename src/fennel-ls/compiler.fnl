@@ -39,10 +39,11 @@ later by fennel-ls.language to answer requests from the client."
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
-        definitions   {}
-        diagnostics   {}
-        references    {}
-        require-calls {}]
+        definitions   {} ; symbol -> definition
+        diagnostics   {} ; [diagnostic]
+        references    {} ; symbol -> references
+        scopes        {} ; ast -> scope
+        require-calls {}]; ast -> boolean (does this ast start with the symbol `require)
 
     (λ find-definition [name ?scope]
       (when ?scope
@@ -106,17 +107,13 @@ later by fennel-ls.language to answer requests from the client."
       (define-function-args ast scope))
 
     (λ call [ast scope]
-      ;; handles every function call
+      (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:
       (match ast
         ;; This cannot be done through the :fn feature of the compiler plugin system
         ;; because it needs to be called *before* the body of the function is processed.
         ;; TODO check if hashfn needs to be here
         [-fn-]
-        (define-function ast scope)
-        [-λ-]
-        (define-function ast scope)
-        [-lambda-]
         (define-function ast scope)
         [-require- modname]
         (tset require-calls ast true)))
@@ -144,6 +141,8 @@ later by fennel-ls.language to answer requests from the client."
            :codeDescription "compiler error"}))
       (error "__NOT_AN_ERROR"))
 
+    (local allowed-globals (icollect [k v (pairs _G)] k))
+
     ;; TODO clean up this code. It's awful now that there is error handling
     (let
       [plugin
@@ -157,7 +156,7 @@ later by fennel-ls.language to answer requests from the client."
        scope (fennel.scope)
        opts {:filename file.uri
              :plugins [plugin]
-             :allowedGlobals (icollect [k v (pairs _G)] k)
+             :allowedGlobals allowed-globals
              :requireAsInclude false
              : scope}
        parser (partial pcall (fennel.parser file.text file.uri opts))
@@ -168,14 +167,14 @@ later by fennel-ls.language to answer requests from the client."
                            (table.insert diagnostics
                              {:range (message.pos->range 0 0 0 0)
                               :message err})))]
-      (set file.ast ast)
 
 
       ;; write things back to the file object
-      ;; (set file.definitions-by-scope definitions-by-scope) ;; not needed yet
+      (set file.ast ast)
+      (set file.scopes scopes)
       (set file.definitions definitions)
       (set file.diagnostics diagnostics)
       (set file.references references)
-      (set file.require-calls require-calls))))
-    ;; (set file.compiled? true))
+      (set file.require-calls require-calls)
+      (set file.allowed-globals allowed-globals))))
 {: compile}
