@@ -20,7 +20,7 @@ Features / To Do List / Things I would enjoy patches for:
     - [X] table destructuring
     - [X] multisyms
     - [X] `.` special form (when called with constants)
-    - [ ] `do` special form
+    - [X] `do` and `let` special form
     - [X] `require` and cross-module definition lookups
     - [ ] goes to a.method on `(: a :method)` when triggered at `:method`
     - [X] expanded macros (a little bit)
@@ -33,15 +33,16 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] mutation on aliased tables (difficult)
 - [X] Reports compiler errors
 - [ ] Reports linting issues
-    - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
     - [ ] Unused locals
-    - [ ] Discarding results from pcall/xpcall/other functions.
+    - [ ] Discarding results from pcall/xpcall/other functions
     - [ ] `unpack` or `values` into an operator special
     - [ ] `do`/`values` with only one inner form
     - [ ] redundant `do` as the last/only item in a form that accepts a "body"
-    - [ ] Dead code. (I'm not sure what sort of things cause dead code)
+    - [ ] `var` forms that could be `local`
+    - [ ] Dead code (I'm not sure what sort of things cause dead code)
     - [ ] Unused fields (difficult)
     - [ ] unification in a `match` pattern (difficult)
+    - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
 - [ ] Completion Suggestions
     - [X] from globals
     - [ ] from current scope

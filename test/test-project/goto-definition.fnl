@@ -44,3 +44,5 @@
 (local mixed [{:key [5 {:foo shallow}]}])
 (local funny (. mixed 1 :key 2 :foo))
 (print funny.field)
+
+(local object (do (let [a 10] {:my-definition :here})))

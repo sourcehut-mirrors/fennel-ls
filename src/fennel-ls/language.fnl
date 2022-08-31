@@ -12,6 +12,7 @@ the data provided by compiler.fnl."
 (local -require- (sym :require))
 (local -dot- (sym :.))
 (local -do- (sym :do))
+(local -let- (sym :let))
 
 (var search nil) ;; all of the search functions are mutually recursive
 
@@ -52,6 +53,9 @@ the data provided by compiler.fnl."
 
     ;; A do block returns the last form
     [-do- & body]
+    (search self file (. body (length body)) stack)
+
+    [-let- _binding & body]
     (search self file (. body (length body)) stack)))
 
 (set search

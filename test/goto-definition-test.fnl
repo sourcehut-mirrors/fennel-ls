@@ -66,7 +66,10 @@
     (check :goto-definition.fnl 45 15 :goto-definition.fnl 40 7 40 13))
 
   (it "works directly on a require/include (require XXX))"
-     (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 2)))
+    (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 2))
+
+  (it "goes to the last form of `do` and `let`"
+    (check :goto-definition.fnl 47 13 :goto-definition.fnl 47 30 47 52)))
 
   ;; TODO
   ;; (it "can go to a function in another file imported via destructuring assignment") ;; WORKS, just needs a test case
