@@ -124,6 +124,13 @@ later by fennel-ls.language to answer requests from the client."
         [-require- modname]
         (tset require-calls ast true)))
 
+    (λ recoverable? [msg]
+      (or (msg:find "unknown identifier in strict mode")
+          (msg:find "expected closing delimiter")
+          (msg:find "expected body expression")
+          (msg:find "expected whitespace before opening delimiter")
+          (msg:find "malformed multisym")))
+
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range ast file)
                       (message.pos->range 0 0 0 0))]
@@ -133,8 +140,11 @@ later by fennel-ls.language to answer requests from the client."
            :severity message.severity.ERROR
            :code 201
            :codeDescription "compiler error"}))
-      (call-me-to-reset-the-compiler)
-      (error "__NOT_AN_ERROR"))
+      (if (recoverable? msg)
+        true
+        (do
+          (call-me-to-reset-the-compiler)
+          (error "__NOT_AN_ERROR"))))
 
     (λ on-parse-error [msg file line byte]
       ;; assume byte and char count is the same, ie no UTF-8
@@ -143,11 +153,16 @@ later by fennel-ls.language to answer requests from the client."
           {:range range
            :message msg
            :severity message.severity.ERROR
-           :code 201
-           :codeDescription "compiler error"}))
-      (error "__NOT_AN_ERROR"))
+           :code 101
+           :codeDescription "parse error"}))
+      (if (recoverable? msg)
+        true
+        (do
+          (print msg)
+          (error "__NOT_AN_ERROR"))))
 
     (local allowed-globals (icollect [k v (pairs _G)] k))
+    (table.insert allowed-globals :vim)
 
     ;; TODO clean up this code. It's awful now that there is error handling
     (let

@@ -408,10 +408,10 @@ package.preload["fennel.repl"] = package.preload["fennel.repl"] or function(...)
           _676_ = _677_
         end
       end
-      if ((_G.type(_676_) == "table") and (nil ~= (_676_).source) and ((_676_).what == "Lua") and (nil ~= (_676_).short_src) and (nil ~= (_676_).linedefined)) then
+      if ((_G.type(_676_) == "table") and ((_676_).what == "Lua") and (nil ~= (_676_).linedefined) and (nil ~= (_676_).source) and (nil ~= (_676_).short_src)) then
+        local line = (_676_).linedefined
         local source = (_676_).source
         local src = (_676_).short_src
-        local line = (_676_).linedefined
         local fnlsrc
         do
           local t_681_ = compiler.sourcemap
@@ -3662,47 +3662,6 @@ package.preload["fennel.parser"] = package.preload["fennel.parser"] or function(
           return nil
         end
       end
-      local function badend()
-        local accum = utils.map(stack, "closer")
-        local _218_
-        if (#stack == 1) then
-          _218_ = ""
-        else
-          _218_ = "s"
-        end
-        return parse_error(string.format("expected closing delimiter%s %s", _218_, string.char(unpack(accum))))
-      end
-      local function skip_whitespace(b)
-        if (b and whitespace_3f(b)) then
-          whitespace_since_dispatch = true
-          return skip_whitespace(getb())
-        elseif (not b and (0 < #stack)) then
-          return badend()
-        else
-          return b
-        end
-      end
-      local function parse_comment(b, contents)
-        if (b and (10 ~= b)) then
-          local function _222_()
-            local _221_ = contents
-            table.insert(_221_, string.char(b))
-            return _221_
-          end
-          return parse_comment(getb(), _222_())
-        elseif comments then
-          return dispatch(utils.comment(table.concat(contents), {line = (line - 1), filename = filename}))
-        else
-          return b
-        end
-      end
-      local function open_table(b)
-        if not whitespace_since_dispatch then
-          parse_error(("expected whitespace before opening delimiter " .. string.char(b)))
-        else
-        end
-        return table.insert(stack, {bytestart = byteindex, closer = delims[b], filename = filename, line = line, col = (col - 1)})
-      end
       local function close_list(list)
         return dispatch(setmetatable(list, getmetatable(utils.list())))
       end
@@ -3714,12 +3673,12 @@ package.preload["fennel.parser"] = package.preload["fennel.parser"] or function(
         return dispatch(val)
       end
       local function add_comment_at(comments0, index, node)
-        local _225_ = (comments0)[index]
-        if (nil ~= _225_) then
-          local existing = _225_
+        local _218_ = (comments0)[index]
+        if (nil ~= _218_) then
+          local existing = _218_
           return table.insert(existing, node)
         elseif true then
-          local _ = _225_
+          local _ = _218_
           comments0[index] = {node}
           return nil
         else
@@ -3797,6 +3756,51 @@ package.preload["fennel.parser"] = package.preload["fennel.parser"] or function(
           return close_curly_table(top)
         end
       end
+      local function badend(cause)
+        local accum = utils.map(stack, "closer")
+        local _228_
+        if (#stack == 1) then
+          _228_ = ""
+        else
+          _228_ = "s"
+        end
+        parse_error(string.format("expected closing delimiter%s %s", _228_, string.char(unpack(accum))))
+        for i = #accum, 2, -1 do
+          close_table(accum[i])
+        end
+        return accum[1]
+      end
+      local function skip_whitespace(b)
+        if (b and whitespace_3f(b)) then
+          whitespace_since_dispatch = true
+          return skip_whitespace(getb())
+        elseif (not b and (0 < #stack)) then
+          return badend("eof")
+        else
+          return b
+        end
+      end
+      local function parse_comment(b, contents)
+        if (b and (10 ~= b)) then
+          local function _232_()
+            local _231_ = contents
+            table.insert(_231_, string.char(b))
+            return _231_
+          end
+          return parse_comment(getb(), _232_())
+        elseif comments then
+          return dispatch(utils.comment(table.concat(contents), {line = (line - 1), filename = filename}))
+        else
+          return b
+        end
+      end
+      local function open_table(b)
+        if not whitespace_since_dispatch then
+          parse_error(("expected whitespace before opening delimiter " .. string.char(b)))
+        else
+        end
+        return table.insert(stack, {bytestart = byteindex, closer = delims[b], filename = filename, line = line, col = (col - 1)})
+      end
       local function parse_string_loop(chars, b, state)
         table.insert(chars, b)
         local state0
@@ -3829,7 +3833,7 @@ package.preload["fennel.parser"] = package.preload["fennel.parser"] or function(
         table.insert(stack, {closer = 34})
         local chars = {34}
         if not parse_string_loop(chars, getb(), "base") then
-          badend()
+          badend("string")
         else
         end
         table.remove(stack)

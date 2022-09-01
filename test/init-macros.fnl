@@ -2,18 +2,24 @@
 
 (fn it [desc ...]
   "busted's `it` function"
-  `((. (require :busted) :it)
-    ,desc (fn [] ,desc ,...)))
+  (let [body [...]]
+    (table.insert body `nil)
+    `((. (require :busted) :it)
+      ,desc (fn [] ,desc ,(unpack body)))))
 
 (fn describe [desc ...]
   "busted's `describe` function"
-  `((. (require :busted) :describe)
-    ,desc (fn [] ,desc ,...)))
+  (let [body [...]]
+    (table.insert body `nil)
+    `((. (require :busted) :describe)
+      ,desc (fn [] ,desc ,(unpack body)))))
 
 (fn before-each [...]
   "busted's `describe` function"
-  `((. (require :busted) :before_each)
-    (fn [] ,...)))
+  (let [body [...]]
+    (table.insert body `nil)
+    `((. (require :busted) :before_each)
+      (fn [] ,(unpack body)))))
 
 
 (fn is-matching [item pattern ?msg]

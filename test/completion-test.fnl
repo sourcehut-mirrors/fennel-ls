@@ -10,7 +10,7 @@
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
 
-(local filename (.. ROOT-URI "imaginary-file.fnl"))
+(local filename (.. ROOT-URI "/imaginary-file.fnl"))
 
 (fn check-completion [body line col expected ?unexpected]
   (local state (doto [] setup-server))
@@ -18,8 +18,9 @@
   (let [response (dispatch.handle* state (completion-at filename line col))
         seen (collect [_ suggestion (ipairs (. response 1 :result))]
                 suggestion.label suggestion.label)]
-    (each [_ exp (ipairs expected)]
-      (is.truthy (. seen exp) (.. exp " was not suggested, but should be")))
+    (if (= (type expected) :table)
+      (each [_ exp (ipairs expected)]
+        (is.truthy (. seen exp) (.. exp " was not suggested, but should be"))))
     (if ?unexpected
       (each [_ exp (ipairs ?unexpected)]
         (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))
@@ -42,17 +43,33 @@
     (check-completion "(d)" 0 3 [:do :doto]))
 
   (it "suggests macros in scope"
-    (check-completion "(macro funny [] `nil)\n()" 1 1 [:funny])))
+    (check-completion "(macro funny [] `nil)\n()" 1 1 [:funny]))
 
-  ;; ;; Compiler hardening
-  ;; (it "works without requiring the close parentheses"))
-  ;; (it "works without a body in the `let`"))
-  ;; (it "does not suggest locals out of scope")
-  ;; (it "suggests items from the previous definitions in the same `let`")
+  (it "does not suggest locals out of scope"
+    (check-completion "(do (local x 10))\n" 1 0 [] [:x]))
 
-  ;; ;; Functions
-  ;; (it "suggests function arguments at the top scope of the function")
-  ;; (it "suggests function arguments deep within the function")
+  (it "does not suggest function args out of scope"
+    (check-completion "(fn [x] (print x))\n" 1 0 [] [:x]))
+
+  (describe "when the program doesn't compile"
+    (it "still completes without requiring the close parentheses"
+      (check-completion "(fn foo [z]\n  (let [x 10 y 20]\n    " 1 2 [:x :y :z]))
+
+    (it "still completes with no body in the `let`"
+      (check-completion "(let [x 10 y 20]\n  )" 1 2 [:x :y]))
+
+    (it "still completes items from the previous definitions in the same `let`"
+      (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b])))
+
+    ;; (it "completes fields with a partially typed multisym that ends in :"
+    ;;   (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field])))
+
+  ;; Functions
+  (it "suggests function arguments at the top scope of the function"
+    (check-completion "(fn foo [arg1 arg2 arg3]\n  )" 1 2 [:arg1 :arg2 :arg3]))
+
+  (it "suggests function arguments at the top scope of the function"
+    (check-completion "(fn foo [arg1 arg2 arg3]\n  (do (do (do ))))" 1 14 [:arg1 :arg2 :arg3])))
 
   ;; ;; Scope Ordering Rules
   ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
@@ -66,7 +83,6 @@
   ;; (it "doesn't suggest specials in the middle of a list (open paren required)"
   ;;   (check-completion "(do )"
   ;;                     0 4 [] [:do :let :fn :-> :-?>> :?.])))
-
 
   ;; (it "doesn't suggest specials at the very top level")
   ;; (it "doesn't suggest macros in the middle of a list (open paren required)")

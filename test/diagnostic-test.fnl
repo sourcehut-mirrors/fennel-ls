@@ -20,7 +20,7 @@
   (table.insert t result)
   `(accumulate ,t ,body))
 
-(local filename (.. ROOT-URI "imaginary.fnl"))
+(local filename (.. ROOT-URI "/imaginary.fnl"))
 
 (describe "diagnostic messages"
   (it "handles compile errors"
@@ -59,7 +59,13 @@
           {:diagnostics
            [{:range {:start {:character a :line b}
                      :end   {:character c :line d}}}]}}]
-        "diagnostics should always have a range"))))
+        "diagnostics should always have a range")))
+
+  (it "gives more than one error"
+    (local state (doto [] setup-server))
+    (let [responses (open-file state filename "(unknown-global-1 unknown-global-2)")]
+      (is-matching responses
+        [{:params {:diagnostics [a b]}}]  "there should be a diagnostic for each one here"))))
 
 ;; TODO lints:
 ;; unnecessary (do) in body position

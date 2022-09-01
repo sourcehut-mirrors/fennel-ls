@@ -25,27 +25,15 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] goes to a.method on `(: a :method)` when triggered at `:method`
     - [X] expanded macros (a little bit)
     - [ ] table mutation via `fn` special: `(fn obj.new-field [])`
-    - [ ] local/table mutation via set/tset
     - [ ] macro calls / which macros are in scope
-    - [ ] .lua files (antifennel decompiler)
     - [ ] setmetatable
     - [ ] function arguments / function calls
+    - [ ] local/table mutation via set/tset
+    - [ ] .lua files (antifennel decompiler)
     - [ ] mutation on aliased tables (difficult)
-- [X] Reports compiler errors
-- [ ] Reports linting issues
-    - [ ] Unused locals
-    - [ ] Discarding results from pcall/xpcall/other functions
-    - [ ] `unpack` or `values` into an operator special
-    - [ ] `do`/`values` with only one inner form
-    - [ ] redundant `do` as the last/only item in a form that accepts a "body"
-    - [ ] `var` forms that could be `local`
-    - [ ] Dead code (I'm not sure what sort of things cause dead code)
-    - [ ] Unused fields (difficult)
-    - [ ] unification in a `match` pattern (difficult)
-    - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
 - [ ] Completion Suggestions
     - [X] from globals
-    - [ ] from current scope
+    - [X] from current scope
     - [ ] from macros (only on first form in a list)
     - [ ] from specials (only on first form in a list)
     - [ ] "dot completion" for table fields
@@ -58,6 +46,19 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] `(: "foo" :` string completions
     - [ ] `(require :` module completions
     - [ ] snippets? I guess?
+- [X] Reports compiler errors
+    - [.] Report more than one error per top-level form
+- [ ] Reports linting issues
+    - [ ] Unused locals
+    - [ ] Discarding results from pcall/xpcall/other functions
+    - [ ] `unpack` or `values` into an operator special
+    - [ ] `do`/`values` with only one inner form
+    - [ ] redundant `do` as the last/only item in a form that accepts a "body"
+    - [ ] `var` forms that could be `local`
+    - [ ] Dead code (I'm not sure what sort of things cause dead code)
+    - [ ] Unused fields (difficult)
+    - [ ] unification in a `match` pattern (difficult)
+    - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
 - [X] Hover over a symbol for documentation
 - [ ] Signature help
     - [ ] Regular help
@@ -75,9 +76,10 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] lua version
     - [ ] allowed global list
     - [ ] enable/disable various linters
-- [ ] rename local symbols
-- [ ] rename module fields (may affect code behavior, may modify other files)
-- [ ] rename arbitrary things (may affect code behavior, may modify other files)
+- [ ] rename
+    - [ ] local symbols
+    - [ ] module fields (may affect code behavior, may modify other files)
+    - [ ] arbitrary fields (may affect code behavior, may modify other files)
 - [ ] formatting with fnlfmt
 - [ ] Type annotations? Global type inference?
 
@@ -90,10 +92,11 @@ make
 ```
 
 2. Configure your editor to use this language server
-LSP is editor-agnostic, but that's only if you're able to actually follow the spec, and I'm not sure that fennel-ls is compliant.
+LSP is editor-agnostic, but that's only if you're able to actually follow the spec, and I'm not sure if fennel-ls is compliant.
 
 So far, I've only ever tested it with Neovim using the native language client and `lspconfig`.
 If you know what that means, here's the relevant code to help you set up Neovim in the same way:
+
 ```lua
 local lspconfig = require('lspconfig')
 -- inform lspconfig about fennel-ls
