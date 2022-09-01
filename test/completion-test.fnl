@@ -28,17 +28,17 @@
           (. _G a)
           (. _G b)
           (. _G c))
-        "oops"))))
+        "oops")))
 
-  ;; (it "suggests locals in scope"
-  ;;   (local state (doto [] setup-server))
-  ;;   (open-file state filename "(local x 10)\n(print )")
-  ;;   (let [response (dispatch.handle* state (completion-at filename 1 7))]
-  ;;     (var seen-suggestion false)
-  ;;     (each [_ suggestion (ipairs (. response 1 :result))]
-  ;;       (if (= suggestion.label :x)
-  ;;         (set seen-suggestion true)))
-  ;;     (assert seen-suggestion "x was not suggested"))))
+  (it "suggests locals in scope"
+    (local state (doto [] setup-server))
+    (open-file state filename "(local x 10)\n(print )")
+    (let [response (dispatch.handle* state (completion-at filename 1 7))]
+      (var seen-suggestion false)
+      (each [_ suggestion (ipairs (. response 1 :result))]
+        (if (= suggestion.label :x)
+          (set seen-suggestion true)))
+      (assert seen-suggestion "x was not suggested"))))
 
   ;; (it "treats things in a call position differently")
   ;; (it "does not suggest locals out of scope")
