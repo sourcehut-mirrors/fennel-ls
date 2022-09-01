@@ -79,7 +79,8 @@ These functions are all pure functions, which makes me happy."
   (local symbol (tostring symbol))
   (if (or (= symbol ".")
           (= symbol "..")
-          (= symbol "..."))
+          (= symbol "...")
+          (= symbol "?."))
     [symbol]
     (let [offset (or ?offset (length symbol))
           next-separator (or (symbol:find ".[.:]" offset)

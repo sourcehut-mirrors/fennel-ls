@@ -29,6 +29,8 @@
     (is.same ["a" "b" "c" "d" "e" "f"] (utils.multi-sym-split "a.b.c.d.e.f"))
     (is.same ["obj" "bar"] (utils.multi-sym-split (fennel.sym "obj.bar")))))
 
+(describe "utf8") ;; TODO
+
 (describe "find-symbol"
   (it "finds a symbol and parents"
     (local state (doto [] setup-server))
@@ -38,7 +40,7 @@
     (is.equal symbol (fennel.sym :sym-one))
     (is-matching
       ;; awful way to check AST equality, but I don't mind
-      parents [[[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]] [1 2 [:sym-one]]]
+      parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
       "bad parents"))
 
   (it "finds nothing, but still gives parents"
@@ -48,7 +50,5 @@
     (local (symbol parents) (language.find-symbol file.ast 18))
     (is.equal symbol nil)
     (is-matching
-      parents [[[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]] [1 2 [:sym-one]]]
+      parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
       "bad parents")))
-
-;; TODO parents for failed forms

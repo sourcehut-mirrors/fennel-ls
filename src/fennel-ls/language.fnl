@@ -142,7 +142,8 @@ the data provided by compiler.fnl."
     (accumulate [result nil i top-level-form (ipairs ast) &until result]
       (if (contains? top-level-form byte)
         (recurse top-level-form byte)))
-    parents))
+    (fcollect [i 1 (length parents)]
+      (. parents (- (length parents) i -1)))))
 
 
 {: find-symbol

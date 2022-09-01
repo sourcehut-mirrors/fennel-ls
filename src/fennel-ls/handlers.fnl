@@ -72,7 +72,7 @@ Every time the client sends a message, it gets handled by a function in the corr
     (match-try (language.find-symbol file.ast byte)
       (symbol parents)
       (match-try
-        (let [parent (. parents (length parents))]
+        (let [parent (. parents 1)]
           (if (. file.require-calls parent)
             (language.search self file parent [])))
         nil
@@ -91,19 +91,32 @@ Every time the client sends a message, it gets handled by a function in the corr
       result {:contents {:kind "markdown"
                          :value (formatter.hover-format result)}})))
 
+(λ collect-scope [scope typ callback ?target]
+  (let [result (or ?target [])]
+    (var scope scope)
+    (while scope
+      (icollect [i v (pairs (. scope typ)) &into result]
+        (callback i v))
+      (set scope scope.parent))
+    result))
+
+(λ find-things-in-scope [file parents typ callback ?target]
+  (let [scope (or (accumulate [result nil
+                               i parent (ipairs parents)
+                               &until result]
+                    (. file.scopes parent))
+                  file.scope)]
+    (collect-scope scope typ callback ?target)))
+
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
         byte (pos->byte file.text position.line position.character)
         (?symbol parents) (language.find-symbol file.ast byte)]
-    ;; TODO build a recursive searcher,
-    ;; store file scopes parents length parents as an intermediate
-    ;; potentially reverse parents order so it's only (. parents 1)
-    (let [begin (if (?. file.scopes (. parents (length parents)))
-                 (icollect [k (pairs (. file.scopes (. parents (length parents)) :manglings))]
-                   {:label k})
-                 [])]
-      (icollect [_ k (ipairs file.allowed-globals) &into begin] {:label k}))))
-
+    (let [result []]
+      (find-things-in-scope file parents :manglings #{:label $} result)
+      (find-things-in-scope file parents :macros #{:label $} result)
+      (find-things-in-scope file parents :specials #{:label $} result)
+      (icollect [_ k (ipairs file.allowed-globals) &into result] {:label k}))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
@@ -120,7 +133,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (set file.open? false))
 
 (λ requests.shutdown [self send]
-  "The server still needs to respond to this request, so the program can't close yet. Wait until notifications.exit"
+  "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"
   nil)
 
 (λ notifications.exit [self]

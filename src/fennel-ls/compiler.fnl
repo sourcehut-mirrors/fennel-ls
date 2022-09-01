@@ -103,8 +103,14 @@ later by fennel-ls.language to answer requests from the client."
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
-      (define-function-name ast scope)
+      (define-function-name ast scope))
+
+    (λ compile-fn [ast scope]
+      (tset scopes ast scope) ;; update scope
       (define-function-args ast scope))
+
+    (λ compile-do [ast scope]
+      (tset scopes ast scope)) ;; update scope
 
     (λ call [ast scope]
       (tset scopes ast scope)
@@ -147,12 +153,14 @@ later by fennel-ls.language to answer requests from the client."
     (let
       [plugin
        {:name "fennel-ls"
-        :versions ["1.2.0"]
+        :versions ["1.3.0"]
         :symbol-to-expression reference
         :call call
         :destructure define
         :assert-compile on-compile-error
-        :parse-error on-parse-error}
+        :parse-error on-parse-error
+        :customhook-early-do compile-do
+        :customhook-early-fn compile-fn}
        scope (fennel.scope)
        opts {:filename file.uri
              :plugins [plugin]
@@ -171,6 +179,7 @@ later by fennel-ls.language to answer requests from the client."
 
       ;; write things back to the file object
       (set file.ast ast)
+      (set file.scope scope)
       (set file.scopes scopes)
       (set file.definitions definitions)
       (set file.diagnostics diagnostics)
