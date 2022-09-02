@@ -157,9 +157,7 @@ later by fennel-ls.language to answer requests from the client."
            :codeDescription "parse error"}))
       (if (recoverable? msg)
         true
-        (do
-          (print msg)
-          (error "__NOT_AN_ERROR"))))
+        (error "__NOT_AN_ERROR")))
 
     (local allowed-globals (icollect [k v (pairs _G)] k))
     (table.insert allowed-globals :vim)
