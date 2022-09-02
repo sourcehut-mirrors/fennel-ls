@@ -12,22 +12,9 @@
 (local empty nil)
 (print empty)
 
-(fn sd [] "short docstring"
+(λ lambda-fn [arg1 arg2]
+  "docstring"
+  (print "body")
   nil)
-(fn ld [arg1]
-  "long docstring
 
-This function has a long docstring, and returns nil.
-The docstring has newlines and markdown and stuff in it.
-
-```fnl
-(ld 100 100) ;; ==> nil
-```
-
-@arg arg1 is ignored
-@arg arg2 is ignored.
-@returns nil"
-  (let [result nil]
-    result))
-
-(ld (sd))
+(lambda-fn 1 2)

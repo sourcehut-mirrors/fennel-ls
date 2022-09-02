@@ -41,4 +41,7 @@
     (check "hover.fnl" 9 30 "```fnl\n:colon-string\n```"))
 
   (it "hovers over a literal nil"
-    (check "hover.fnl" 12 9 "```fnl\nnil\n```")))
+    (check "hover.fnl" 12 9 "```fnl\nnil\n```"))
+
+  (it "hovers over λ function"
+    (check "hover.fnl" 18 6 "```fnl\n(fn lambda-fn [arg1 arg2] ...)\n```\ndocstring")))

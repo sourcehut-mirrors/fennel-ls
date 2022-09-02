@@ -17,40 +17,57 @@ user code."
   (.. "```fnl\n" str "\n```"))
 
 (local width 80)
-(fn fn-format [name args docstring]
-  (.. "(fn"
-      (if name (.. " " (tostring name)) "")
-      (.. " " (view args {:one-line? true :prefer-colon? true}))
-      " ...)"
+(fn fn-format [special name args docstring]
+  (.. (code-block (.. "(fn"
+                     (if name (.. " " (tostring name)) "")
+                     (.. " " (view args
+                               {:one-line? true
+                                :prefer-colon? true}))
+                     " ...)"))
       (if docstring (.. "\n" docstring) "")))
+
+
+(λ fn? [sym]
+  (if (sym? sym)
+    (let [sym (tostring sym)]
+      (or (= sym "fn")
+          (= sym "λ")
+          (= sym "lambda")))))
 
 (λ hover-format [result]
   "Format code that will appear when the user hovers over a symbol"
-  (code-block
-      (match result.?definition
-        ;; name + docstring
-        (where [-fn- name args docstring body]
-          (and (sym? name)
-               (type= args :table)
-               (type= docstring :string)))
-        (fn-format name args docstring)
-        ;; docstring
-        (where [-fn- args docstring body]
-          (and (type= args :table)
-               (type= docstring :string)))
-        (fn-format nil args docstring)
-        ;; name
-        (where [-fn- name args]
-          (and (sym? name)
-               (type= args :table)))
-        (fn-format name args nil)
-        ;; none
-        (where [-fn- args]
-          (and (type= args :table)))
-        (fn-format nil args nil)
-        ?anything-else
-        (if result.?keys
-          (view result.?keys)
-          (view ?anything-else {:prefer-colon? true})))))
+  (match result.definition
+    ;; name + docstring
+    (where [special name args docstring body]
+      (fn? special)
+      (sym? name)
+      (type= args :table)
+      (type= docstring :string))
+    (fn-format special name args docstring)
+    ;; docstring
+    (where [special args docstring body]
+      (fn? special)
+      (type= args :table)
+      (type= docstring :string))
+    (fn-format special nil args docstring)
+    ;; name
+    (where [special name args]
+      (fn? special)
+      (sym? name)
+      (type= args :table))
+    (fn-format special name args nil)
+    ;; none
+    (where [special args]
+      (fn? special)
+      (type= args :table))
+    (fn-format special nil args nil)
+    ?anything-else
+    (code-block
+      (if (-?>> result.keys length (< 0))
+        (.. "ERROR, I don't know how to show this "
+            "(. "
+            (view ?anything-else {:prefer-colon? true}) " "
+            (view result.keys {:prefer-colon? true}) ")")
+        (view ?anything-else {:prefer-colon? true})))))
 
 {: hover-format}

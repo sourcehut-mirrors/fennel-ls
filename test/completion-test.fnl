@@ -69,7 +69,7 @@
     (check-completion "(fn foo [arg1 arg2 arg3]\n  )" 1 2 [:arg1 :arg2 :arg3]))
 
   (it "suggests function arguments at the top scope of the function"
-    (check-completion "(fn foo [arg1 arg2 arg3]\n  (do (do (do ))))" 1 14 [:arg1 :arg2 :arg3])))
+    (check-completion "(fn foo [arg1 arg2 arg3]\n  (do (do (do ))))" 1 14 [:arg1 :arg2 :arg3]))
 
   ;; ;; Scope Ordering Rules
   ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
@@ -88,7 +88,14 @@
   ;; (it "doesn't suggest macros in the middle of a list (open paren required)")
   ;; (it "doesn't suggest macros at the very top level")
 
-  ;; (it "suggests fields of tables")
+  (it "suggests fields of tables"
+    (check-completion
+      "(let [my-table {:foo 10 :bar 20}]\n  my-table.)))"
+      1 11
+      [:foo :bar]
+      [:_G :local :doto :1]))) ;; no globals, specials, macros, or others
+
+  ;; (it "suggests fields of strings"))
   ;; (it "suggests known fn fields of tables when using a method call multisym")
   ;; (it "suggests known fn keys when using the `:` special")
   ;; (it "suggests known keys when using the `.` special")

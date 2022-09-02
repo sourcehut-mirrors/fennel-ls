@@ -67,10 +67,10 @@ later by fennel-ls.language to answer requests from the client."
         (if (sym? binding)
             (let [definition
                   {: binding
-                   : ?definition
-                   :?keys (if (not= 0 (length keys))
-                            (fcollect [i 1 (length keys)]
-                              (. keys i)))}]
+                   :definition ?definition
+                   :keys (if (< 0 (length keys))
+                           (fcollect [i 1 (length keys)]
+                             (. keys i)))}]
               (tset (. definitions-by-scope scope) (tostring binding) definition)
               (tset definitions binding definition))
             (= :table (type binding))
@@ -90,7 +90,7 @@ later by fennel-ls.language to answer requests from the client."
         (tset (. definitions-by-scope scope) ;; !!! TODO somehow insert into child scope
               (tostring name)
               {:binding name
-               :?definition ast})))
+               :definition ast})))
 
     (λ define-function-args [ast scope]
       ;; add the definitions of function arguments to the definitions
@@ -99,18 +99,18 @@ later by fennel-ls.language to answer requests from the client."
           (where [_fn args] (fennel.sequence? args)) args
           (where [_fn _name args] (fennel.sequence? args)) args))
       (each [_ argument (ipairs args)]
-        (define nil argument scope))) ;; we say function arguments are set to nil ;; !!! parent or child?
+        (define nil argument scope))) ;; we say function arguments are set to nil
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
       (define-function-name ast scope))
 
     (λ compile-fn [ast scope]
-      (tset scopes ast scope) ;; update scope
+      (tset scopes ast scope)
       (define-function-args ast scope))
 
     (λ compile-do [ast scope]
-      (tset scopes ast scope)) ;; update scope
+      (tset scopes ast scope))
 
     (λ call [ast scope]
       (tset scopes ast scope)
@@ -129,7 +129,8 @@ later by fennel-ls.language to answer requests from the client."
           (msg:find "expected closing delimiter")
           (msg:find "expected body expression")
           (msg:find "expected whitespace before opening delimiter")
-          (msg:find "malformed multisym")))
+          (msg:find "malformed multisym")
+          (msg:find "expected at least one pattern/body pair")))
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range ast file)
@@ -168,7 +169,7 @@ later by fennel-ls.language to answer requests from the client."
        {:name "fennel-ls"
         :versions ["1.3.0"]
         :symbol-to-expression reference
-        :call call
+        : call
         :destructure define
         :assert-compile on-compile-error
         :parse-error on-parse-error

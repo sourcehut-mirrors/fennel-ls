@@ -16,7 +16,8 @@ the data provided by compiler.fnl."
 
 (var search nil) ;; all of the search functions are mutually recursive
 
-(λ search-assignment [self file {: binding : ?definition : ?keys &as assignment} stack]
+(λ search-assignment [self file {: binding :definition ?definition :keys ?keys &as assignment}
+                      stack]
   (if (= 0 (length stack))
     (values assignment file) ;; BASE CASE!!
     (do
@@ -36,7 +37,7 @@ the data provided by compiler.fnl."
   (if (. tbl (. stack (length stack)))
       (search self file (. tbl (table.remove stack)) stack)
       (= 0 (length stack))
-      (values {:?definition tbl} file) ;; BASE CASE !!
+      (values {:definition tbl} file) ;; BASE CASE !!
       nil)) ;; BASE CASE Give up
 
 (λ search-list [self file call stack]
@@ -64,7 +65,7 @@ the data provided by compiler.fnl."
         (sym? item)               (search-symbol self file item stack)
         (list? item)              (search-list self file item stack)
         (= :table (type item))    (search-table self file item stack)
-        (= 0 (length stack))      {:?definition item} ;; BASE CASE !!
+        (= 0 (length stack))      {:definition item} ;; BASE CASE !!
         (error (.. "I don't know what to do with " (view item))))))
 
 (λ search-main [self file symbol]
@@ -82,11 +83,11 @@ the data provided by compiler.fnl."
     (search-assignment self file ref stack)
     (_ def)
     (do
-      (if def.?keys
-        (fcollect [i (length def.?keys) 1 -1 &into stack]
-          (. def.?keys i)))
-      (search self file def.?definition stack))))
-      ;; (search self file def.?definition stack))))
+      (if def.keys
+        (fcollect [i (length def.keys) 1 -1 &into stack]
+          (. def.keys i)))
+      (search self file def.definition stack))))
+      ;; (search self file def.definition stack))))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object
@@ -148,4 +149,5 @@ the data provided by compiler.fnl."
 
 {: find-symbol
  : search-main
+ : search-assignment
  : search}

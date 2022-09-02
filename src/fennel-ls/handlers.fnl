@@ -79,7 +79,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         (language.search-main self file symbol))
       (result result-file)
       (message.range-and-uri
-        (or result.binding result.?definition)
+        (or result.binding result.definition)
         result-file)
       (catch _ nil))))
 
@@ -108,15 +108,36 @@ Every time the client sends a message, it gets handled by a function in the corr
                   file.scope)]
     (collect-scope scope typ callback ?target)))
 
-(λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri self uri)
-        byte (pos->byte file.text position.line position.character)
-        (?symbol parents) (language.find-symbol file.ast byte)]
+(λ scope-completion [file byte ?symbol parents]
     (let [result []]
       (find-things-in-scope file parents :manglings #{:label $} result)
       (find-things-in-scope file parents :macros #{:label $} result)
       (find-things-in-scope file parents :specials #{:label $} result)
-      (icollect [_ k (ipairs file.allowed-globals) &into result] {:label k}))))
+      (icollect [_ k (ipairs file.allowed-globals) &into result]
+        {:label k})))
+
+(λ field-completion [self file symbol split]
+  (match (. file.references symbol)
+    ref
+    (let [stack (fcollect [i (- (length split) 1) 2 -1]
+                  (. split i))]
+      (match-try (language.search-assignment self file ref stack)
+        {: definition}
+        (match (values definition (type definition))
+          (str :string) (icollect [k v (pairs string)]
+                          {:label k})
+          (tbl :table) (icollect [k v (pairs tbl)]
+                         (if (= (type k) :string)
+                           {:label k})))
+        (catch _ nil)))))
+
+(λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
+  (let [file (state.get-by-uri self uri)
+        byte (pos->byte file.text position.line position.character)
+        (?symbol parents) (language.find-symbol file.ast byte)]
+    (match (-?> ?symbol utils.multi-sym-split)
+      (where (or nil [_ nil])) (scope-completion file byte ?symbol parents)
+      [a b &as split] (field-completion self file ?symbol split))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
