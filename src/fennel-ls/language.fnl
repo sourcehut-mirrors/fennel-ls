@@ -13,62 +13,72 @@ the data provided by compiler.fnl."
 (local -dot- (sym :.))
 (local -do- (sym :do))
 (local -let- (sym :let))
+(local -fn- (sym :fn))
+(local -nil- (sym :nil))
 
 (var search nil) ;; all of the search functions are mutually recursive
 
-(λ search-assignment [self file {: binding :definition ?definition :keys ?keys &as assignment}
-                      stack]
-  (if (= 0 (length stack))
-    (values assignment file) ;; BASE CASE!!
-    (do
-      (if ?keys
-        (fcollect [i (length ?keys) 1 -1 &into stack]
-          (. ?keys i)))
-      (search self file ?definition stack))))
+(λ search-assignment [self file assignment stack opts]
+  (let [{: binding :definition ?definition :keys ?keys} assignment]
+    (if (and (= 0 (length stack)) opts.stop-early?) 
+      (values assignment file) ;; BASE CASE!!
+      (do
+        (if ?keys
+          (fcollect [i (length ?keys) 1 -1 &into stack]
+            (. ?keys i)))
+        (search self file ?definition stack opts)))))
 
-(λ search-symbol [self file symbol stack]
-  (match (. file.references symbol)
-    to (search-assignment self file to
-         (let [split (utils.multi-sym-split symbol)]
-           (fcollect [i (length split) 2 -1 &into stack]
-             (. split i)))))) ;; TODO test coverage for this line
+(λ search-symbol [self file symbol stack opts]
+  (if (= symbol -nil-)
+    (values {:definition symbol} file) ;; BASE CASE !!
+    (match (. file.references symbol)
+      to (search-assignment self file to
+           (let [split (utils.multi-sym-split symbol)]
+             (fcollect [i (length split) 2 -1 &into stack]
+               (. split i))) ;; TODO test coverage for this line
+           opts))))
 
-(λ search-table [self file tbl stack]
+(λ search-table [self file tbl stack opts]
   (if (. tbl (. stack (length stack)))
-      (search self file (. tbl (table.remove stack)) stack)
+      (search self file (. tbl (table.remove stack)) stack opts)
       (= 0 (length stack))
       (values {:definition tbl} file) ;; BASE CASE !!
       nil)) ;; BASE CASE Give up
 
-(λ search-list [self file call stack]
+(λ search-list [self file call stack opts]
   (match call
     [-require- mod]
     (let [newfile (state.get-by-module self mod)
           newitem (. newfile.ast (length newfile.ast))]
-      (search self newfile newitem stack))
+      (search self newfile newitem stack opts))
     ; A . form  indexes into item 1 with the other items
     [-dot- & split]
     (search self file (. split 1)
       (fcollect [i (length split) 2 -1 &into stack]
-        (. split i)))
+        (. split i))
+      opts)
 
     ;; A do block returns the last form
     [-do- & body]
-    (search self file (. body (length body)) stack)
+    (search self file (. body (length body)) stack opts)
 
     [-let- _binding & body]
-    (search self file (. body (length body)) stack)))
+    (search self file (. body (length body)) stack opts)
+
+    ;; functions evaluate to "themselves"
+    [-fn-]
+    (values {:definition call} file))) ;; BASE CASE !!
 
 (set search
-  (λ search [self file item stack]
+  (λ search [self file item stack opts]
     (if
-        (sym? item)               (search-symbol self file item stack)
-        (list? item)              (search-list self file item stack)
-        (= :table (type item))    (search-table self file item stack)
+        (sym? item)               (search-symbol self file item stack opts)
+        (list? item)              (search-list self file item stack opts)
+        (= :table (type item))    (search-table self file item stack opts)
         (= 0 (length stack))      {:definition item} ;; BASE CASE !!
         (error (.. "I don't know what to do with " (view item))))))
 
-(λ search-main [self file symbol]
+(λ search-main [self file symbol opts]
   ;; TODO partial byting, go to different defitition sites depending on which section of the symbol the trigger happens on
 
   ;; The stack is the multi-sym parts still to search
@@ -80,14 +90,13 @@ the data provided by compiler.fnl."
         (. split i))))
   (match (values (. file.references symbol) (. file.definitions symbol))
     (ref _)
-    (search-assignment self file ref stack)
+    (search-assignment self file ref stack opts)
     (_ def)
     (do
       (if def.keys
         (fcollect [i (length def.keys) 1 -1 &into stack]
           (. def.keys i)))
-      (search self file def.definition stack))))
-      ;; (search self file def.definition stack))))
+      (search self file def.definition stack opts))))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object

@@ -93,6 +93,13 @@
       "(let [my-table {:foo 10 :bar 20}]\n  my-table.)))"
       1 11
       [:foo :bar]
+      [:_G :local :doto :1])) ;; no globals, specials, macros, or others
+
+  (it "suggests fields of tables indirectly"
+    (check-completion
+      "(let [foo (require :foo)]\n  foo.)))"
+      1 6
+      [:my-export :constant]
       [:_G :local :doto :1]))) ;; no globals, specials, macros, or others
 
   ;; (it "suggests fields of strings"))
