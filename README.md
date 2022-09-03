@@ -24,7 +24,7 @@ Features / To Do List / Things I would enjoy patches for:
     - [X] `require` and cross-module definition lookups
     - [ ] goes to a.method on `(: a :method)` when triggered at `:method`
     - [X] expanded macros (a little bit)
-    - [ ] table mutation via `fn` special: `(fn obj.new-field [])`
+    - [X] table mutation via `fn` special: `(fn obj.new-field [])`
     - [ ] macro calls / which macros are in scope
     - [ ] setmetatable
     - [ ] function arguments / function calls
@@ -36,7 +36,7 @@ Features / To Do List / Things I would enjoy patches for:
     - [X] from current scope
     - [ ] from macros (only on first form in a list)
     - [ ] from specials (only on first form in a list)
-    - [ ] "dot completion" for table fields
+    - [X] "dot completion" for table fields
     - [ ] dot completion is aware of a string's fields
     - [ ] from anywhere else that I'm forgetting right now
     - [ ] actually compliant rules about lexical scope (only see things declared before, not after)

@@ -19,14 +19,21 @@ the data provided by compiler.fnl."
 (var search nil) ;; all of the search functions are mutually recursive
 
 (λ search-assignment [self file assignment stack opts]
-  (let [{: binding :definition ?definition :keys ?keys} assignment]
+  (let [{: binding
+         :definition ?definition
+         :keys ?keys
+         :fields ?fields} assignment]
     (if (and (= 0 (length stack)) opts.stop-early?) 
-      (values assignment file) ;; BASE CASE!!
-      (do
-        (if ?keys
-          (fcollect [i (length ?keys) 1 -1 &into stack]
-            (. ?keys i)))
-        (search self file ?definition stack opts)))))
+        (values assignment file) ;; BASE CASE!!
+
+        (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
+        (search-assignment self file (. ?fields (table.remove stack)) stack opts)
+
+        (do
+          (if ?keys
+            (fcollect [i (length ?keys) 1 -1 &into stack]
+              (. ?keys i)))
+          (search self file ?definition stack opts)))))
 
 (λ search-symbol [self file symbol stack opts]
   (if (= symbol -nil-)

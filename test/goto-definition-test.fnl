@@ -70,7 +70,7 @@
     (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 2))
 
   (it "goes to the last form of `do` and `let`"
-    (check :goto-definition.fnl 47 13 :goto-definition.fnl 47 30 47 52)))
+    (check :goto-definition.fnl 47 13 :goto-definition.fnl 47 30 47 52))
 
   ;; TODO
   ;; (it "doesn't leak function arguments to the surrounding scope")
@@ -82,7 +82,8 @@
   ;; (it "can follow import-macros (namespaced)")
   ;; (it "can go to the definition even in a lua file")
   ;; (it "finds (set a.b) definitions")
-  ;; (it "finds (fn a.b [] ...) declarations")
+  (it "finds (fn a.b [] ...) declarations"
+    (check :goto-definition.fnl 51 12 :goto-definition.fnl 50 4 50 22)))
   ;; (it "finds (tset a :b) definitions")
   ;; (it "finds (setmetatable a {__index {:b def}) definitions")
   ;; (it "finds definitions into a function (fn foo [] (local x 10) {: x}) (let [result (foo)] (print result.x)) finds result.x")

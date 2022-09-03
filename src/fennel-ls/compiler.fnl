@@ -5,6 +5,7 @@ later by fennel-ls.language to answer requests from the client."
 
 (local {: sym? : list? : sequence? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
+(local utils (require :fennel-ls.utils))
 
 ;; words surrounded by - are symbols,
 ;; because fennel doesn't allow 'require in a runtime file
@@ -85,12 +86,18 @@ later by fennel-ls.language to answer requests from the client."
       (match ast
         (where [_fn name args]
           (and (sym? name)
-               (not (multisym? name)) ;; not dealing with multisym for now
                (sequence? args)))
-        (tset (. definitions-by-scope scope) ;; !!! TODO somehow insert into child scope
-              (tostring name)
-              {:binding name
-               :definition ast})))
+        (let [def {:binding name :definition ast}]
+          (if (multisym? name)
+            (match (utils.multi-sym-split name)
+              [ref field nil]
+              (let [target (find-definition ref scope)]
+                (set target.fields (or target.fields {}))
+                (tset target.fields field def))) ;; TODO more complicated function name metadata
+
+            (tset (. definitions-by-scope scope)
+                  (tostring name)
+                  def)))))
 
     (λ define-function-args [ast scope]
       ;; add the definitions of function arguments to the definitions
