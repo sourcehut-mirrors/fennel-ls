@@ -37,7 +37,7 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] from macros (only on first form in a list)
     - [ ] from specials (only on first form in a list)
     - [X] "dot completion" for table fields
-    - [ ] dot completion is aware of a string's fields
+    - [ ] dot completion is aware of a stdlib
     - [ ] from anywhere else that I'm forgetting right now
     - [ ] actually compliant rules about lexical scope (only see things declared before, not after)
     - [ ] show docs/icons on each suggestion

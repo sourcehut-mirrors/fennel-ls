@@ -40,7 +40,7 @@ I suspect this file is going to be gone after a bit of refactoring."
     (table.concat result ";")))
 
 (λ lookup [{: root-uri} mod]
-  (match (or (fennel.searchModule mod (add-workspaces-to-path luapath [root-uri]))
+  (match (or ;; TODO support lua ;; (fennel.searchModule mod (add-workspaces-to-path luapath [root-uri]))
              (fennel.searchModule mod (add-workspaces-to-path fennelpath [root-uri])))
     modname (utils.path->uri modname)
     nil nil))

@@ -42,9 +42,7 @@ object."
       uri
       (do
         (tset self.modules module uri)
-        (get-by-uri self uri))
-      nil
-      (error (.. "cannot find module " module)))))
+        (get-by-uri self uri)))))
 
 (λ set-uri-contents [self uri text]
   (match (. self.files uri)

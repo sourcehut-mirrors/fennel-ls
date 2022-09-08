@@ -89,7 +89,8 @@ Every time the client sends a message, it gets handled by a function in the corr
     (match-try (language.find-symbol file.ast byte)
       symbol (language.search-main self file symbol {})
       result {:contents {:kind "markdown"
-                         :value (formatter.hover-format result)}})))
+                         :value (formatter.hover-format result)}}
+      (catch _ nil))))
 
 (λ collect-scope [scope typ callback ?target]
   (let [result (or ?target [])]
@@ -150,6 +151,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (send (message.diagnostics file)))
 
 (λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
+  ;; TODO reload from disk if we didn't get a didSave
   (local file (state.get-by-uri self uri))
   (set file.open? false))
 

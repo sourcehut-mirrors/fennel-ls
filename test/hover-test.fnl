@@ -44,4 +44,15 @@
     (check "hover.fnl" 12 9 "```fnl\nnil\n```"))
 
   (it "hovers over λ function"
-    (check "hover.fnl" 18 6 "```fnl\n(fn lambda-fn [arg1 arg2] ...)\n```\ndocstring")))
+    (check "hover.fnl" 18 6 "```fnl\n(fn lambda-fn [arg1 arg2] ...)\n```\ndocstring"))
+
+  (it "hovers over literally the very first character"
+    (local state (doto [] setup-server))
+    (let [message (dispatch.handle* state
+                     (message.create-request 2 "textDocument/hover"
+                       {:position {:character 0 :line 0}
+                        :textDocument {:uri (.. ROOT-URI "/hover.fnl")}}))]
+      (is-matching
+        message
+        [{:jsonrpc "2.0" :id 2}]
+        ""))))

@@ -57,7 +57,8 @@ the data provided by compiler.fnl."
     [-require- mod]
     (let [newfile (state.get-by-module self mod)
           newitem (. newfile.ast (length newfile.ast))]
-      (search self newfile newitem stack opts))
+      (if newfile
+        (search self newfile newitem stack opts)))
     ; A . form  indexes into item 1 with the other items
     [-dot- & split]
     (search self file (. split 1)
