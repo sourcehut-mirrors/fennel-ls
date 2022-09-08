@@ -55,11 +55,11 @@ the data provided by compiler.fnl."
 (λ search-list [self file call stack opts]
   (match call
     [-require- mod]
-    (let [newfile (state.get-by-module self mod)
-          newitem (. newfile.ast (length newfile.ast))]
-      (if newfile
-        (search self newfile newitem stack opts)))
-    ; A . form  indexes into item 1 with the other items
+    (let [newfile (state.get-by-module self mod)]
+      (when newfile
+        (let [newitem (. newfile.ast (length newfile.ast))]
+          (search self newfile newitem stack opts))))
+    ;; A . form  indexes into item 1 with the other items
     [-dot- & split]
     (search self file (. split 1)
       (fcollect [i (length split) 2 -1 &into stack]
