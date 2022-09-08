@@ -2,8 +2,7 @@
 The high level analysis system that does deep searches following
 the data provided by compiler.fnl."
 
-(local {: sym? : list? : sequence? : sym : view} (require :fennel))
-(local {: table?} (require :fennel.utils))
+(local {: sym? : list? : sequence? : varg? : sym : view} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
@@ -147,7 +146,7 @@ the data provided by compiler.fnl."
                        &until result]
             (if (contains? child byte)
               (recurse child byte)))
-          (table? ast)
+          (and (not (sym? ast)) (not (varg? ast)))
           (accumulate [(result done) nil
                        key value (pairs ast)
                        &until done]

@@ -1,5 +1,3 @@
-LUA_LIB=/usr/lib/liblua.so.5.4
-LUA_INCLUDE_DIR=/usr/include/lua5.4
 FENNEL=./fennel
 EXE=fennel-ls
 
@@ -11,10 +9,13 @@ SRC+=$(wildcard src/fennel-ls/*.fnl)
 all: $(EXE)
 
 $(EXE): $(SRC)
-	LUA_PATH="./src/?.lua;./src/?/init.lua" FENNEL_PATH="./src/?.fnl;./src/?/init.fnl" $(FENNEL) --compile-binary src/fennel-ls.fnl fennel-ls $(LUA_LIB) $(LUA_INCLUDE_DIR)
+	echo "#!/usr/bin/env lua" > $@
+	LUA_PATH="./src/?.lua;./src/?/init.lua" FENNEL_PATH="./src/?.fnl;./src/?/init.fnl" \
+		$(FENNEL) --require-as-include --compile src/fennel-ls.fnl >> $@
+	chmod 755 $@
 
 clean:
-	rm -f fennel-ls
+	rm -f $(EXE)
 
 test:
 	# requires busted to be installed
