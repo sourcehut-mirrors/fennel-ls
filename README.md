@@ -3,6 +3,8 @@ A language server for fennel-ls.
 Uses static analysis, and doesn't actually run your code, which makes it perfect for analyzing your (os.execute "rm -rf") code.
 If you want live analysis of your code as it runs, consider using a REPL.
 
+For now, you can ask fennel-ls to treat your file as a macro file if the very first characters in the file exactly match `;; fennel-ls: macro-file`. Expect this to break at some point in the future when I come up with a better way to specify which files are meant to be macro files.
+
 Features / To Do List / Things I would enjoy patches for:
 ([X] = complete,  [ ] = planned)
 

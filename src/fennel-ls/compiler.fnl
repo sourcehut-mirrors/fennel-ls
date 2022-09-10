@@ -90,10 +90,10 @@ later by fennel-ls.language to answer requests from the client."
         (let [def {:binding name :definition ast}]
           (if (multisym? name)
             (match (utils.multi-sym-split name)
-              [ref field nil]
+              [ref field nil] ;; TODO more powerful function name metadata
               (let [target (find-definition ref scope)]
                 (set target.fields (or target.fields {}))
-                (tset target.fields field def))) ;; TODO more complicated function name metadata
+                (tset target.fields field def)))
 
             (tset (. definitions-by-scope scope)
                   (tostring name)
@@ -106,7 +106,7 @@ later by fennel-ls.language to answer requests from the client."
           (where [_fn args] (fennel.sequence? args)) args
           (where [_fn _name args] (fennel.sequence? args)) args))
       (each [_ argument (ipairs args)]
-        (define nil argument scope))) ;; we say function arguments are set to nil
+        (define (sym :nil) argument scope))) ;; we say function arguments are set to nil
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
@@ -172,7 +172,8 @@ later by fennel-ls.language to answer requests from the client."
 
     ;; TODO clean up this code. It's awful now that there is error handling
     (let
-      [plugin
+      [macro-file? (= (: file.text :sub 1 24) ";; fennel-ls: macro-file")
+       plugin
        {:name "fennel-ls"
         :versions ["1.3.0"]
         :symbol-to-expression reference
@@ -190,7 +191,10 @@ later by fennel-ls.language to answer requests from the client."
              : scope}
        parser (partial pcall (fennel.parser file.text file.uri opts))
        ast (icollect [ok ok2 ast parser &until (not (and ok ok2))] ast)
-       _compile-output (icollect [_i form (ipairs ast)]
+       _compile-output (icollect [_i form (ipairs
+                                            (if macro-file? [(fennel.list (sym :eval-compiler)
+                                                                          ((or table.unpack _G.unpack) ast))]
+                                              ast))]
                          (match (pcall fennel.compile form opts)
                            (where (nil err) (not= err "__NOT_AN_ERROR"))
                            (table.insert diagnostics
