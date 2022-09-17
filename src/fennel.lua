@@ -408,10 +408,10 @@ package.preload["fennel.repl"] = package.preload["fennel.repl"] or function(...)
           _677_ = _678_
         end
       end
-      if ((_G.type(_677_) == "table") and (nil ~= (_677_).source) and (nil ~= (_677_).linedefined) and ((_677_).what == "Lua") and (nil ~= (_677_).short_src)) then
+      if ((_G.type(_677_) == "table") and (nil ~= (_677_).short_src) and (nil ~= (_677_).source) and (nil ~= (_677_).linedefined) and ((_677_).what == "Lua")) then
+        local src = (_677_).short_src
         local source = (_677_).source
         local line = (_677_).linedefined
-        local src = (_677_).short_src
         local fnlsrc
         do
           local t_682_ = compiler.sourcemap
@@ -3903,18 +3903,18 @@ package.preload["fennel.parser"] = package.preload["fennel.parser"] or function(
           return (rawstr:find(pat) - utils.len(rawstr) - 1)
         end
         if (rawstr:match("^~") and (rawstr ~= "~=")) then
-          return parse_error("invalid character: ~")
+          parse_error("invalid character: ~")
         elseif rawstr:match("%.[0-9]") then
-          return parse_error(("can't start multisym segment with a digit: " .. rawstr), col_adjust("%.[0-9]"))
+          parse_error(("can't start multisym segment with a digit: " .. rawstr), col_adjust("%.[0-9]"))
         elseif (rawstr:match("[%.:][%.:]") and (rawstr ~= "..") and (rawstr ~= "$...")) then
-          return parse_error(("malformed multisym: " .. rawstr), col_adjust("[%.:][%.:]"))
+          parse_error(("malformed multisym: " .. rawstr), col_adjust("[%.:][%.:]"))
         elseif ((rawstr ~= ":") and rawstr:match(":$")) then
-          return parse_error(("malformed multisym: " .. rawstr), col_adjust(":$"))
+          parse_error(("malformed multisym: " .. rawstr), col_adjust(":$"))
         elseif rawstr:match(":.+[%.:]") then
-          return parse_error(("method must be last component of multisym: " .. rawstr), col_adjust(":.+[%.:]"))
+          parse_error(("method must be last component of multisym: " .. rawstr), col_adjust(":.+[%.:]"))
         else
-          return rawstr
         end
+        return rawstr
       end
       local function parse_sym(b)
         local source0 = {bytestart = byteindex, filename = filename, line = line, col = (col - 1)}
