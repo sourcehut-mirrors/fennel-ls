@@ -25,6 +25,15 @@
       (each [_ exp (ipairs ?unexpected)]
         (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))
 
+(fn check-no-completion [body line col expected ?unexpected]
+  (local state (doto [] setup-server))
+  (open-file state filename body)
+  (let [response (dispatch.handle* state (completion-at filename line col))]
+    (is-matching (. response 1)
+      {:jsonrpc "2.0" :id id :result nil}
+      "there shouldn't be a result")))
+
+
 (describe "completions"
   (it "suggests globals"
     (check-completion "(" 0 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next]))
@@ -39,7 +48,9 @@
     (check-completion "(let [x 10] (let [y 100] \n    nil\n    ))" 2 4 [:x :y]))
 
   (it "suggests specials and macros at beginning of list"
-    (check-completion "()" 0 1 [:do :let :fn :doto :-> :-?>> :?.])
+    (check-completion "()" 0 1 [:do :let :fn] :doto :-> :-?>> :?.)
+    ;; it's not the language server's job to do filtering,
+    ;; so there's no negative assertions here for other symbols
     (check-completion "(d)" 0 3 [:do :doto]))
 
   (it "suggests macros in scope"
@@ -49,9 +60,10 @@
     (check-completion "(do (local x 10))\n" 1 0 [] [:x]))
 
   (it "does not suggest function args out of scope"
-    (check-completion "(fn [x] (print x))\n" 1 0 [] [:x]))
+    (check-completion "(fn [x] (print x))\n" 1 0 [] [:x])
+    (check-completion "(fn [x] (print x))\n(print " 1 7 [] [:x]))
 
-  (describe "when the program doesn't compile"
+  (describe "When the program doesn't compile"
     (it "still completes without requiring the close parentheses"
       (check-completion "(fn foo [z]\n  (let [x 10 y 20]\n    " 1 2 [:x :y :z]))
 
@@ -59,10 +71,13 @@
       (check-completion "(let [x 10 y 20]\n  )" 1 2 [:x :y]))
 
     (it "still completes items from the previous definitions in the same `let`"
-      (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b])))
+      (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b]))
 
     ;; (it "completes fields with a partially typed multisym that ends in :"
-    ;;   (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field])))
+    ;;   (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field]))
+
+    (it "doesn't crash with a partially typed multisym contains ::"
+      (check-no-completion "(local x {:field (fn [])})\n(x::f" 1 3 [:field])))
 
   ;; Functions
   (it "suggests function arguments at the top scope of the function"
