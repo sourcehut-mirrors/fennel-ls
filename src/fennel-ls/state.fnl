@@ -22,7 +22,7 @@ object."
 (λ get-by-uri [self uri]
   (or (. self.files uri)
       (let [file (read-file uri)]
-        (compile file)
+        (compile self file)
         (tset self.files uri file)
         file)))
 
@@ -51,14 +51,14 @@ object."
     (do
       (when (not= text file.text)
         (set file.text text)
-        (compile file))
+        (compile self file))
       file)
 
     ;; create new file
     nil
     (let [file {: uri : text}]
       (tset self.files uri file)
-      (compile file)
+      (compile self file)
       file)))
 
 {: get-by-uri

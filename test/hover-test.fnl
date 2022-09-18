@@ -46,6 +46,9 @@
   (it "hovers over λ function"
     (check "hover.fnl" 18 6 "```fnl\n(fn lambda-fn [arg1 arg2] ...)\n```\ndocstring"))
 
+  (it "hovers the first part of a multisym"
+    (check "hover.fnl" 9 14 "```fnl\n{:field1 10 :field2 :colon-string}\n```"))
+
   (it "hovers over literally the very first character"
     (local state (doto [] setup-server))
     (let [message (dispatch.handle* state

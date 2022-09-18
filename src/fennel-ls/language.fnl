@@ -85,14 +85,14 @@ the data provided by compiler.fnl."
         (= 0 (length stack))      {:definition item} ;; BASE CASE !!
         (error (.. "I don't know what to do with " (view item))))))
 
-(λ search-main [self file symbol opts]
+(λ search-main [self file symbol opts ?byte]
   ;; TODO partial byting, go to different defitition sites depending on which section of the symbol the trigger happens on
 
   ;; The stack is the multi-sym parts still to search
   ;; for example, if I'm searching for "foo.bar.baz", my "item" or "symbol" is foo,
   ;; and the stack has ["baz" "bar"], with "bar" at the "top"/"end" of the stack as the next key to search.
   (local stack
-    (let [split (utils.multi-sym-split symbol)]
+    (let [split (utils.multi-sym-split symbol (if ?byte (+ 1 (- ?byte symbol.bytestart))))]
       (fcollect [i (length split) 2 -1]
         (. split i))))
   (match (values (. file.references symbol) (. file.definitions symbol))

@@ -49,6 +49,9 @@
   (it "can go to a function inside a table"
     (check :goto-definition.fnl 28 6 :goto-definition.fnl 4 4 4 7))
 
+  (it "can go to the table containing a function"
+    (check :goto-definition.fnl 28 3 :goto-definition.fnl 26 7 26 10))
+
   (it "can go to a field inside of a table literal"
     (check :goto-definition.fnl 35 19 :goto-definition.fnl 34 20 34 35))
 
@@ -71,6 +74,9 @@
 
   (it "goes to the last form of `do` and `let`"
     (check :goto-definition.fnl 47 13 :goto-definition.fnl 47 30 47 52))
+
+  (it "can go to `a.b` from an `a.b.c` symbol"
+    (check :goto-definition.fnl 54 9 :goto-definition.fnl 53 13 53 25))
 
   ;; TODO
   ;; (it "doesn't leak function arguments to the surrounding scope")

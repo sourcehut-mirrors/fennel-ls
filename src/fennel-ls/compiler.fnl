@@ -14,7 +14,6 @@ later by fennel-ls.language to answer requests from the client."
 (local -λ- (sym :λ))
 (local -lambda- (sym :lambda))
 
-
 (λ multisym? [t]
   ;; check if t is a symbol with multiple parts, eg. foo.bar.baz
   (and (sym? t)
@@ -36,7 +35,7 @@ later by fennel-ls.language to answer requests from the client."
        (tset self key val)
        val))})
 
-(λ compile [file]
+(λ compile [self file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))

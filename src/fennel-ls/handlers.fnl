@@ -76,7 +76,7 @@ Every time the client sends a message, it gets handled by a function in the corr
           (if (. file.require-calls parent)
             (language.search self file parent [] {:stop-early? true})))
         nil
-        (language.search-main self file symbol {:stop-early? true}))
+        (language.search-main self file symbol {:stop-early? true} byte))
       (result result-file)
       (message.range-and-uri
         (or result.binding result.definition)
@@ -87,7 +87,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [file (state.get-by-uri self uri)
         byte (pos->byte file.text position.line position.character)]
     (match-try (language.find-symbol file.ast byte)
-      symbol (language.search-main self file symbol {})
+      symbol (language.search-main self file symbol {} byte)
       result {:contents {:kind "markdown"
                          :value (formatter.hover-format result)}}
       (catch _ nil))))

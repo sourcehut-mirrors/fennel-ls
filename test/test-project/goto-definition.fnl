@@ -50,3 +50,6 @@
 (local module {})
 (fn module.my-function [a b c] "docstring" (let [body (+ a b c)] body))
 (module.my-function 1 2 3)
+
+(local x {:y {:z (+ 1 1)}})
+(print x.y.z)
