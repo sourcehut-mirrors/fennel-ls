@@ -155,7 +155,8 @@ later by fennel-ls.language to answer requests from the client."
 
     (λ on-parse-error [msg file line byte]
       ;; assume byte and char count is the same, ie no UTF-8
-      (let [range (message.pos->range line byte line byte)]
+      (let [line (- line 1)
+            range (message.pos->range line byte line byte)]
         (table.insert diagnostics
           {:range range
            :message msg

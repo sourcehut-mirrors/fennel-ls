@@ -46,8 +46,8 @@
             (find [i v (ipairs diagnostics)]
              (match v
                {:message "expected whitespace before opening delimiter ("
-                :range {:start {:character 17 :line 1}
-                        :end   {:character 17 :line 1}}}
+                :range {:start {:character 17 :line 0}
+                        :end   {:character 17 :line 0}}}
                v)))]
       (is diagnostic "expected a diagnostic")))
 

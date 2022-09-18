@@ -92,6 +92,9 @@ Every time the client sends a message, it gets handled by a function in the corr
                          :value (formatter.hover-format result)}}
       (catch _ nil))))
 
+
+;; All of the helper functions for textDocument/completion are here until I
+;; finish refactoring them, and then they can find a home in language.fnl
 (λ collect-scope [scope typ callback ?target]
   (let [result (or ?target [])]
     (var scope scope)
