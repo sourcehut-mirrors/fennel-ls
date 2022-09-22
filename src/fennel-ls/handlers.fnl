@@ -159,14 +159,14 @@ Every time the client sends a message, it gets handled by a function in the corr
   (set file.open? false))
 
 (λ notifications.workspace/didChangeConfiguration [self send params]
-  (set self.settings params.fennel-ls))
-  ;; TODO respect the settings
+  (state.write-config self params.fennel-ls))
 
 (λ requests.shutdown [self send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"
   nil)
 
 (λ notifications.exit [self]
+  "This is the real shutdown request, we can quit now"
   (os.exit 0))
 
 {: requests

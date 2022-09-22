@@ -56,7 +56,7 @@
     (check :goto-definition.fnl 35 19 :goto-definition.fnl 34 20 34 35))
 
   (it "can go to a function in another file when accessed by multisym"
-    (check :goto-definition.fnl 7 7 :foo.fnl 2 4 2 13))
+    (check :goto-definition.fnl 7 7 :./foo.fnl 2 4 2 13))
 
   (it "goes further if you go to definition on a binding"
     (check :goto-definition.fnl 31 12 :goto-definition.fnl 23 4 23 5))
@@ -70,7 +70,7 @@
     (check :goto-definition.fnl 45 15 :goto-definition.fnl 40 7 40 13))
 
   (it "works directly on a require/include (require XXX))"
-    (check :goto-definition.fnl 1 5 :bar.fnl 0 0 0 2))
+    (check :goto-definition.fnl 1 5 :./bar.fnl 0 0 0 2))
 
   (it "goes to the last form of `do` and `let`"
     (check :goto-definition.fnl 47 13 :goto-definition.fnl 47 30 47 52))

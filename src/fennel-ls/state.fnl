@@ -9,11 +9,6 @@ object."
 (local searcher (require :fennel-ls.searcher))
 (local {: compile} (require :fennel-ls.compiler))
 
-(λ init-state [self params]
-  (set self.files {})
-  (set self.modules {})
-  (set self.root-uri params.rootUri))
-
 (λ read-file [uri]
   (with-open [fd (io.open (utils.uri->path uri))]
     {:uri uri
@@ -61,7 +56,36 @@ object."
       (compile self file)
       file)))
 
-{: get-by-uri
- : get-by-module
+(local default-config
+  {:fennel-path "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl"
+   :macro-path  "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
+   :globals     ""})
+
+(λ write-config [self ?config]
+  (if (not ?config)
+    (set self.config default-config) ;; fast path, use all defaults
+    (set self.config
+      {;; fennel-path:
+       ;; the path to use to find fennel files using (require) or (include)
+       :fennel-path (or ?config.fennelpath
+                        default-config.fennel-path)
+       ;; macro-path:
+       ;; the path to use to find fennel files using (require-macros) or (include-macros)
+       :macro-path (or ?config.macro-path
+                       default-config.fennel-path)
+       ;; globals:
+       ;; Comma separated list of extra globals that are allowed.
+       :globals (or ?config.globals
+                    default-config.globals)})))
+
+(λ init-state [self params]
+  (set self.files {})
+  (set self.modules {})
+  (set self.root-uri params.rootUri)
+  (write-config self))
+
+{: get-by-module
+ : get-by-uri
+ : init-state
  : set-uri-contents
- : init-state}
+ : write-config}
