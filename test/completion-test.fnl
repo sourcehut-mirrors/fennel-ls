@@ -18,7 +18,7 @@
   (let [response (dispatch.handle* state (completion-at filename line col))
         seen (collect [_ suggestion (ipairs (. response 1 :result))]
                 suggestion.label suggestion.label)]
-    (if (= (type expected) :table)
+    (if expected
       (each [_ exp (ipairs expected)]
         (is.truthy (. seen exp) (.. exp " was not suggested, but should be"))))
     (if ?unexpected
@@ -32,7 +32,6 @@
     (is-matching (. response 1)
       {:jsonrpc "2.0" :id id :result nil}
       "there shouldn't be a result")))
-
 
 (describe "completions"
   (it "suggests globals"

@@ -55,11 +55,11 @@ Every time the client sends a message, it gets handled by a function in the corr
    ;; :workspaceSymbolProvider nil
    ;; :workspace {:workspaceFolders nil
    ;;             :documentOperations {:didCreate nil
-   ;;                              :willCreate nil
-   ;;                              :didRename nil
-   ;;                              :willRename nil
-   ;;                              :didDelete nil
-   ;;                              :willDelete nil}})
+   ;;                                  :willCreate nil
+   ;;                                  :didRename nil
+   ;;                                  :willRename nil
+   ;;                                  :didDelete nil
+   ;;                                  :willDelete nil}})
 
 (λ requests.initialize [self send params]
   (state.init-state self params)
@@ -157,6 +157,10 @@ Every time the client sends a message, it gets handled by a function in the corr
   ;; TODO reload from disk if we didn't get a didSave
   (local file (state.get-by-uri self uri))
   (set file.open? false))
+
+(λ notifications.workspace/didChangeConfiguration [self send params]
+  (set self.settings params.fennel-ls))
+  ;; TODO respect the settings
 
 (λ requests.shutdown [self send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"

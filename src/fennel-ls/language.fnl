@@ -22,7 +22,7 @@ the data provided by compiler.fnl."
          :definition ?definition
          :keys ?keys
          :fields ?fields} assignment]
-    (if (and (= 0 (length stack)) opts.stop-early?) 
+    (if (and (= 0 (length stack)) opts.stop-early?)
         (values assignment file) ;; BASE CASE!!
 
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
