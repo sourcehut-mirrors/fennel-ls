@@ -11,9 +11,9 @@
 (describe "jump to definition"
 
   (fn check [request-file line char response-file start-line start-col end-line end-col]
-    (local state (doto [] setup-server))
-    (let [message (dispatch.handle* state
-                     (message.create-request 2 "textDocument/definition"
+    (local self (doto [] setup-server))
+    (let [message (dispatch.handle* self
+                     (message.create-request 2 :textDocument/definition
                        {:position {:character char :line line}
                         :textDocument {:uri (.. ROOT-URI "/" request-file)}}))
           uri (.. ROOT-URI "/" response-file)]

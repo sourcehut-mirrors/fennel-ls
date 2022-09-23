@@ -1,3 +1,4 @@
+;; fennel-ls: macro-file
 "This document does not include tests. Instead it includes macros that are used for tests."
 
 (fn it [desc ...]

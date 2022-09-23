@@ -13,9 +13,9 @@
 (local filename (.. ROOT-URI "/imaginary-file.fnl"))
 
 (fn check-completion [body line col expected ?unexpected]
-  (local state (doto [] setup-server))
-  (open-file state filename body)
-  (let [response (dispatch.handle* state (completion-at filename line col))
+  (local self (doto [] setup-server))
+  (open-file self filename body)
+  (let [response (dispatch.handle* self (completion-at filename line col))
         seen (collect [_ suggestion (ipairs (. response 1 :result))]
                 suggestion.label suggestion.label)]
     (if expected
@@ -26,9 +26,9 @@
         (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))
 
 (fn check-no-completion [body line col expected ?unexpected]
-  (local state (doto [] setup-server))
-  (open-file state filename body)
-  (let [response (dispatch.handle* state (completion-at filename line col))]
+  (local self (doto [] setup-server))
+  (open-file self filename body)
+  (let [response (dispatch.handle* self (completion-at filename line col))]
     (is-matching (. response 1)
       {:jsonrpc "2.0" :id id :result nil}
       "there shouldn't be a result")))

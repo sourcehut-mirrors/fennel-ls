@@ -24,8 +24,8 @@
 
 (describe "diagnostic messages"
   (it "handles compile errors"
-    (local state (doto [] setup-server))
-    (let [responses (open-file state filename "(do do)")
+    (local self (doto [] setup-server))
+    (let [responses (open-file self filename "(do do)")
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
@@ -38,8 +38,8 @@
       (is diagnostic "expected a diagnostic")))
 
   (it "handles parse errors"
-    (local state (doto [] setup-server))
-    (let [responses (open-file state filename "(do (print :hello(]")
+    (local self (doto [] setup-server))
+    (let [responses (open-file self filename "(do (print :hello(]")
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
@@ -52,8 +52,8 @@
       (is diagnostic "expected a diagnostic")))
 
   (it "handles (match)"
-    (local state (doto [] setup-server))
-    (let [responses (open-file state filename "(match)")]
+    (local self (doto [] setup-server))
+    (let [responses (open-file self filename "(match)")]
       (is-matching responses
         [{:params
           {:diagnostics
@@ -62,8 +62,8 @@
         "diagnostics should always have a range")))
 
   (it "gives more than one error"
-    (local state (doto [] setup-server))
-    (let [responses (open-file state filename "(unknown-global-1 unknown-global-2)")]
+    (local self (doto [] setup-server))
+    (let [responses (open-file self filename "(unknown-global-1 unknown-global-2)")]
       (is-matching responses
         [{:params {:diagnostics [a b]}}]  "there should be a diagnostic for each one here"))))
 

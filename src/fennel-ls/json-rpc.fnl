@@ -23,8 +23,8 @@ Luckily, I'm testing with Neovim, so I can pretend these problems don't exist fo
       header-line
       (let [sep (string.find header-line ": ")
             k (string.sub header-line 1 (- sep 1))
-            v (string.sub header-line (+ sep 2))]
-        (tset header k (string.sub v 1 -2))
+            v (string.sub header-line (+ sep 2) -2)] ;; trim off the \r
+        (tset header k v)
         (read-header in header)))))
 
 (λ read-n [in len ?buffer]

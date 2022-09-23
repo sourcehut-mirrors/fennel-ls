@@ -11,8 +11,8 @@
 (describe "hover"
 
   (fn check [request-file line char response-string]
-    (local state (doto [] setup-server))
-    (let [message (dispatch.handle* state
+    (local self (doto [] setup-server))
+    (let [message (dispatch.handle* self
                      (message.create-request 2 "textDocument/hover"
                        {:position {:character char :line line}
                         :textDocument {:uri (.. ROOT-URI "/" request-file)}}))]

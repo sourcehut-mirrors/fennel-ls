@@ -5,8 +5,8 @@ will be functions for managing user options. There is no global
 state in this project: all state will be stored in the \"self\"
 object."
 
-(local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
+(local utils (require :fennel-ls.utils))
 (local {: compile} (require :fennel-ls.compiler))
 
 (λ read-file [uri]
@@ -56,10 +56,23 @@ object."
       (compile self file)
       file)))
 
+(λ flush-uri [self uri]
+  "get rid of data about a file, in case it changed in some way"
+  (tset self.files uri nil))
+
 (local default-config
   {:fennel-path "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl"
    :macro-path  "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
    :globals     ""})
+
+;; TODO: set the warning levels of lints
+;; allow all globals
+;; allow some globals
+;; pick from existing libraries of globals (ie love2d)
+;; pick between different versions of lua (ie luajit)
+;; pick a "compat always" mode that accpets anything if it could be valid in any lua
+;; make a "compat strict" mode that warns about any lua-version-specific patterns
+;; ie using (unpack) without saying (or table.unpack _G.unpack) or something like that
 
 (λ write-config [self ?config]
   (if (not ?config)
@@ -67,7 +80,7 @@ object."
     (set self.config
       {;; fennel-path:
        ;; the path to use to find fennel files using (require) or (include)
-       :fennel-path (or ?config.fennelpath
+       :fennel-path (or ?config.fennel-path
                         default-config.fennel-path)
        ;; macro-path:
        ;; the path to use to find fennel files using (require-macros) or (include-macros)
@@ -84,7 +97,8 @@ object."
   (set self.root-uri params.rootUri)
   (write-config self))
 
-{: get-by-module
+{: flush-uri
+ : get-by-module
  : get-by-uri
  : init-state
  : set-uri-contents

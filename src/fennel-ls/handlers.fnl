@@ -154,9 +154,9 @@ Every time the client sends a message, it gets handled by a function in the corr
   (send (message.diagnostics file)))
 
 (λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
-  ;; TODO reload from disk if we didn't get a didSave
   (local file (state.get-by-uri self uri))
-  (set file.open? false))
+  ;; TODO only reload from disk if we didn't get a didSave, instead of always
+  (state.flush-uri self uri))
 
 (λ notifications.workspace/didChangeConfiguration [self send params]
   (state.write-config self params.fennel-ls))

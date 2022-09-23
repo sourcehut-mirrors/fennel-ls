@@ -7,3 +7,4 @@
 (require :test.json-rpc-test)
 (require :test.misc-test)
 (require :test.string-processing-test)
+(require :test.settings-test)
