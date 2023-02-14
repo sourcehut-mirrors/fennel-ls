@@ -90,7 +90,8 @@ You can match my environment to develop with the following steps.
 
 1. Build the binary
 ```sh
-make
+make && sudo make install # to install into /usr/local/bin
+make install PREFIX=$HOME # if you have ~/bin on your $PATH
 ```
 
 2. Configure your editor to use this language server
@@ -115,6 +116,13 @@ require("lspconfig.configs")["fennel-ls"] = {
 lspconfig["fennel-ls"].setup(
     vim.lsp.protocol.make_client_capabilities()
 )
+```
+
+For Emacs, (eglot, built-in to 29+) put this in your config:
+
+```lisp
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs '(fennel-mode . ("fennel-ls"))))
 ```
 
 It should be possible to set up for other clients, but I haven't looked into these steps. If you get it working in any other environments, I'd love to know! It would be great to have instructions on how to set up other editors!

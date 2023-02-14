@@ -4,7 +4,11 @@ EXE=fennel-ls
 SRC=$(wildcard src/*.fnl)
 SRC+=$(wildcard src/fennel-ls/*.fnl)
 
-.PHONY: clean test
+DESTDIR ?=
+PREFIX ?= /usr/local
+BIN_DIR ?= $(PREFIX)/bin
+
+.PHONY: clean test install
 
 all: $(EXE)
 
@@ -20,3 +24,6 @@ clean:
 test:
 	# requires busted to be installed
 	FENNEL_PATH="./src/?.fnl;./src/?/init.fnl" $(FENNEL) --correlate test/init.fnl --verbose
+
+install: $(EXE)
+	mkdir -p $(DESTDIR)$(BIN_DIR) && cp $< $(DESTDIR)$(BIN_DIR)/
