@@ -31,7 +31,7 @@
             [{:params {: diagnostics}}]
             (find [i v (ipairs diagnostics)]
                (match v
-                 {:message "tried to reference a special form at runtime"
+                 {:message "tried to reference a special form without calling it"
                   :range {:start {:character 4 :line 0}
                           :end   {:character 6 :line 0}}}
                  v)))]

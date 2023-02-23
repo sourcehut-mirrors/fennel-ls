@@ -131,12 +131,12 @@ later by fennel-ls.language to answer requests from the client."
         (tset require-calls ast true)))
 
     (λ recoverable? [msg]
-      (or (msg:find "unknown identifier in strict mode")
-          (msg:find "expected closing delimiter")
-          (msg:find "expected body expression")
-          (msg:find "expected whitespace before opening delimiter")
-          (msg:find "malformed multisym")
-          (msg:find "expected at least one pattern/body pair")))
+      (or (= 1 (msg:find "unknown identifier"))
+          (= 1 (msg:find "expected closing delimiter"))
+          (= 1 (msg:find "expected body expression"))
+          (= 1 (msg:find "expected whitespace before opening delimiter"))
+          (= 1 (msg:find "malformed multisym"))
+          (= 1 (msg:find "expected at least one pattern/body pair"))))
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range ast file)
@@ -175,7 +175,7 @@ later by fennel-ls.language to answer requests from the client."
       [macro-file? (= (: file.text :sub 1 24) ";; fennel-ls: macro-file")
        plugin
        {:name "fennel-ls"
-        :versions ["1.3.0"]
+        :versions ["1.3.1"]
         :symbol-to-expression reference
         : call
         :destructure define
