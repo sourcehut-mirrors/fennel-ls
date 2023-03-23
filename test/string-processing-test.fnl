@@ -1,5 +1,5 @@
 (import-macros {: is-matching : describe : it} :test)
-(local is (require :luassert))
+(local is (require :test.is))
 
 (local fennel (require :fennel))
 (local utils (require :fennel-ls.utils))

@@ -2,24 +2,24 @@
 "This document does not include tests. Instead it includes macros that are used for tests."
 
 (fn it [desc ...]
-  "busted's `it` function"
+  "lust's `it` function"
   (let [body [...]]
     (table.insert body `nil)
-    `((. (require :busted) :it)
+    `((. (require :test.lust) :it)
       ,desc (fn [] ,desc ,(unpack body)))))
 
 (fn describe [desc ...]
-  "busted's `describe` function"
+  "lust's `describe` function"
   (let [body [...]]
     (table.insert body `nil)
-    `((. (require :busted) :describe)
+    `((. (require :test.lust) :describe)
       ,desc (fn [] ,desc ,(unpack body)))))
 
 (fn before-each [...]
-  "busted's `describe` function"
+  "lust's `before_each` function"
   (let [body [...]]
     (table.insert body `nil)
-    `((. (require :busted) :before_each)
+    `((. (require :test.lust) :before_each)
       (fn [] ,(unpack body)))))
 
 

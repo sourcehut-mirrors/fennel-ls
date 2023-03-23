@@ -1,5 +1,5 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
-(local is (require :luassert))
+(local is (require :test.is))
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
@@ -20,7 +20,7 @@
                 suggestion.label suggestion.label)]
     (if expected
       (each [_ exp (ipairs expected)]
-        (is.truthy (. seen exp) (.. exp " was not suggested, but should be"))))
+        (is (. seen exp) (.. exp " was not suggested, but should be"))))
     (if ?unexpected
       (each [_ exp (ipairs ?unexpected)]
         (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))

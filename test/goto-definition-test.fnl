@@ -1,6 +1,6 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
 
-(local is (require :luassert))
+(local is (require :test.is))
 
 (local {: ROOT-URI
         : setup-server} (require :test.utils))
