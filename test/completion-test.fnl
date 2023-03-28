@@ -3,9 +3,7 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : open-file
-        : completion-at
-        : setup-server} (require :test.utils))
+        : create-client} (require :test.mock-client))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
@@ -13,9 +11,9 @@
 (local filename (.. ROOT-URI "/imaginary-file.fnl"))
 
 (fn check-completion [body line col expected ?unexpected]
-  (local self (doto [] setup-server))
-  (open-file self filename body)
-  (let [response (dispatch.handle* self (completion-at filename line col))
+  (let [client (doto (create-client)
+                 (: :open-file! filename body))
+        response (client:completion filename line col)
         seen (collect [_ suggestion (ipairs (. response 1 :result))]
                 suggestion.label suggestion.label)]
     (if expected
@@ -26,9 +24,9 @@
         (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))
 
 (fn check-no-completion [body line col expected ?unexpected]
-  (local self (doto [] setup-server))
-  (open-file self filename body)
-  (let [response (dispatch.handle* self (completion-at filename line col))]
+  (let [client (doto (create-client)
+                 (: :open-file! filename body))
+        response (client:completion filename line col)]
     (is-matching (. response 1)
       {:jsonrpc "2.0" :id id :result nil}
       "there shouldn't be a result")))

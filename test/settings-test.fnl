@@ -3,21 +3,17 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : open-file
-        : setup-server} (require :test.utils))
+        : create-client} (require :test.mock-client))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
 
 (describe "settings"
   (it "can set the path"
-    (local self (doto [] (setup-server {:fennel-ls {:fennel-path "./?/?.fnl"}})))
-    (open-file self (.. ROOT-URI :/test.fnl) "(local {: this-is-in-modname} (require :modname))")
-    (let [[{:result {:range message}}]
-          (dispatch.handle* self
-            (message.create-request 2 :textDocument/definition
-              {:position {:character 12 :line 0}
-               :textDocument {:uri (.. ROOT-URI :/test.fnl)}}))]
+    (let [client (doto (create-client {:fennel-ls {:fennel-path "./?/?.fnl"}})
+                   (: :open-file! (.. ROOT-URI :/test.fnl) "(local {: this-is-in-modname} (require :modname))"))
+          [{:result {:range message}}]
+          (client:definition (.. ROOT-URI :/test.fnl) 0 12)]
       (is.not.nil message)
       "body")))
 

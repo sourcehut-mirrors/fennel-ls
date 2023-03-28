@@ -3,7 +3,7 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : setup-server} (require :test.utils))
+        : create-client} (require :test.mock-client))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message  (require :fennel-ls.message))
@@ -11,14 +11,11 @@
 (describe "hover"
 
   (fn check [request-file line char response-string]
-    (local self (doto [] setup-server))
-    (let [message (dispatch.handle* self
-                     (message.create-request 2 "textDocument/hover"
-                       {:position {:character char :line line}
-                        :textDocument {:uri (.. ROOT-URI "/" request-file)}}))]
+    (let [self (create-client)
+          message (self:hover (.. ROOT-URI :/ request-file) line char)]
       (is-matching
         message
-        [{:jsonrpc "2.0" :id 2
+        [{:jsonrpc "2.0" :id self.prev-id
           :result
           {:contents
            {:kind "markdown"
@@ -50,12 +47,6 @@
     (check "hover.fnl" 9 14 "```fnl\n{:field1 10 :field2 :colon-string}\n```"))
 
   (it "hovers over literally the very first character"
-    (local state (doto [] setup-server))
-    (let [message (dispatch.handle* state
-                     (message.create-request 2 "textDocument/hover"
-                       {:position {:character 0 :line 0}
-                        :textDocument {:uri (.. ROOT-URI "/hover.fnl")}}))]
-      (is-matching
-        message
-        [{:jsonrpc "2.0" :id 2}]
-        ""))))
+    (let [self (create-client)
+          message (self:hover (.. ROOT-URI "/hover.fnl") 0 0)]
+      (is-matching message [{:jsonrpc "2.0" :id 2}] ""))))

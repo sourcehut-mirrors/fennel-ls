@@ -3,7 +3,7 @@
 (local is (require :test.is))
 
 (local {: ROOT-URI
-        : setup-server} (require :test.utils))
+        : create-client} (require :test.mock-client))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message  (require :fennel-ls.message))
@@ -11,15 +11,12 @@
 (describe "jump to definition"
 
   (fn check [request-file line char response-file start-line start-col end-line end-col]
-    (local self (doto [] setup-server))
-    (let [message (dispatch.handle* self
-                     (message.create-request 2 :textDocument/definition
-                       {:position {:character char :line line}
-                        :textDocument {:uri (.. ROOT-URI "/" request-file)}}))
+    (let [client (create-client)
+          message (client:definition (.. ROOT-URI :/ request-file) line char)
           uri (.. ROOT-URI "/" response-file)]
       (is-matching
         message
-        [{:jsonrpc "2.0" :id 2
+        [{:jsonrpc "2.0" :id client.prev-id
           :result {: uri
                    :range {:start {:line start-line :character start-col}
                            :end   {:line end-line   :character end-col}}}}]

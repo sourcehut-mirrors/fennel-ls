@@ -2,10 +2,9 @@
 (local is (require :test.is))
 
 (local {: view &as fennel} (require :fennel))
-(local {: setup-server
-        : open-file
+(local {: create-client
         : ROOT-URI}
-  (require :test.utils))
+  (require :test.mock-client))
 
 (local language (require :fennel-ls.language))
 (local utils    (require :fennel-ls.utils))
@@ -33,22 +32,22 @@
 
 (describe "find-symbol"
   (it "finds a symbol and parents"
-    (local state (doto [] setup-server))
-    (open-file state filename "(match [1 2 4] [1 2 sym-one] sym-one)")
-    (local file (. state.files filename))
-    (local (symbol parents) (language.find-symbol file.ast 23))
-    (is.equal symbol (fennel.sym :sym-one))
-    (is-matching
-      ;; awful way to check AST equality, but I don't mind
-      parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
-      "bad parents"))
+    (let [state (doto (create-client)
+                  (: :open-file! filename "(match [1 2 4] [1 2 sym-one] sym-one)"))
+          file (. state.server.files filename)
+          (symbol parents) (language.find-symbol file.ast 23)]
+      (is.equal symbol (fennel.sym :sym-one))
+      (is-matching
+        ;; awful way to check AST equality, but I don't mind
+        parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
+        "bad parents")))
 
   (it "finds nothing, but still gives parents"
-    (local state (doto [] setup-server))
-    (open-file state filename "(match [1 2 4] [1 2 sym-one] sym-one)")
-    (local file (. state.files filename))
-    (local (symbol parents) (language.find-symbol file.ast 18))
-    (is.equal symbol nil)
-    (is-matching
-      parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
-      "bad parents")))
+    (let [state (doto (create-client)
+                  (: :open-file! filename "(match [1 2 4] [1 2 sym-one] sym-one)"))
+          file (. state.server.files filename)
+          (symbol parents) (language.find-symbol file.ast 18)]
+      (is.equal symbol nil)
+      (is-matching
+        parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
+        "bad parents"))))

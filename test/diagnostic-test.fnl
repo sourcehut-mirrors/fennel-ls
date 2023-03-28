@@ -3,8 +3,7 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : open-file
-        : setup-server} (require :test.utils))
+        : create-client} (require :test.mock-client))
 
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
@@ -24,8 +23,8 @@
 
 (describe "diagnostic messages"
   (it "handles compile errors"
-    (local self (doto [] setup-server))
-    (let [responses (open-file self filename "(do do)")
+    (let [self (create-client)
+          responses (self:open-file! filename "(do do)")
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
@@ -38,8 +37,8 @@
       (is diagnostic "expected a diagnostic")))
 
   (it "handles parse errors"
-    (local self (doto [] setup-server))
-    (let [responses (open-file self filename "(do (print :hello(]")
+    (let [self (create-client)
+          responses (self:open-file! filename "(do (print :hello(]")
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
@@ -52,8 +51,8 @@
       (is diagnostic "expected a diagnostic")))
 
   (it "handles (match)"
-    (local self (doto [] setup-server))
-    (let [responses (open-file self filename "(match)")]
+    (let [self (create-client)
+          responses (self:open-file! filename "(match)")]
       (is-matching responses
         [{:params
           {:diagnostics
@@ -62,8 +61,8 @@
         "diagnostics should always have a range")))
 
   (it "gives more than one error"
-    (local self (doto [] setup-server))
-    (let [responses (open-file self filename "(unknown-global-1 unknown-global-2)")]
+    (let [self (create-client)
+          responses (self:open-file! filename "(unknown-global-1 unknown-global-2)")]
       (is-matching responses
         [{:params {:diagnostics [a b]}}]  "there should be a diagnostic for each one here"))))
 
