@@ -18,7 +18,7 @@ the data provided by compiler.fnl."
 (var search nil) ;; all of the search functions are mutually recursive
 
 (λ search-assignment [self file assignment stack opts]
-  (let [{: binding
+  (let [{:binding _
          :definition ?definition
          :keys ?keys
          :fields ?fields} assignment]
@@ -37,7 +37,7 @@ the data provided by compiler.fnl."
 (λ search-symbol [self file symbol stack opts]
   (if (= symbol -nil-)
     (values {:definition symbol} file) ;; BASE CASE !!
-    (match (. file.references symbol)
+    (case (. file.references symbol)
       to (search-assignment self file to
            (let [split (utils.multi-sym-split symbol)]
              (fcollect [i (length split) 2 -1 &into stack]
@@ -95,7 +95,7 @@ the data provided by compiler.fnl."
     (let [split (utils.multi-sym-split symbol (if ?byte (+ 1 (- ?byte symbol.bytestart))))]
       (fcollect [i (length split) 2 -1]
         (. split i))))
-  (match (values (. file.references symbol) (. file.definitions symbol))
+  (case (values (. file.references symbol) (. file.definitions symbol))
     (ref _)
     (search-assignment self file ref stack opts)
     (_ def)

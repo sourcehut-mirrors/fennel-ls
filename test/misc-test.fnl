@@ -51,3 +51,8 @@
       (is-matching
         parents [[1 2 [:sym-one]] [[:match] [1 2 4] [1 2 [:sym-one]] [:sym-one]]]
         "bad parents"))))
+(describe "failure"
+  (it "doesn't crash"
+    (let [self (create-client)
+          state (require :fennel-ls.state)]
+      (state.get-by-module self.server "test.test-project.crash-files.test"))))

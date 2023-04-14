@@ -70,7 +70,7 @@
     (message.create-request (next-id! self) :textDocument/references
      {:position {: line : character}
       :textDocument {:uri file}
-      :context {:includeDeclaration ?includeDeclaration}})))
+      :context {:includeDeclaration (not (not ?includeDeclaration))}})))
 
 (set mt.__index
      {: open-file!

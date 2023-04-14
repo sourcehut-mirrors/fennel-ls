@@ -1,5 +1,6 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :test.is))
+(local message (require :fennel-ls.message))
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
@@ -11,8 +12,16 @@
   (let [client (doto (create-client)
                  (: :open-file! filename body))
         response (client:references filename line col)]
-    (is.same response [])))
+    (is-matching response
+      (where [{:jsonrpc "2.0" :id client.prev-id
+               : result}]
+        (is.same result expected)))))
 
-(describe "references")
-  ; (it "finds a reference from let"
-  ;   (check-references "(let [x 10] x)" 0 1))) 
+(describe "references"
+  (it "finds a reference from let"
+    (check-references "(let [x 10] x)" 0 12
+      [{:uri filename :range (message.pos->range 0 12 0 13)}]))
+
+  (it "finds a reference from let"
+    (check-references "(let [x 10] x)" 0 6
+      [{:uri filename :range (message.pos->range 0 12 0 13)}])))

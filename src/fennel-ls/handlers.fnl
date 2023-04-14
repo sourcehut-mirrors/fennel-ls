@@ -30,7 +30,7 @@ Every time the client sends a message, it gets handled by a function in the corr
    :definitionProvider {:workDoneProgress false}
    ;; :typeDefinitionProvider nil
    ;; :implementationProvider nil
-   ;; :referencesProvider nil
+   :referencesProvider {:workDoneProgress false}
    ;; :documentHighlightProvider nil
    ;; :documentSymbolProvider nil
    ;; :codeActionProvider nil
@@ -69,18 +69,40 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
         byte (pos->byte file.text position.line position.character)]
-    (match-try (language.find-symbol file.ast byte)
+    (case-try (language.find-symbol file.ast byte)
       (symbol parents)
-      (match-try
-        (let [parent (. parents 1)]
-          (if (. file.require-calls parent)
-            (language.search self file parent [] {:stop-early? true})))
-        nil
-        (language.search-main self file symbol {:stop-early? true} byte))
+      ;; TODO unruin this match-try
+      (let [parent (. parents 1)]
+        (if (. file.require-calls parent)
+          (language.search self file parent [] {:stop-early? true})
+          (language.search-main self file symbol {:stop-early? true} byte)))
       (result result-file)
       (message.range-and-uri
         (or result.binding result.definition)
         result-file)
+      (catch _ nil))))
+
+(λ requests.textDocument/references [self send {:position {: line : character}
+                                                :textDocument {: uri}
+                                                :context {:includeDeclaration ?include-declaration?}}]
+  (let [file (state.get-by-uri self uri)
+        byte (pos->byte file.text line character)]
+    (case-try (language.find-symbol file.ast byte)
+      symbol
+      (if (. file.definitions symbol)
+        (values (. file.definitions symbol) file)
+        (language.search-main self file symbol {:stop-early? true} byte))
+      (definition result-file)
+      (let [result
+            (icollect [_ symbol (ipairs definition.referenced-by)]
+              ;; TODO we currently assume all references are in the same file
+              (message.range-and-uri symbol result-file))]
+        (if ?include-declaration?
+          (table.insert result
+                (message.range-and-uri definition.binding result-file)))
+
+        ;; TODO if the request says not to include duplicates, don't include duplicates
+        result)
       (catch _ nil))))
 
 (λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
@@ -128,8 +150,8 @@ Every time the client sends a message, it gets handled by a function in the corr
       (match-try (language.search-assignment self file ref stack {})
         {: definition}
         (match (values definition (type definition))
-          (str :string) (icollect [k v (pairs string)]
-                          {:label k})
+          (_str :string) (icollect [k v (pairs string)]
+                           {:label k})
           (tbl :table) (icollect [k v (pairs tbl)]
                          (if (= (type k) :string)
                            {:label k})))
@@ -141,7 +163,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         (?symbol parents) (language.find-symbol file.ast byte)]
     (match (-?> ?symbol utils.multi-sym-split)
       (where (or nil [_ nil])) (scope-completion file byte ?symbol parents)
-      [a b &as split] (field-completion self file ?symbol split))))
+      [_a _b &as split] (field-completion self file ?symbol split))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))

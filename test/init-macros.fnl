@@ -34,7 +34,7 @@
             (fennel#.view ?otherwise#))
           "\ndid not match pattern:\n"
           ,(view pattern)
-          (and ,?msg (.. "\n" ,?msg))))))
+          ,(and ?msg `(.. "\n" ,?msg))))))
 
 {: it
  : describe

@@ -3,6 +3,7 @@
 -- MIT LICENSE
 
 local lust = {}
+local tostring = require("fennel.view")
 lust.level = 0
 lust.passes = 0
 lust.errors = 0

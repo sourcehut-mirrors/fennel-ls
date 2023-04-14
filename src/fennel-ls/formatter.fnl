@@ -18,12 +18,13 @@ user code."
 
 (local width 80)
 (fn fn-format [special name args docstring]
-  (.. (code-block (.. "(fn"
-                     (if name (.. " " (tostring name)) "")
-                     (.. " " (view args
-                               {:one-line? true
-                                :prefer-colon? true}))
-                     " ...)"))
+  (.. (code-block (.. "("
+                      (tostring special)
+                      (if name (.. " " (tostring name)) "")
+                      (.. " " (view args
+                                {:one-line? true
+                                 :prefer-colon? true}))
+                      " ...)"))
       (if docstring (.. "\n" docstring) "")))
 
 
@@ -38,14 +39,14 @@ user code."
   "Format code that will appear when the user hovers over a symbol"
   (match result.definition
     ;; name + docstring
-    (where [special name args docstring body]
+    (where [special name args docstring _body]
       (fn? special)
       (sym? name)
       (type= args :table)
       (type= docstring :string))
     (fn-format special name args docstring)
     ;; docstring
-    (where [special args docstring body]
+    (where [special args docstring _body]
       (fn? special)
       (type= args :table)
       (type= docstring :string))

@@ -1,111 +1,9 @@
-"Compiler
-This file is responsible for the low level tasks of analysis. Its main job
-is to recieve a file object and run all of the basic analysis that will be used
-later by fennel-ls.language to answer requests from the client."
-
-(local {: sym? : list? : sequence? : sym : view &as fennel} (require :fennel))
-(local message (require :fennel-ls.message))
-(local utils (require :fennel-ls.utils))
-
-;; words surrounded by - are symbols,
-;; because fennel doesn't allow 'require in a runtime file
-(local -require- (sym :require))
-(local -fn- (sym :fn))
-
-(λ ast->macro-ast [ast]
-  [(fennel.list (sym :eval-compiler)
-                ((or table.unpack _G.unpack) ast))])
-
-(λ multisym? [t]
-  ;; check if t is a symbol with multiple parts, eg. foo.bar.baz
-  (and (sym? t)
-    (let [t (tostring t)]
-       (or (t:find "%.")
-           (t:find ":")))))
-
-(λ iter [t]
-  ;; iterate through a list, sequence, or table
-  (if (or (list? t)
-          (sequence? t))
-    (ipairs t)
-    (pairs t)))
-
-(local has-tables-mt
-  {:__index
-   (λ [self key]
-     (let [val {}]
-       (tset self key val)
-       val))})
-
-(λ compile [self file]
-  "Compile the file, and record all the useful information from the compiler into the file object"
-  ;; The useful information being recorded:
-  (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
-        definitions   {} ; symbol -> definition
-        diagnostics   {} ; [diagnostic]
-        references    {} ; symbol -> references
-        scopes        {} ; ast -> scope
-        require-calls {}]; ast -> boolean (does this ast start with the symbol `require)
-
-    (λ find-definition [name ?scope]
-      (when ?scope
-        (or (. definitions-by-scope ?scope name)
-            (find-definition name ?scope.parent))))
-
-    (λ reference [ast scope]
-      ;; Add a reference to the references
-      (assert (sym? ast))
-      ;; find reference
-      (let [name (string.match (tostring ast) "[^%.:]+")]
-        (case (find-definition (tostring name) scope)
-          target
-          (do
-            (tset references ast target)
-            (table.insert target.referenced-by ast)))))
-
-    (λ symbol-to-expression [ast scope ?reference?]
-      (if ?reference?
-        (reference ast scope)))
-
-    (λ define [?definition binding scope]
-      ;; Add a definition to the definitions
-      ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
-      ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
-      ;; also, there's no logic for (values)
-      (λ recurse [binding keys]
-        (if (sym? binding)
-            (let [definition
-                  {: binding
-                   :definition ?definition
-                   :referenced-by (or (?. definitions binding :referenced-by) [])
-                   :keys (if (< 0 (length keys))
-                           (fcollect [i 1 (length keys)]
-                             (. keys i)))}]
-              (tset (. definitions-by-scope scope) (tostring binding) definition)
-              (tset definitions binding definition))
-            (= :table (type binding))
-            (each [k v (iter binding)]
-              (table.insert keys k)
-              (recurse v keys)
-              (table.remove keys))))
-      (recurse binding []))
-
-    (λ destructure [to from scope {:declaration ?declaration?}]
-      ;; I really don't understand symtype
-      ;; I think I need an explanation
-      (if ?declaration?
-        (define to from scope)))
-
-    (λ define-function-name [ast scope]
-      ;; add a function definition to the definitions
       (case ast
-        (where [_fn name args]
           (and (sym? name)
-               (sequence? args)))
+               (sequence? args))
         (let [def {:binding name
                    :definition ast
-                   ;; referenced-by inherits from all other symbols
-                   :referenced-by (or (?. definitions name :referenced-by) [])}]
+                   :referenced-by []}]
           (if (multisym? name)
             (case (utils.multi-sym-split name)
               [ref field nil] ;; TODO more powerful function name metadata
@@ -115,7 +13,7 @@ later by fennel-ls.language to answer requests from the client."
 
             (tset (. definitions-by-scope scope)
                   (tostring name)
-                  def)))))
+                  def))))
 
     (λ define-function-args [ast scope]
       ;; add the definitions of function arguments to the definitions
@@ -146,7 +44,7 @@ later by fennel-ls.language to answer requests from the client."
         ;; TODO check if hashfn needs to be here
         (where [(= -fn-)])
         (define-function ast scope)
-        (where [(= -require-) _modname])
+        (where [(= -require-) modname])
         (tset require-calls ast true)))
 
     (λ recoverable? [msg]
@@ -198,7 +96,7 @@ later by fennel-ls.language to answer requests from the client."
            :versions ["1.3.1"]
            : symbol-to-expression
            : call
-           : destructure
+           :destructure define
            :assert-compile on-compile-error
            :parse-error on-parse-error
            :customhook-early-do compile-do
@@ -214,8 +112,8 @@ later by fennel-ls.language to answer requests from the client."
       ;; compile
       (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
         (case (pcall fennel.compile form opts)
-          (where (or (nil err) (false err)) (not (err:find "__NOT_AN_ERROR\n?$")))
-          (error (.. "\nyou have crashed the compiler with the message:" err
+          (where (or (nil err) (false err)) (not (err:find "__NOT_AN_ERROR$")))
+          (error (.. "you have crashed the compiler with the message:" err
                      "\nI am considering supressing this error if I get a lot of false alarms"))))
           ; (table.insert diagnostics
           ;   {:range (message.pos->range 0 0 0 0)
@@ -252,6 +150,6 @@ later by fennel-ls.language to answer requests from the client."
       (set file.references references)
       (set file.deep-references references)
       (set file.require-calls require-calls)
-      (set file.allowed-globals allowed-globals))))
+      (set file.allowed-globals allowed-globals))
 
 {: compile}
