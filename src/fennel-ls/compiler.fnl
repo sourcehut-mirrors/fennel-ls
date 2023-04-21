@@ -233,9 +233,9 @@ later by fennel-ls.language to answer requests from the client."
       ;     ;; base case???
 
       (each [sym definition (pairs definitions)]
-          (let [range (message.ast->range sym file)]
-            (if (and (= 0 (length definition.referenced-by))
-                     (not= "_" (: (tostring sym) :sub 1 1)))
+          (if (and (= 0 (length definition.referenced-by))
+                   (not= "_" (: (tostring sym) :sub 1 1)))
+            (let [range (message.ast->range sym file)]
               (table.insert diagnostics
                 {:range range
                  :message (.. "unused definition: " (tostring sym))
