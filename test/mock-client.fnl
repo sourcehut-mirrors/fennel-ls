@@ -31,7 +31,7 @@
     (if ?config
       (dispatch.handle* self.server {:jsonrpc "2.0"
                                      :method :workspace/didChangeConfiguration
-                                     :params ?config}))
+                                     :params {:settings ?config}}))
     self))
 
 (fn next-id! [self]

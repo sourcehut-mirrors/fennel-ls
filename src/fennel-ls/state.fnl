@@ -60,11 +60,6 @@ object."
   "get rid of data about a file, in case it changed in some way"
   (tset self.files uri nil))
 
-(local default-config
-  {:fennel-path "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl"
-   :macro-path  "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
-   :globals     ""})
-
 ;; TODO: set the warning levels of lints
 ;; allow all globals
 ;; allow some globals
@@ -74,32 +69,48 @@ object."
 ;; make a "compat strict" mode that warns about any lua-version-specific patterns
 ;; ie using (unpack) without saying (or table.unpack _G.unpack) or something like that
 
-(λ write-config [self ?config]
-  (if (not ?config)
-    (set self.config default-config) ;; fast path, use all defaults
-    (set self.config
-      {;; fennel-path:
-       ;; the path to use to find fennel files using (require) or (include)
-       :fennel-path (or ?config.fennel-path
-                        default-config.fennel-path)
-       ;; macro-path:
-       ;; the path to use to find fennel files using (require-macros) or (include-macros)
-       :macro-path (or ?config.macro-path
-                       default-config.fennel-path)
-       ;; globals:
-       ;; Comma separated list of extra globals that are allowed.
-       :globals (or ?config.globals
-                    default-config.globals)})))
+(local option-mt {})
+(fn option [default-value]
+  "represents an \"option\" that the user can override"
+  (doto [default-value] (setmetatable option-mt)))
+
+(fn make-configuration-from-template [default ?user ?parent]
+  (if (= option-mt (getmetatable default))
+      (let [setting
+             (match-try ?user
+               nil (?. ?parent :all)
+               nil (. default 1))]
+        (assert (= (type (. default 1)) (type setting)))
+        setting)
+      (= :table (type default))
+      (collect [k v (pairs default)]
+          k (make-configuration-from-template
+              (. default k)
+              (?. ?user k)
+              ?user))
+      (error "This is a bug with fennel-ls: default-configuration has a key that isn't a table or option")))
+
+(local default-configuration
+  {:fennel-path (option "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl")
+   :macro-path (option "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl")
+   :checks {:unused-definition (option true)}})
+
+(λ make-configuration [?c]
+  (make-configuration-from-template default-configuration ?c))
 
 (λ init-state [self params]
   (set self.files {})
   (set self.modules {})
   (set self.root-uri params.rootUri)
-  (write-config self))
+  (set self.configuration (make-configuration)))
+
+(λ write-configuration [self ?configuration]
+  (set self.configuration (make-configuration ?configuration)))
+
 
 {: flush-uri
  : get-by-module
  : get-by-uri
  : init-state
  : set-uri-contents
- : write-config}
+ : write-configuration}

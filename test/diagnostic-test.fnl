@@ -28,12 +28,14 @@
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
-            (find [i v (ipairs diagnostics)]
-               (match v
-                 {:message "tried to reference a special form without calling it"
-                  :range {:start {:character 4 :line 0}
-                          :end   {:character 6 :line 0}}}
-                 v)))]
+            (is (find [i v (ipairs diagnostics)]
+                  (match v
+                    {:message "tried to reference a special form without calling it"
+                     :range {:start {:character 4 :line 0}
+                             :end   {:character 6 :line 0}}}
+                    v))
+                "not found")
+            _ (error "did not match"))]
       (is diagnostic "expected a diagnostic")))
 
   (it "handles parse errors"
@@ -42,12 +44,14 @@
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
-            (find [i v (ipairs diagnostics)]
-             (match v
-               {:message "expected whitespace before opening delimiter ("
-                :range {:start {:character 17 :line 0}
-                        :end   {:character 17 :line 0}}}
-               v)))]
+            (is (find [i v (ipairs diagnostics)]
+                 (match v
+                   {:message "expected whitespace before opening delimiter ("
+                    :range {:start {:character 17 :line 0}
+                            :end   {:character 17 :line 0}}}
+                   v))
+                "not found")
+            _ (error "did not match"))]
       (is diagnostic "expected a diagnostic")))
 
   (it "handles (match)"
@@ -64,7 +68,21 @@
     (let [self (create-client)
           responses (self:open-file! filename "(unknown-global-1 unknown-global-2)")]
       (is-matching responses
-        [{:params {:diagnostics [a b]}}]  "there should be a diagnostic for each one here"))))
+        [{:params {:diagnostics [a b]}}]  "there should be a diagnostic for each one here")))
+
+  (it "warns about unused variables"
+    (let [self (create-client)
+          responses (self:open-file! filename "(local x 10)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [i v (ipairs diagnostics)]
+             (match v
+               {:message "unused definition: x"
+                :range {:start {:character 7 :line 0}
+                        :end   {:character 8 :line 0}}}
+               v))
+            "not found")
+        _ (error "did not match")))))
 
 ;; TODO lints:
 ;; unnecessary (do) in body position

@@ -180,8 +180,8 @@ Every time the client sends a message, it gets handled by a function in the corr
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (state.flush-uri self uri))
 
-(λ notifications.workspace/didChangeConfiguration [self send params]
-  (state.write-config self params.fennel-ls))
+(λ notifications.workspace/didChangeConfiguration [self send {: settings}]
+  (state.write-configuration self settings.fennel-ls))
 
 (λ requests.shutdown [self send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"

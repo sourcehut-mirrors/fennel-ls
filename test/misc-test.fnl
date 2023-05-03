@@ -55,4 +55,7 @@
   (it "doesn't crash"
     (let [self (create-client)
           state (require :fennel-ls.state)]
-      (state.get-by-module self.server "test.test-project.crash-files.test"))))
+      (state.get-by-module self.server "test.test-project.crash-files.test")))
+  (it "doesn't crash 2"
+    (doto (create-client)
+      (: :open-file! filename "(macro foo {})"))))

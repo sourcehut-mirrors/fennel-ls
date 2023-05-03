@@ -122,7 +122,8 @@ later by fennel-ls.language to answer requests from the client."
       (local args
         (case ast
           (where [_fn args] (fennel.sequence? args)) args
-          (where [_fn _name args] (fennel.sequence? args)) args))
+          (where [_fn _name args] (fennel.sequence? args)) args
+          _ []))
       (each [_ argument (ipairs args)]
         (define (sym :nil) argument scope))) ;; we say function arguments are set to nil
 
@@ -213,10 +214,10 @@ later by fennel-ls.language to answer requests from the client."
           ast (icollect [ok ok-2 ast parser &until (not (and ok ok-2))] ast)]
       ;; compile
       (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
-        (case (pcall fennel.compile form opts)
-          (where (or (nil err) (false err)) (not (err:find "__NOT_AN_ERROR\n?$")))
-          (error (.. "\nyou have crashed the compiler with the message:" err
-                     "\nI am considering supressing this error if I get a lot of false alarms"))))
+        (case (xpcall #(fennel.compile form opts) fennel.traceback)
+          (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
+          (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
+                     "\n\n^^^ the error message above here is the root problem\n\n"))))
           ; (table.insert diagnostics
           ;   {:range (message.pos->range 0 0 0 0)
           ;    :message (.. "unrecoverable compiler error: " err)})
@@ -233,7 +234,8 @@ later by fennel-ls.language to answer requests from the client."
       ;     ;; base case???
 
       (each [sym definition (pairs definitions)]
-          (if (and (= 0 (length definition.referenced-by))
+          (if (and self.configuration.checks.unused-definition
+                   (= 0 (length definition.referenced-by))
                    (not= "_" (: (tostring sym) :sub 1 1)))
             (let [range (message.ast->range sym file)]
               (table.insert diagnostics
@@ -242,7 +244,6 @@ later by fennel-ls.language to answer requests from the client."
                  :severity message.severity.WARN
                  :code 301
                  :codeDescription "warning error"}))))
-
 
       (set file.ast ast)
       (set file.scope scope)
