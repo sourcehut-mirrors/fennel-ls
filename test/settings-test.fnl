@@ -9,8 +9,6 @@
     (let [client (doto (create-client {:fennel-ls {:fennel-path "./?/?.fnl"}})
                    (: :open-file! (.. ROOT-URI :/test.fnl) "(local {: this-is-in-modname} (require :modname))"))
           result (client:definition (.. ROOT-URI :/test.fnl) 0 12)]
-      (eval-compiler
-        (print "EVAL" (in-scope? (sym :message))))
       (is-matching
         result
         [{:result {:range message}}]

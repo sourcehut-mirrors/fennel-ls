@@ -1,9 +1,11 @@
 -- lust v0.1.0 - Lua test framework
 -- https://github.com/bjornbytes/lust
 -- MIT LICENSE
+--
+-- Modified by XeroOl to use fennel.view for more fennel flavored error messages
 
 local lust = {}
-local tostring = require("fennel.view")
+local tostring = require("fennel").view
 lust.level = 0
 lust.passes = 0
 lust.errors = 0
