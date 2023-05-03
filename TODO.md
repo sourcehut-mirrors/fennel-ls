@@ -1,0 +1,80 @@
+Features / To Do List / Things I would enjoy patches for:
+([X] = complete,  [ ] = planned)
+
+- [X] Able to connect to a client
+- [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
+- [ ] Settings to configure lua / fennel path, allowed globals, etc
+- [ ] Supporting builds for anything other than arch linux
+- [ ] Testing/support/instructions for any clients: (LSP is supposed to be editor-agnostic, but that's only if you're able to actually follow the spec, and I'm not sure that fennel-ls is compliant)
+    - [X] Neovim (This project isn't a neovim plugin, but there are instructions on how to inform neovim of the fennel-ls binary once you build it.)
+    - [ ] emacs
+    - [ ] vscode
+    - [ ] vim+coc
+- [x] Go-to-definition:
+    - [X] literal table constructor
+    - [X] table destructuring
+    - [X] multisyms
+    - [X] `.` special form (when called with constants)
+    - [X] `do` and `let` special form
+    - [X] `require` and cross-module definition lookups
+    - [ ] goes to a.method on `(: a :method)` when triggered at `:method`
+    - [X] expanded macros (a little bit)
+    - [X] table mutation via `fn` special: `(fn obj.new-field [])`
+    - [ ] macro calls / which macros are in scope
+    - [ ] setmetatable
+    - [ ] function arguments / function calls
+    - [ ] local/table mutation via set/tset
+    - [ ] .lua files (antifennel decompiler)
+    - [ ] mutation on aliased tables (difficult)
+- [ ] Completion Suggestions
+    - [X] from globals
+    - [X] from current scope
+    - [ ] from macros (only on first form in a list)
+    - [ ] from specials (only on first form in a list)
+    - [X] "dot completion" for table fields
+    - [ ] dot completion is aware of a stdlib
+    - [ ] from anywhere else that I'm forgetting right now
+    - [ ] actually compliant rules about lexical scope (only see things declared before, not after)
+    - [ ] show docs/icons on each suggestion
+    - [ ] "dot completion" for metatable `__index` fields
+    - [ ] `(. obj :` string completions
+    - [ ] `(: "foo" :` string completions
+    - [ ] `(require :` module completions
+    - [ ] snippets? I guess?
+- [X] Reports compiler errors
+    - [.] Report more than one error per top-level form
+- [ ] Reports linting issues
+    - [ ] Unused locals
+    - [ ] Discarding results from pcall/xpcall/other functions
+    - [ ] `unpack` or `values` into an operator special
+    - [ ] `do`/`values` with only one inner form
+    - [ ] redundant `do` as the last/only item in a form that accepts a "body"
+    - [ ] `var` forms that could be `local`
+    - [ ] Dead code (I'm not sure what sort of things cause dead code)
+    - [ ] Unused fields (difficult)
+    - [ ] unification in a `match` pattern (difficult)
+    - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
+- [X] Hover over a symbol for documentation
+- [ ] Signature help
+    - [ ] Regular help
+    - [ ] hide or grey out the `self` in an `a:b` multisym call
+- [ ] Go-to-references
+    - [ ] lexical scope in the same file
+    - [ ] fields
+    - [ ] go to references of fields when tables are aliased
+    - [ ] global search across other files
+- [ ] Options / Configuration
+    - [ ] Configure over LSP
+    - [ ] Configure with some sort of per-project config file
+    - [ ] Configure with environment variables I guess??
+    - [ ] fennel/lua path
+    - [ ] lua version
+    - [ ] allowed global list
+    - [ ] enable/disable various linters
+- [ ] rename
+    - [ ] local symbols
+    - [ ] module fields (may affect code behavior, may modify other files)
+    - [ ] arbitrary fields (may affect code behavior, may modify other files)
+- [ ] formatting with fnlfmt
+- [ ] Type annotations? Global type inference?
+
