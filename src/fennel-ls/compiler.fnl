@@ -110,8 +110,9 @@ later by fennel-ls.language to answer requests from the client."
             (case (utils.multi-sym-split name)
               [ref field nil] ;; TODO more powerful function name metadata
               (let [target (find-definition ref scope)]
-                (set target.fields (or target.fields {}))
-                (tset target.fields field def)))
+                (when target
+                  (set target.fields (or target.fields {}))
+                  (tset target.fields field def))))
 
             (tset (. definitions-by-scope scope)
                   (tostring name)
