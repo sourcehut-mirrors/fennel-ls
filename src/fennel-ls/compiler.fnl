@@ -67,6 +67,30 @@ later by fennel-ls.language to answer requests from the client."
       (if ?reference?
         (reference ast scope)))
 
+    (λ mutate [?definition binding scope]
+      ;; for now, mutating a field counts as a reference I guess
+      (λ recurse [binding keys]
+        (if (sym? binding)
+            (let [
+                  ;; ;; future work may need to care about mutations
+                  ;; _mutation
+                  ;; {: binding
+                  ;;  :new-definition ?definition
+                  ;;  :keys (if (< 0 (length keys))
+                  ;;          (fcollect [i 1 (length keys)]
+                  ;;            (. keys i)))}
+                  name (string.match (tostring binding) "[^%.:]+")]
+              (when (multisym? binding)
+                (case (find-definition (tostring name) scope)
+                  target
+                  (table.insert target.referenced-by binding))))
+            (= :table (type binding))
+            (each [k v (iter binding)]
+              (table.insert keys k)
+              (recurse v keys)
+              (table.remove keys))))
+      (recurse binding []))
+
     (λ define [?definition binding scope]
       ;; Add a definition to the definitions
       ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
@@ -94,7 +118,8 @@ later by fennel-ls.language to answer requests from the client."
       ;; I really don't understand symtype
       ;; I think I need an explanation
       (if ?declaration?
-        (define to from scope)))
+        (define to from scope)
+        (mutate to from scope)))
 
     (λ define-function-name [ast scope]
       ;; add a function definition to the definitions

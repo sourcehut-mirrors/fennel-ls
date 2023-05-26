@@ -82,7 +82,29 @@
                         :end   {:character 8 :line 0}}}
                v))
             "not found")
+        _ (error "did not match"))))
+
+  (it "does not warn if a field is used"
+    (let [self (create-client)
+          responses (self:open-file! filename "(fn [abc] (set abc.xyz 10))")]
+      (assert (not (?. responses 1 :params :diagnostics 1)))))
+
+  (it "warns if a var is written but not read"
+    (let [self (create-client)
+          responses (self:open-file! filename "(var x 1) (set x 2) (set [x] [3])")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [i v (ipairs diagnostics)]
+             (match v
+               {:message "unused definition: x"
+                :range {:start {:character 5 :line 0}
+                        :end   {:character 6 :line 0}}}
+               v))
+            "not found")
         _ (error "did not match")))))
+
+
+
 
 ;; TODO lints:
 ;; unnecessary (do) in body position
