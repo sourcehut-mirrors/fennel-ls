@@ -1,13 +1,17 @@
-Features / To Do List / Things I would enjoy patches for:
+# Wishlist of features
 ([X] = complete,  [ ] = planned)
 
+Each subsection is increasingly more of a stretch goal.
+My current goal is to work on completions a little bit more.
+
 - [X] Able to connect to a client
-- [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`)
+- [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
 - [ ] Settings to configure lua / fennel path, allowed globals, etc
 - [ ] Supporting builds for anything other than arch linux
 - [ ] Testing/support/instructions for any clients: (LSP is supposed to be editor-agnostic, but that's only if you're able to actually follow the spec, and I'm not sure that fennel-ls is compliant)
     - [X] Neovim (This project isn't a neovim plugin, but there are instructions on how to inform neovim of the fennel-ls binary once you build it.)
-    - [ ] emacs
+    - [X] emacs
+    - [X] helix
     - [ ] vscode
     - [ ] vim+coc
 - [x] Go-to-definition:
@@ -33,18 +37,18 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] from specials (only on first form in a list)
     - [X] "dot completion" for table fields
     - [ ] dot completion is aware of a stdlib
-    - [ ] from anywhere else that I'm forgetting right now
     - [ ] actually compliant rules about lexical scope (only see things declared before, not after)
     - [ ] show docs/icons on each suggestion
     - [ ] "dot completion" for metatable `__index` fields
     - [ ] `(. obj :` string completions
     - [ ] `(: "foo" :` string completions
     - [ ] `(require :` module completions
-    - [ ] snippets? I guess?
+    - [ ] from anywhere else that I'm forgetting right now
+    - [ ] snippets? maybe more?
 - [X] Reports compiler errors
-    - [.] Report more than one error per top-level form
+    - [X] Report more than one error per top-level form
 - [ ] Reports linting issues
-    - [ ] Unused locals
+    - [X] Unused locals
     - [ ] Discarding results from pcall/xpcall/other functions
     - [ ] `unpack` or `values` into an operator special
     - [ ] `do`/`values` with only one inner form
@@ -54,9 +58,10 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] Unused fields (difficult)
     - [ ] unification in a `match` pattern (difficult)
     - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
+    - [ ] Type Checking
 - [X] Hover over a symbol for documentation
 - [ ] Signature help
-    - [ ] Regular help
+    - [ ] respond to signature help queries
     - [ ] hide or grey out the `self` in an `a:b` multisym call
 - [ ] Go-to-references
     - [ ] lexical scope in the same file
@@ -64,13 +69,13 @@ Features / To Do List / Things I would enjoy patches for:
     - [ ] go to references of fields when tables are aliased
     - [ ] global search across other files
 - [ ] Options / Configuration
-    - [ ] Configure over LSP
+    - [X] Configure over LSP
     - [ ] Configure with some sort of per-project config file
     - [ ] Configure with environment variables I guess??
-    - [ ] fennel/lua path
+    - [X] fennel/lua path
     - [ ] lua version
     - [ ] allowed global list
-    - [ ] enable/disable various linters
+    - [X] enable/disable various linters
 - [ ] rename
     - [ ] local symbols
     - [ ] module fields (may affect code behavior, may modify other files)

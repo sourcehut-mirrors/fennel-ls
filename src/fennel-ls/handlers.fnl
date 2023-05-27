@@ -126,21 +126,22 @@ Every time the client sends a message, it gets handled by a function in the corr
       (set scope scope.parent))
     result))
 
-(λ find-things-in-scope [file parents typ callback ?target]
+(λ scope-completion [file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
                                i parent (ipairs parents)
                                &until result]
                     (. file.scopes parent))
-                  file.scope)]
-    (collect-scope scope typ callback ?target)))
-
-(λ scope-completion [file byte ?symbol parents]
-    (let [result []]
-      (find-things-in-scope file parents :manglings #{:label $} result)
-      (find-things-in-scope file parents :macros #{:label $} result)
-      (find-things-in-scope file parents :specials #{:label $} result)
-      (icollect [_ k (ipairs file.allowed-globals) &into result]
-        {:label k})))
+                  file.scope)
+        parent (. parents 1)
+        result []
+        completing-first-item (and parent (= ?symbol (. parent 1)))]
+    (collect-scope scope :manglings #{:label $} result)
+    (when completing-first-item
+      (collect-scope scope :macros #{:label $} result)
+      (collect-scope scope :specials #{:label $} result))
+    (icollect [_ k (ipairs file.allowed-globals) &into result]
+      (do ;(print (view k)) ;; TODO
+        {:label k}))))
 
 (λ field-completion [self file symbol split]
   (match (. file.references symbol)

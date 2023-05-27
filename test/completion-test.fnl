@@ -48,7 +48,7 @@
     (check-completion "()" 0 1 [:do :let :fn] :doto :-> :-?>> :?.)
     ;; it's not the language server's job to do filtering,
     ;; so there's no negative assertions here for other symbols
-    (check-completion "(d)" 0 3 [:do :doto]))
+    (check-completion "(d)" 0 2 [:do :doto]))
 
   (it "suggests macros in scope"
     (check-completion "(macro funny [] `nil)\n()" 1 1 [:funny]))
@@ -91,10 +91,9 @@
   ;; (it "does not suggest macros defined from later definitions")
 
   ;; ;; Call ordering rules
-
-  ;; (it "doesn't suggest specials in the middle of a list (open paren required)"
-  ;;   (check-completion "(do )"
-  ;;                     0 4 [] [:do :let :fn :-> :-?>> :?.])))
+  (it "doesn't suggest specials in the middle of a list"
+    (check-completion "(do )"
+      0 4 [] [:do :let :fn :-> :-?>> :?.]))
 
   ;; (it "doesn't suggest specials at the very top level")
   ;; (it "doesn't suggest macros in the middle of a list (open paren required)")
