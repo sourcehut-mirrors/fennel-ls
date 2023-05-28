@@ -71,7 +71,7 @@
       (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b]))
 
     (it "completes fields with a partially typed multisym that ends in :"
-      (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field]))
+      (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field] [:local]))
 
     (it "doesn't crash with a partially typed multisym contains ::"
       (check-no-completion "(local x {:field (fn [])})\n(x::f" 1 3 [:field])))
@@ -115,7 +115,7 @@
 
   ;; (it "suggests fields of strings"))
   (it "suggests known fn fields of tables when using a method call multisym"
-    (check-completion "(local x {:field (fn [])})\n(x:fi" 1 5 [:field])))
+    (check-completion "(local x {:field (fn [])})\n(x:fi" 1 5 [:field] [:table])))
 
 
   ;; (it "suggests known fn keys when using the `:` special")
