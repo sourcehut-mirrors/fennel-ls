@@ -111,10 +111,13 @@
       "(let [foo (require :foo)]\n  foo.)))"
       1 6
       [:my-export :constant]
-      [:_G :local :doto :1]))) ;; no globals, specials, macros, or others
+      [:_G :local :doto :1])) ;; no globals, specials, macros, or others
 
   ;; (it "suggests fields of strings"))
-  ;; (it "suggests known fn fields of tables when using a method call multisym")
+  (it "suggests known fn fields of tables when using a method call multisym"
+    (check-completion "(local x {:field (fn [])})\n(x:fi" 1 5 [:field])))
+
+
   ;; (it "suggests known fn keys when using the `:` special")
   ;; (it "suggests known keys when using the `.` special")
   ;; (it "suggests known module names in `require` and `include` and `import-macros` and `require-macros` and friends")

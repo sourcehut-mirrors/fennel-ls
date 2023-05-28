@@ -174,7 +174,10 @@ later by fennel-ls.language to answer requests from the client."
         (where [(= -fn-)])
         (define-function ast scope)
         (where [(= -require-) _modname])
-        (tset require-calls ast true)))
+        (tset require-calls ast true)
+        ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
+        (where [sym] (multisym? sym) (: (tostring sym) :find ":"))
+        (reference sym scope)))
 
     (λ recoverable? [msg]
       (or (= 1 (msg:find "unknown identifier"))
