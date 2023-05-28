@@ -70,8 +70,8 @@
     (it "still completes items from the previous definitions in the same `let`"
       (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b]))
 
-    ;; (it "completes fields with a partially typed multisym that ends in :"
-    ;;   (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field]))
+    (it "completes fields with a partially typed multisym that ends in :"
+      (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field]))
 
     (it "doesn't crash with a partially typed multisym contains ::"
       (check-no-completion "(local x {:field (fn [])})\n(x::f" 1 3 [:field])))

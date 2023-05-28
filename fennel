@@ -5117,7 +5117,7 @@ package.preload["fennel.utils"] = package.preload["fennel.utils"] or function(..
         end
         return ((0 < #parts) and parts)
       end
-      return ((str:match("%.") or str:match(":")) and not str:match("%.%.") and (str:byte() ~= string.byte(".")) and (str:byte(( - 1)) ~= string.byte(".")) and _154_())
+      return ((str:match("%.") or str:match(":")) and not str:match("%.%.") and (str:byte() ~= string.byte(".")) and (str:byte(-1) ~= string.byte(".")) and (str:byte() ~= string.byte(":")) and (str:byte(-1) ~= string.byte(":")) and _154_())
     end
   end
   local function quoted_3f(symbol)
