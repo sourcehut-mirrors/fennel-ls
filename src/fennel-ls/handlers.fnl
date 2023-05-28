@@ -108,7 +108,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
         byte (pos->byte file.text position.line position.character)]
-    (match-try (language.find-symbol file.ast byte)
+    (case-try (language.find-symbol file.ast byte)
       symbol (language.search-main self file symbol {} byte)
       result {:contents {:kind "markdown"
                          :value (formatter.hover-format result)}}
@@ -132,11 +132,11 @@ Every time the client sends a message, it gets handled by a function in the corr
                                &until result]
                     (. file.scopes parent))
                   file.scope)
-        parent (. parents 1)
+        ?parent (. parents 1)
         result []
-        completing-first-item (and parent (= ?symbol (. parent 1)))]
+        in-call-position? (and ?parent (= ?symbol (. ?parent 1)))]
     (collect-scope scope :manglings #{:label $} result)
-    (when completing-first-item
+    (when in-call-position?
       (collect-scope scope :macros #{:label $} result)
       (collect-scope scope :specials #{:label $} result))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
@@ -144,25 +144,25 @@ Every time the client sends a message, it gets handled by a function in the corr
         {:label k}))))
 
 (λ field-completion [self file symbol split]
-  (match (. file.references symbol)
+  (case (. file.references symbol)
     ref
     (let [stack (fcollect [i (- (length split) 1) 2 -1]
                   (. split i))]
-      (match-try (language.search-assignment self file ref stack {})
+      (case (language.search-assignment self file ref stack {})
         {: definition}
-        (match (values definition (type definition))
+        (case (values definition (type definition))
           (_str :string) (icollect [k v (pairs string)]
                            {:label k})
           (tbl :table) (icollect [k v (pairs tbl)]
                          (if (= (type k) :string)
                            {:label k})))
-        (catch _ nil)))))
+        _ nil))))
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
         byte (pos->byte file.text position.line position.character)
         (?symbol parents) (language.find-symbol file.ast byte)]
-    (match (-?> ?symbol utils.multi-sym-split)
+    (case (-?> ?symbol utils.multi-sym-split)
       (where (or nil [_ nil])) (scope-completion file byte ?symbol parents)
       [_a _b &as split] (field-completion self file ?symbol split))))
 
