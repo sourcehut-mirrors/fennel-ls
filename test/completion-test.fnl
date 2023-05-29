@@ -45,7 +45,7 @@
     (check-completion "(let [x 10] (let [y 100] \n    nil\n    ))" 2 4 [:x :y]))
 
   (it "suggests specials and macros at beginning of list"
-    (check-completion "()" 0 1 [:do :let :fn] :doto :-> :-?>> :?.)
+    (check-completion "()" 0 1 [:do :let :fn :doto :-> :-?>> :?.])
     ;; it's not the language server's job to do filtering,
     ;; so there's no negative assertions here for other symbols
     (check-completion "(d)" 0 2 [:do :doto]))
