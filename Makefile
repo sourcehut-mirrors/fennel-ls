@@ -1,4 +1,5 @@
-FENNEL=./fennel
+LUA ?= lua
+FENNEL=$(LUA) fennel
 EXE=fennel-ls
 
 SRC=$(wildcard src/*.fnl)
@@ -6,14 +7,14 @@ SRC+=$(wildcard src/fennel-ls/*.fnl)
 
 DESTDIR ?=
 PREFIX ?= /usr/local
-BIN_DIR ?= $(PREFIX)/bin
+BINDIR ?= $(PREFIX)/bin
 
 .PHONY: clean test install
 
 all: $(EXE)
 
 $(EXE): $(SRC)
-	echo "#!/usr/bin/env lua" > $@
+	echo "#!/usr/bin/env $(LUA)" > $@
 	LUA_PATH="./src/?.lua" \
 		FENNEL_PATH="./src/?.fnl" \
 		$(FENNEL) --require-as-include --compile src/fennel-ls.fnl >> $@
@@ -27,4 +28,4 @@ test:
 		$(FENNEL) test/init.fnl
 
 install: $(EXE)
-	mkdir -p $(DESTDIR)$(BIN_DIR) && cp $< $(DESTDIR)$(BIN_DIR)/
+	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
