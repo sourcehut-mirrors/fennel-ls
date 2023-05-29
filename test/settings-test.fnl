@@ -11,7 +11,7 @@
           result (client:definition (.. ROOT-URI :/test.fnl) 0 12)]
       (is-matching
         result
-        [{:result {:range message}}]
+        [{:result {:range _range}}]
         "error message")))
 
   ;; (it "can set the path"

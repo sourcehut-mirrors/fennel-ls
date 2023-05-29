@@ -5,9 +5,6 @@
 (local {: ROOT-URI
         : create-client} (require :test.mock-client))
 
-(local dispatch (require :fennel-ls.dispatch))
-(local message  (require :fennel-ls.message))
-
 (describe "jump to definition"
 
   (fn check [request-file line char response-file start-line start-col end-line end-col]

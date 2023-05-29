@@ -5,9 +5,6 @@
 (local {: ROOT-URI
         : create-client} (require :test.mock-client))
 
-(local dispatch (require :fennel-ls.dispatch))
-(local message  (require :fennel-ls.message))
-
 (describe "hover"
 
   (fn check [request-file line char response-string]

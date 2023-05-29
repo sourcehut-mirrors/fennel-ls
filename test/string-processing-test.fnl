@@ -64,3 +64,5 @@
           "this is the\nold file"
           [{:text "And this is the\nnew file"}])
         "And this is the\nnew file"))))
+
+ ;; (it "can substitute multiple ranges")

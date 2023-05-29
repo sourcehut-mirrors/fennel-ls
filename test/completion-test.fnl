@@ -5,31 +5,21 @@
 (local {: ROOT-URI
         : create-client} (require :test.mock-client))
 
-(local dispatch (require :fennel-ls.dispatch))
-(local message (require :fennel-ls.message))
-
 (local filename (.. ROOT-URI "/imaginary-file.fnl"))
 
 (fn check-completion [body line col expected ?unexpected]
   (let [client (doto (create-client)
                  (: :open-file! filename body))
-        response (client:completion filename line col)
-        seen (collect [_ suggestion (ipairs (. response 1 :result))]
-                suggestion.label suggestion.label)]
+        [{: result}] (client:completion filename line col)
+        seen (if result
+               (collect [_ suggestion (ipairs result)]
+                 suggestion.label suggestion.label))]
     (if expected
       (each [_ exp (ipairs expected)]
         (is (. seen exp) (.. exp " was not suggested, but should be"))))
     (if ?unexpected
       (each [_ exp (ipairs ?unexpected)]
         (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))
-
-(fn check-no-completion [body line col expected ?unexpected]
-  (let [client (doto (create-client)
-                 (: :open-file! filename body))
-        response (client:completion filename line col)]
-    (is-matching (. response 1)
-      {:jsonrpc "2.0" :id id :result nil}
-      "there shouldn't be a result")))
 
 (describe "completions"
   (it "suggests globals"
@@ -74,7 +64,7 @@
       (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field] [:local]))
 
     (it "doesn't crash with a partially typed multisym contains ::"
-      (check-no-completion "(local x {:field (fn [])})\n(x::f" 1 3 [:field])))
+      (check-completion "(local x {:field (fn [])})\n(x::f" 1 3 [])))
 
   ;; Functions
   (it "suggests function arguments at the top scope of the function"

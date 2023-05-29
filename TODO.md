@@ -1,9 +1,10 @@
 # Wishlist of features
 ([X] = complete,  [ ] = planned)
 
-Each subsection is increasingly more of a stretch goal.
+
 My current goal is to work on completions a little bit more.
 
+Here is my feature wishlist. I don't expect to ever get all of this done, but these are the sort of enhancements I am thinking about.
 - [X] Able to connect to a client
 - [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
 - [ ] Settings to configure lua / fennel path, allowed globals, etc
@@ -26,7 +27,7 @@ My current goal is to work on completions a little bit more.
     - [X] table mutation via `fn` special: `(fn obj.new-field [])`
     - [ ] macro calls / which macros are in scope
     - [ ] setmetatable
-    - [ ] function arguments / function calls
+    - [ ] can search through function arguments / function calls / method calls
     - [ ] local/table mutation via set/tset
     - [ ] .lua files (antifennel decompiler)
     - [ ] mutation on aliased tables (difficult)
@@ -50,7 +51,7 @@ My current goal is to work on completions a little bit more.
 - [ ] Reports linting issues
     - [X] Unused locals
     - [ ] Discarding results from pcall/xpcall/other functions
-    - [ ] `unpack` or `values` into an operator special
+    - [ ] `unpack` or `values` into a special
     - [ ] `do`/`values` with only one inner form
     - [ ] redundant `do` as the last/only item in a form that accepts a "body"
     - [ ] `var` forms that could be `local`
@@ -82,4 +83,3 @@ My current goal is to work on completions a little bit more.
     - [ ] arbitrary fields (may affect code behavior, may modify other files)
 - [ ] formatting with fnlfmt
 - [ ] Type annotations? Global type inference?
-
