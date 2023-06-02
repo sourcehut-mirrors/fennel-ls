@@ -18,3 +18,6 @@
   nil)
 
 (lambda-fn 1 2)
+
+(case {:x [10 {:AB :CD}]}
+  {:x [_ val]} (print val))

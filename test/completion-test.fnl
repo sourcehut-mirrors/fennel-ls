@@ -114,11 +114,10 @@
       (let [client (doto (create-client)
                      (: :open-file! filename "(fn xyzzy [x y z] \"docstring\" nil)\n(xyzz"))
             [{:result [completion]}] (client:completion filename 1 5)]
-        (print (view completion))
-        (assert completion.label "completion label")
-        (assert completion.kind "completion kind")
-        ;; (assert (?. completion :labelDetails :description) "fully qualified names or file path")
-        (assert completion.documentation "completion documentation")))))
+        ;; TODO this seems a little bit weird to assert
+        (is.same :xyzzy completion.label "the first completion should be xyzzy")
+        (assert completion.kind "completion kind should be present")
+        (assert completion.documentation "completion documentation should be present")))))
 
     ;; (it "offers rich information about macro completions")
     ;; (it "offers rich information about variable completions")

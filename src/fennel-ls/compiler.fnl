@@ -37,6 +37,9 @@ later by fennel-ls.language to answer requests from the client."
        (tset self key val)
        val))})
 
+(λ is-values? [?ast]
+  (and (list? ?ast) (= (sym :values) (. ?ast 1))))
+
 (λ compile [self file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
@@ -107,6 +110,13 @@ later by fennel-ls.language to answer requests from the client."
                              (. keys i)))}]
               (tset (. definitions-by-scope scope) (tostring binding) definition)
               (tset definitions binding definition))
+            (list? binding)
+            (if (and (is-values? ?definition)
+                     (= (length binding)
+                        (- (length ?definition) 1)))
+              (for [i 1 (length binding)]
+                (define (. ?definition (+ i 1)) (. binding i) scope))
+              (recurse (. binding 1) keys))
             (= :table (type binding))
             (each [k v (iter binding)]
               (table.insert keys k)

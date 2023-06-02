@@ -46,4 +46,7 @@
   (it "hovers over literally the very first character"
     (let [self (create-client)
           message (self:hover (.. ROOT-URI "/hover.fnl") 0 0)]
-      (is-matching message [{:jsonrpc "2.0" :id 2}] ""))))
+      (is-matching message [{:jsonrpc "2.0" :id 2}] "")))
+
+  (it "can go backward through (case)"
+    (check "hover.fnl" 22 22 "```fnl\n{:AB :CD}\n```")))

@@ -133,7 +133,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
-(λ make-completionitem [self file name scope]
+(λ make-completion-item [self file name scope]
   ;; TODO consider passing stop-early?
   (case (language.search-name-and-scope self file name scope)
     def (formatter.completion-item-format name def)))
@@ -147,7 +147,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         ?parent (. parents 1)
         result []
         in-call-position? (and ?parent (= ?symbol (. ?parent 1)))]
-    (collect-scope scope :manglings #(make-completionitem self file $ scope) result)
+    (collect-scope scope :manglings #(make-completion-item self file $ scope) result)
     (when in-call-position?
       (collect-scope scope :macros #{:label $ :kind kinds.Keyword} result)
       (collect-scope scope :specials #{:label $ :kind kinds.Keyword} result))
