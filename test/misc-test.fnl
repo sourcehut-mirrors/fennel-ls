@@ -56,5 +56,7 @@
     (let [self (create-client)
           state (require :fennel-ls.state)
           searcher (require :fennel-ls.searcher)]
-     (is.not.nil (searcher.lookup self.server :crash-files.test))
-     (is.not.nil (state.get-by-module self.server :crash-files.test)))))
+     (is.not.nil (searcher.lookup self.server :crash-files.test1))
+     (is.not.nil (state.get-by-module self.server :crash-files.test1)))))
+     ; (is.not.nil (searcher.lookup self.server :crash-files.test2))
+     ; (is.not.nil (state.get-by-module self.server :crash-files.test2)))))

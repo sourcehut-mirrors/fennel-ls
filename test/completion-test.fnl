@@ -23,7 +23,9 @@
 
 (describe "completions"
   (it "suggests globals"
-    (check-completion "(" 0 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next]))
+    (check-completion "(" 0 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next])
+    (check-completion "#nil\n(" 1 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next]))
+
 
   (it "suggests locals in scope"
     (check-completion "(local x 10)\n(print )" 1 7 [:x]))
@@ -105,8 +107,25 @@
 
   ;; (it "suggests fields of strings"))
   (it "suggests known fn fields of tables when using a method call multisym"
-    (check-completion "(local x {:field (fn [])})\n(x:fi" 1 5 [:field] [:table])))
+    (check-completion "(local x {:field (fn [])})\n(x:fi" 1 5 [:field] [:table]))
 
+  (describe "metadata"
+    (it "offers rich information about function completions"
+      (let [client (doto (create-client)
+                     (: :open-file! filename "(fn xyzzy [x y z] \"docstring\" nil)\n(xyzz"))
+            [{:result [completion]}] (client:completion filename 1 5)]
+        (print (view completion))
+        (assert completion.label "completion label")
+        (assert completion.kind "completion kind")
+        ;; (assert (?. completion :labelDetails :description) "fully qualified names or file path")
+        (assert completion.documentation "completion documentation")))))
+
+    ;; (it "offers rich information about macro completions")
+    ;; (it "offers rich information about variable completions")
+    ;; (it "offers rich information about field completions")
+    ;; (it "offers rich information about method completions")
+    ;; (it "offers rich information about module completions")
+    ;; (it "offers rich information about macromodule completions")))
 
   ;; (it "suggests known fn keys when using the `:` special")
   ;; (it "suggests known keys when using the `.` special")

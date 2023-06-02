@@ -3,20 +3,13 @@ This module is for formatting code that needs to be shown to the client
 in tooltips and other notification messages. It is NOT for formatting
 user code."
 
-(local {: sym
-        : sym?
-        : view
-        : list} (require :fennel))
+(local {: sym?
+        : view} (require :fennel))
 (local {: type=} (require :fennel-ls.utils))
-
-
-(local -fn- (sym :fn))
-(local -varg- (sym :...))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
 
-(local width 80)
 (fn fn-format [special name args docstring]
   (.. (code-block (.. "("
                       (tostring special)
@@ -27,48 +20,76 @@ user code."
                       " ...)"))
       (if docstring (.. "\n" docstring) "")))
 
+(λ fn? [symbol]
+  (if (sym? symbol)
+    (let [name (tostring symbol)]
+      (or (= name "fn")
+          (= name "λ")
+          (= name "lambda")))))
 
-(λ fn? [sym]
-  (if (sym? sym)
-    (let [sym (tostring sym)]
-      (or (= sym "fn")
-          (= sym "λ")
-          (= sym "lambda")))))
+(λ analyze-fn [ast]
+  "if ast is a function definition, try to fill out as much of this as possible:
+{: name
+ : arglist
+ : docstring
+ : fntype}
+fntype is one of fn or λ or lambda"
+  (case ast
+    ;; name + docstring
+    (where [fntype name arglist docstring _body]
+      (fn? fntype)
+      (sym? name)
+      (type= arglist :table)
+      (type= docstring :string))
+    {: fntype : name : arglist : docstring}
+    ;; docstring
+    (where [fntype arglist docstring _body]
+      (fn? fntype)
+      (type= arglist :table)
+      (type= docstring :string))
+    {: fntype : arglist : docstring}
+    ;; name
+    (where [fntype name arglist]
+      (fn? fntype)
+      (sym? name)
+      (type= arglist :table))
+    {: fntype : name : arglist}
+    ;; none
+    (where [fntype arglist]
+      (fn? fntype)
+      (type= arglist :table))
+    {: fntype : arglist}))
 
 (λ hover-format [result]
   "Format code that will appear when the user hovers over a symbol"
-  (match result.definition
-    ;; name + docstring
-    (where [special name args docstring _body]
-      (fn? special)
-      (sym? name)
-      (type= args :table)
-      (type= docstring :string))
-    (fn-format special name args docstring)
-    ;; docstring
-    (where [special args docstring _body]
-      (fn? special)
-      (type= args :table)
-      (type= docstring :string))
-    (fn-format special nil args docstring)
-    ;; name
-    (where [special name args]
-      (fn? special)
-      (sym? name)
-      (type= args :table))
-    (fn-format special name args nil)
-    ;; none
-    (where [special args]
-      (fn? special)
-      (type= args :table))
-    (fn-format special nil args nil)
-    ?anything-else
-    (code-block
-      (if (-?>> result.keys length (< 0))
-        (.. "ERROR, I don't know how to show this "
-            "(. "
-            (view ?anything-else {:prefer-colon? true}) " "
-            (view result.keys {:prefer-colon? true}) ")")
-        (view ?anything-else {:prefer-colon? true})))))
+  {:kind "markdown"
+   :value
+   (case (analyze-fn result.definition)
+     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring} (fn-format ?fntype ?name ?arglist ?docstring)
+     _ (code-block
+         (if (-?>> result.keys length (< 0))
+           (.. "ERROR, I don't know how to show this "
+               "(. "
+               (view result.definition {:prefer-colon? true}) " "
+               (view result.keys {:prefer-colon? true}) ")")
+           (view result.definition {:prefer-colon? true}))))})
 
-{: hover-format}
+;; CompletionItemKind
+(local kinds
+ {:Text 1 :Method 2 :Function 3 :Constructor 4 :Field 5 :Variable 6 :Class 7
+  :Interface 8 :Module 9 :Property 10 :Unit 11 :Value 12 :Enum 13 :Keyword 14
+  :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
+  :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
+
+(λ completion-item-format [label def]
+  "make a completion item"
+  (doto
+    (case (analyze-fn def.definition)
+      {:fntype _} {: label
+                   :kind (if (label:find ":") kinds.Method kinds.Function)}
+      _ {: label
+         :kind kinds.Variable})
+    (tset :documentation (hover-format def))))
+
+{: hover-format
+ : completion-item-format}

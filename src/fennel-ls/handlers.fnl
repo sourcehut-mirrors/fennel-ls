@@ -5,9 +5,9 @@ Every time the client sends a message, it gets handled by a function in the corr
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
  and a textDocument/defintion request will call requests.textDocument/definition)"
 
-(local {: pos->byte : apply-changes}   (require :fennel-ls.utils))
+(local {: pos->byte : apply-changes} (require :fennel-ls.utils))
 (local message (require :fennel-ls.message))
-(local state   (require :fennel-ls.state))
+(local state (require :fennel-ls.state))
 (local language (require :fennel-ls.language))
 (local formatter (require :fennel-ls.formatter))
 (local utils (require :fennel-ls.utils))
@@ -101,7 +101,7 @@ Every time the client sends a message, it gets handled by a function in the corr
           (table.insert result
                 (message.range-and-uri definition.binding result-file)))
 
-        ;; TODO if the request says not to include duplicates, don't include duplicates
+        ;; TODO don't include duplicates
         result)
       (catch _ nil))))
 
@@ -110,8 +110,8 @@ Every time the client sends a message, it gets handled by a function in the corr
         byte (pos->byte file.text position.line position.character)]
     (case-try (language.find-symbol file.ast byte)
       symbol (language.search-main self file symbol {} byte)
-      result {:contents {:kind "markdown"
-                         :value (formatter.hover-format result)}}
+      result {:contents (formatter.hover-format result)
+              :range (message.ast->range symbol file)}
       (catch _ nil))))
 
 
@@ -126,7 +126,19 @@ Every time the client sends a message, it gets handled by a function in the corr
       (set scope scope.parent))
     result))
 
-(λ scope-completion [file byte ?symbol parents]
+;; CompletionItemKind
+(local kinds
+ {:Text 1 :Method 2 :Function 3 :Constructor 4 :Field 5 :Variable 6 :Class 7
+  :Interface 8 :Module 9 :Property 10 :Unit 11 :Value 12 :Enum 13 :Keyword 14
+  :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
+  :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
+
+(λ make-completionitem [self file name scope]
+  ;; TODO consider passing stop-early?
+  (case (language.search-name-and-scope self file name scope)
+    def (formatter.completion-item-format name def)))
+
+(λ scope-completion [self file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
                                i parent (ipairs parents)
                                &until result]
@@ -135,13 +147,12 @@ Every time the client sends a message, it gets handled by a function in the corr
         ?parent (. parents 1)
         result []
         in-call-position? (and ?parent (= ?symbol (. ?parent 1)))]
-    (collect-scope scope :manglings #{:label $} result)
+    (collect-scope scope :manglings #(make-completionitem self file $ scope) result)
     (when in-call-position?
-      (collect-scope scope :macros #{:label $} result)
-      (collect-scope scope :specials #{:label $} result))
+      (collect-scope scope :macros #{:label $ :kind kinds.Keyword} result)
+      (collect-scope scope :specials #{:label $ :kind kinds.Keyword} result))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
-      (do ;(print (view k)) ;; TODO
-        {:label k}))))
+        {:label k :kind kinds.Variable})))
 
 (λ field-completion [self file symbol split]
   (case (. file.references symbol)
@@ -152,18 +163,22 @@ Every time the client sends a message, it gets handled by a function in the corr
         {: definition}
         (case (values definition (type definition))
           (_str :string) (icollect [k v (pairs string)]
-                           {:label k})
+                           {:label k :kind kinds.Field})
           (tbl :table) (icollect [k v (pairs tbl)]
                          (if (= (type k) :string)
-                           {:label k})))
+                           {:label k :kind kinds.Field})))
         _ nil))))
+
+(λ create-completion-item [self file name scope]
+  (let [result (language.search-name-and-scope self file name scope)]
+    {:label result.label :kind result.kind}))
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
         byte (pos->byte file.text position.line position.character)
         (?symbol parents) (language.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
-      (where (or nil [_ nil])) (scope-completion file byte ?symbol parents)
+      (where (or nil [_ nil])) (scope-completion self file byte ?symbol parents)
       [_a _b &as split] (field-completion self file ?symbol split))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]

@@ -18,7 +18,7 @@ to look to fix this in the future."
    ;; LSP errors
    :ServerNotInitialized -32002
    :UnknownErrorCode     -32001
-   :RequestFailed        -32802 ;; when the server has no excuse for failure
+   :RequestFailed        -32803 ;; when the server has no excuse for failure
    :ServerCancelled      -32802
    :ContentModified      -32801 ;; I don't think this one is useful unless we do async things
    :RequestCancelled     -32800}) ;; I don't think I'm going to even support cancelling things, that sounds like a pain

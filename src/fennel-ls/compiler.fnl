@@ -229,6 +229,9 @@ later by fennel-ls.language to answer requests from the client."
            : symbol-to-expression
            : call
            : destructure
+           ;; :fn    fn-hook
+           ;; :do    there's a do hook
+           ;; :chunk I don't know what this one is
            :assert-compile on-compile-error
            :parse-error on-parse-error
            :customhook-early-do compile-do
@@ -278,6 +281,7 @@ later by fennel-ls.language to answer requests from the client."
       (set file.scope scope)
       (set file.scopes scopes)
       (set file.definitions definitions)
+      (set file.definitions-by-scope definitions-by-scope)
       (set file.diagnostics diagnostics)
       (set file.references references)
       (set file.deep-references references)
