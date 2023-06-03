@@ -20,6 +20,14 @@ user code."
                       " ...)"))
       (if docstring (.. "\n" docstring) "")))
 
+(fn metadata-format [{: binding : metadata}]
+  "formats a special using its builtin metadata magic"
+  (..
+    (code-block
+      (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")"))
+    "\n"
+    metadata.fnl/docstring))
+
 (λ fn? [symbol]
   (if (sym? symbol)
     (let [name (tostring symbol)]
@@ -27,14 +35,14 @@ user code."
           (= name "λ")
           (= name "lambda")))))
 
-(λ analyze-fn [ast]
+(λ analyze-fn [?ast]
   "if ast is a function definition, try to fill out as much of this as possible:
 {: name
  : arglist
  : docstring
  : fntype}
 fntype is one of fn or λ or lambda"
-  (case ast
+  (case ?ast
     ;; name + docstring
     (where [fntype name arglist docstring _body]
       (fn? fntype)
@@ -66,13 +74,16 @@ fntype is one of fn or λ or lambda"
    :value
    (case (analyze-fn result.definition)
      {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring} (fn-format ?fntype ?name ?arglist ?docstring)
-     _ (code-block
-         (if (-?>> result.keys length (< 0))
+     _ (if (-?>> result.keys length (< 0))
+         (code-block
            (.. "ERROR, I don't know how to show this "
                "(. "
                (view result.definition {:prefer-colon? true}) " "
-               (view result.keys {:prefer-colon? true}) ")")
-           (view result.definition {:prefer-colon? true}))))})
+               (view result.keys {:prefer-colon? true}) ")"))
+         result.metadata
+         (metadata-format result)
+         (code-block
+            (view result.definition {:prefer-colon? true}))))})
 
 ;; CompletionItemKind
 (local kinds

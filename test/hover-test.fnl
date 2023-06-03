@@ -49,4 +49,7 @@
       (is-matching message [{:jsonrpc "2.0" :id 2}] "")))
 
   (it "can go backward through (case)"
-    (check "hover.fnl" 22 22 "```fnl\n{:AB :CD}\n```")))
+    (check "hover.fnl" 22 22 "```fnl\n{:AB :CD}\n```"))
+
+  (it "hovers over a special"
+    (check "hover.fnl" 5 2 "```fnl\n(let [name1 val1 ... nameN valN] ...)\n```\nIntroduces a new scope in which a given set of local bindings are used.")))

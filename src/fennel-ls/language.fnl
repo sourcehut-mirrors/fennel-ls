@@ -90,6 +90,10 @@ the data provided by compiler.fnl."
         (= 0 (length stack))      {:definition item} ;; BASE CASE !!
         (error (.. "I don't know what to do with " (view item))))))
 
+(local {:metadata METADATA
+        :scopes {:global {:specials SPECIALS}}}
+  (require :fennel.compiler))
+
 (λ search-main [self file symbol opts ?byte]
   "Find the definition of a symbol
 
@@ -125,11 +129,8 @@ Returns:
   (if (sym? symbol)
     (let [split (utils.multi-sym-split symbol (if ?byte (+ 1 (- ?byte symbol.bytestart))))
           stack (stack-add-split! [] split)]
-      (local {:metadata METADATA
-              :scopes {:global {:specials SPECIALS}}}
-        (require :fennel.compiler))
       (case (. METADATA (. SPECIALS (tostring symbol)))
-        metadata {: metadata}
+        metadata {:binding symbol : metadata}
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)
             _ (case (. file.definitions symbol)
@@ -141,9 +142,13 @@ Returns:
         (find-local-definition file name ?scope.parent))))
 
 (λ search-name-and-scope [self file name scope ?opts]
+  "find a definition just from the name of the item, and the scope it is in"
+  (assert (= (type name) :string))
   (let [stack (stack-add-multisym! [] name)]
-    (case (find-local-definition file name scope)
-      def (search self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))
+    (case (. METADATA (. SPECIALS name))
+      metadata {:binding (sym name) : metadata}
+      _ (case (find-local-definition file name scope)
+          def (search self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object

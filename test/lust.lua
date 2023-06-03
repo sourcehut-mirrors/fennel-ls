@@ -147,10 +147,10 @@ local paths = {
     end
   },
   equal = {
-    test = function(v, x)
+    test = function(v, x, message)
       return strict_eq(v, x),
-        'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to be exactly equal',
-        'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to not be exactly equal'
+        message or 'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to be exactly equal',
+        message or 'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to not be exactly equal'
     end
   },
   have = {

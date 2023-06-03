@@ -119,6 +119,25 @@
         (assert completion.kind "completion kind should be present")
         (assert completion.documentation "completion documentation should be present")))))
 
+    ; (it "offers rich information about global completions"
+    ;   (let [client (doto (create-client)
+    ;                  (: :open-file! filename "("))
+    ;         [{:result completions}] (client:completion filename 0 1)
+    ;         _ (table.sort completions #(< $1.label $2.label))
+    ;         count (accumulate [sum 0 _ completion (ipairs completions)]
+    ;                (if (and (= (type completion.label) :string)
+    ;                        (= (type completion.kind) :number)
+    ;                        (= (type completion.documentation) :table))
+    ;                  (+ sum 1)
+    ;                  sum))]
+    ;     (if (< count (length completions))
+    ;       (print "!!!" (- (length completions) count) "items are missing a label or kind or doc"))
+    ;     (each [_ completion (ipairs completions)]
+    ;       (is.same (type completion.label) :string "unlabeled completion")
+    ;       (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
+    ;       (is.same (type completion.documentation) :table (.. completion.label " needs documentation")))))))
+
+
     ;; (it "offers rich information about macro completions")
     ;; (it "offers rich information about variable completions")
     ;; (it "offers rich information about field completions")

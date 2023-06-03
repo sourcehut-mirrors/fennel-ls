@@ -140,7 +140,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ scope-completion [self file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
-                               i parent (ipairs parents)
+                               _ parent (ipairs parents)
                                &until result]
                     (. file.scopes parent))
                   file.scope)
@@ -150,7 +150,7 @@ Every time the client sends a message, it gets handled by a function in the corr
     (collect-scope scope :manglings #(make-completion-item self file $ scope) result)
     (when in-call-position?
       (collect-scope scope :macros #{:label $ :kind kinds.Keyword} result)
-      (collect-scope scope :specials #{:label $ :kind kinds.Keyword} result))
+      (collect-scope scope :specials #(make-completion-item self file $ scope) result))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
         {:label k :kind kinds.Variable})))
 
@@ -162,9 +162,9 @@ Every time the client sends a message, it gets handled by a function in the corr
       (case (language.search-assignment self file ref stack {})
         {: definition}
         (case (values definition (type definition))
-          (_str :string) (icollect [k v (pairs string)]
+          (_str :string) (icollect [k _ (pairs string)]
                            {:label k :kind kinds.Field})
-          (tbl :table) (icollect [k v (pairs tbl)]
+          (tbl :table) (icollect [k _ (pairs tbl)]
                          (if (= (type k) :string)
                            {:label k :kind kinds.Field})))
         _ nil))))
