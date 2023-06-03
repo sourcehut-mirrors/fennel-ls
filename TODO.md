@@ -4,6 +4,8 @@
 
 My current goal is to work on completions a little bit more.
 
+- [ ] Fix crash-files.test2
+
 Here is my feature wishlist. I don't expect to ever get all of this done, but these are the sort of enhancements I am thinking about.
 - [X] Able to connect to a client
 - [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)

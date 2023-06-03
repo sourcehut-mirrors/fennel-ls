@@ -7,10 +7,12 @@
 
 (describe "jump to definition"
 
+  (var CLIENT nil)
   (fn check [request-file line char response-file start-line start-col end-line end-col]
-    (let [client (create-client)
+    (let [client (or CLIENT (create-client))
           message (client:definition (.. ROOT-URI :/ request-file) line char)
           uri (.. ROOT-URI "/" response-file)]
+      (set CLIENT client)
       (is-matching
         message
         [{:jsonrpc "2.0" :id client.prev-id
@@ -52,6 +54,9 @@
   (it "can go to a function in another file when accessed by multisym"
     (check :goto-definition.fnl 7 7 :./foo.fnl 2 4 2 13))
 
+  (it "can go to a function in another file imported via destructuring assignment" ;; WORKS, just needs a test case
+    (check :goto-definition.fnl 2 11 :./baz.fnl 0 4 0 9))
+
   (it "goes further if you go to definition on a binding"
     (check :goto-definition.fnl 31 12 :goto-definition.fnl 23 4 23 5))
 
@@ -72,9 +77,15 @@
   (it "can go to `a.b` from an `a.b.c` symbol"
     (check :goto-definition.fnl 54 9 :goto-definition.fnl 53 13 53 25))
 
-  ;; TODO
-  ;; (it "doesn't leak function arguments to the surrounding scope")
-  ;; (it "can go to a function in another file imported via destructuring assignment") ;; WORKS, just needs a test case
+  (it "doesn't leak function arguments to the surrounding scope"
+    (check :goto-definition.fnl 58 7 :goto-definition.fnl 53 7 53 8))
+
+  (it "can go to identifiers introduced by (for)"
+    (check :goto-definition.fnl 61 9 :goto-definition.fnl 60 6 60 7))
+
+  (it "can go to identifiers introduced by (each)"
+    (check :goto-definition.fnl 64 2 :goto-definition.fnl 63 7 63 8))
+
   ;; (it "can go through more than one extra file")
   ;; (it "will give up instead of freezing on recursive requires")
   ;; (it "finds the definition of in-file macros")
@@ -87,7 +98,7 @@
   ;; (it "finds (tset a :b) definitions")
   ;; (it "finds (setmetatable a {__index {:b def}) definitions")
   ;; (it "finds definitions into a function (fn foo [] (local x 10) {: x}) (let [result (foo)] (print result.x)) finds result.x")
-  ;; (it "finds basic setmetatable definitions with an __index function")
-  ;; (it "can return to callsite and go through a function's arguments when they're available")
-  ;; (it "can go to a function's reference OR read type inference comments when callsite isn't available (PICK ONE)")
+  ;; (it "finds definitions through a function (fn foo [{: y}] {:x y}) (let [result (foo {:y {}})] (print result.x)) finds result.x")
+  ;; (it "finds through setmetatable with an __index function")
+  ;; (it "can go to a function's references OR read type inference comments when callsite isn't available (PICK ONE)")
   ;; (it "can work with a custom fennelpath") ;; Wait until an options system is done

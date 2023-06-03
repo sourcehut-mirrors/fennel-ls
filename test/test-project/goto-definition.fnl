@@ -53,3 +53,13 @@
 
 (local x {:y {:z (+ 1 1)}})
 (print x.y.z)
+
+(fn other [x]
+  (print x))
+(print x)
+
+(for [i 1 10]
+  (other i))
+
+(each [k {: v} (pairs x)]
+  k v)

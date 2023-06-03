@@ -161,11 +161,18 @@ later by fennel-ls.language to answer requests from the client."
           (where [_fn _name args] (fennel.sequence? args)) args
           _ []))
       (each [_ argument (ipairs args)]
-        (define (sym :nil) argument scope))) ;; we say function arguments are set to nil
+        (define (sym :nil) argument scope))) ;; TODO  for now, function arguments are set to nil
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
       (define-function-name ast scope))
+
+    (λ compile-for [ast binding scope]
+       (define (sym :nil) binding scope))
+
+    (λ compile-each [ast bindings scope]
+      (each [i binding (ipairs bindings)]
+        (define (sym :nil) binding scope)))
 
     (λ compile-fn [ast scope]
       (tset scopes ast scope)
@@ -244,8 +251,10 @@ later by fennel-ls.language to answer requests from the client."
            ;; :chunk I don't know what this one is
            :assert-compile on-compile-error
            :parse-error on-parse-error
-           :customhook-early-do compile-do
-           :customhook-early-fn compile-fn}
+           :customhook-early-for compile-for
+           :customhook-early-each compile-each
+           :customhook-early-fn compile-fn
+           :customhook-early-do compile-do}
           scope (fennel.scope)
           opts {:filename file.uri
                 :plugins [plugin]

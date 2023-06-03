@@ -1,4 +1,3 @@
-
 (fn bazfn []
   (print "you called bazfn"))
 
