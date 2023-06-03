@@ -1341,6 +1341,7 @@ package.preload["fennel.specials"] = package.preload["fennel.specials"] or funct
     local destructures = {}
     local new_manglings = {}
     local sub_scope = compiler["make-scope"](scope)
+    utils.hook("customhook-early-each", ast, binding, sub_scope)
     local function destructure_binding(v)
       compiler.assert(not utils["string?"](v), ("unexpected iterator clause " .. tostring(v)), binding)
       if utils["sym?"](v) then
@@ -1397,6 +1398,7 @@ package.preload["fennel.specials"] = package.preload["fennel.specials"] or funct
     compiler.assert(utils["sym?"](binding_sym), ("unable to bind %s %s"):format(type(binding_sym), tostring(binding_sym)), ast[2])
     compiler.assert((3 <= #ast), "expected body expression", ast[1])
     compiler.assert((#ranges <= 3), "unexpected arguments", ranges[4])
+    utils.hook("customhook-early-for", ast, binding_sym, sub_scope)
     for i = 1, math.min(#ranges, 3) do
       range_args[i] = tostring(compiler.compile1(ranges[i], scope, parent, {nval = 1})[1])
     end
