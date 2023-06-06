@@ -68,7 +68,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
-        byte (pos->byte file.text position.line position.character)]
+        byte (utils.pos->byte file.text position.line position.character)]
     (case-try (language.find-symbol file.ast byte)
       (symbol parents)
       ;; TODO unruin this match-try
@@ -86,7 +86,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                 :textDocument {: uri}
                                                 :context {:includeDeclaration ?include-declaration?}}]
   (let [file (state.get-by-uri self uri)
-        byte (pos->byte file.text line character)]
+        byte (utils.pos->byte file.text line character)]
     (case-try (language.find-symbol file.ast byte)
       symbol
       (if (. file.definitions symbol)
@@ -107,7 +107,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
-        byte (pos->byte file.text position.line position.character)]
+        byte (utils.pos->byte file.text position.line position.character)]
     (case-try (language.find-symbol file.ast byte)
       symbol (language.search-main self file symbol {} byte)
       result {:contents (formatter.hover-format result)
@@ -152,7 +152,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       (collect-scope scope :macros #{:label $ :kind kinds.Keyword} result)
       (collect-scope scope :specials #(make-completion-item self file $ scope) result))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
-        {:label k :kind kinds.Variable})))
+      (make-completion-item self file k scope))))
 
 (λ field-completion [self file symbol split]
   (case (. file.references symbol)
@@ -175,24 +175,28 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
-        byte (pos->byte file.text position.line position.character)
+        byte (utils.pos->byte file.text position.line position.character)
         (?symbol parents) (language.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
       (where (or nil [_ nil])) (scope-completion self file byte ?symbol parents)
       [_a _b &as split] (field-completion self file ?symbol split))))
 
+
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
-  (state.set-uri-contents self uri (apply-changes file.text contentChanges))
+  (state.set-uri-contents self uri (utils.apply-changes file.text contentChanges))
+  (diagnostics.check self file)
   (send (message.diagnostics file)))
 
 (λ notifications.textDocument/didOpen [self send {:textDocument {: languageId : text : uri}}]
   (local file (state.set-uri-contents self uri text))
-  (set file.open? true)
-  (send (message.diagnostics file)))
+  (diagnostics.check self file)
+  (send (message.diagnostics file))
+  (set file.open? true))
 
 (λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
+  (set file.open? false)
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (state.flush-uri self uri))
 

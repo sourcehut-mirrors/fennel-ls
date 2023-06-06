@@ -83,7 +83,7 @@ object."
         (assert (= (type (. default 1)) (type setting)))
         setting)
       (= :table (type default))
-      (collect [k v (pairs default)]
+      (collect [k _ (pairs default)]
           k (make-configuration-from-template
               (. default k)
               (?. ?user k)
@@ -93,7 +93,9 @@ object."
 (local default-configuration
   {:fennel-path (option "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl")
    :macro-path (option "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl")
-   :checks {:unused-definition (option true)}})
+   :version (option "lua54")
+   :checks {:unused-definition (option true)
+            :unknown-module-field (option true)}})
 
 (λ make-configuration [?c]
   (make-configuration-from-template default-configuration ?c))
@@ -106,7 +108,6 @@ object."
 
 (λ write-configuration [self ?configuration]
   (set self.configuration (make-configuration ?configuration)))
-
 
 {: flush-uri
  : get-by-module

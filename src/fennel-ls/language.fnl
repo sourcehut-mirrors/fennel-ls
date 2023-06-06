@@ -65,7 +65,7 @@ the data provided by compiler.fnl."
     (let [newfile (state.get-by-module self mod)]
       (when newfile
         (let [newitem (. newfile.ast (length newfile.ast))]
-          (search self newfile newitem stack opts))))
+          (search self newfile newitem stack (doto opts (tset :searched-through-require true))))))
     ;; A . form  indexes into item 1 with the other items
     [-dot- & split]
     (search self file (. split 1) (stack-add-split! stack split) opts)
@@ -141,14 +141,21 @@ Returns:
     (or (. file.definitions-by-scope ?scope name)
         (find-local-definition file name ?scope.parent))))
 
+(λ global-info [self name]
+  (. (require :fennel-ls.docs)
+     self.configuration.version
+     name))
+
 (λ search-name-and-scope [self file name scope ?opts]
   "find a definition just from the name of the item, and the scope it is in"
   (assert (= (type name) :string))
   (let [stack (stack-add-multisym! [] name)]
     (case (. METADATA (. SPECIALS name))
       metadata {:binding (sym name) : metadata}
-      _ (case (find-local-definition file name scope)
-          def (search self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))
+      _ (case (global-info self name)
+         global-item global-item
+         _ (case (find-local-definition file name scope)
+             def (search self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object

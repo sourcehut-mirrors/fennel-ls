@@ -234,7 +234,7 @@ later by fennel-ls.language to answer requests from the client."
         (error "__NOT_AN_ERROR")))
 
     (local allowed-globals
-      (icollect [k v (pairs _G)]
+      (icollect [k _ (pairs _G)]
         k))
     (table.insert allowed-globals :vim)
 
@@ -273,28 +273,12 @@ later by fennel-ls.language to answer requests from the client."
           ;   {:range (message.pos->range 0 0 0 0)
           ;    :message (.. "unrecoverable compiler error: " err)})
 
-      ;; analyze more things
-      ;; write things back to the file object
-      (local deep-references {})
-
       ; (each [sym target (pairs references)]
       ;   (if
       ;     (sym? target)
       ;     (list? target)
       ;     (= :table (type target))))
       ;     ;; base case???
-
-      (each [sym definition (pairs definitions)]
-          (if (and self.configuration.checks.unused-definition
-                   (= 0 (length definition.referenced-by))
-                   (not= "_" (: (tostring sym) :sub 1 1)))
-            (let [range (message.ast->range sym file)]
-              (table.insert diagnostics
-                {:range range
-                 :message (.. "unused definition: " (tostring sym))
-                 :severity message.severity.WARN
-                 :code 301
-                 :codeDescription "warning error"}))))
 
       (set file.ast ast)
       (set file.scope scope)

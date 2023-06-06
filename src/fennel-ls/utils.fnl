@@ -25,7 +25,7 @@ These functions are all pure functions, which makes me happy."
 (λ pos->byte [str line col]
   "convert a 0-indexed line and column into a 1-indexed byte. Doesn't yet handle UTF8 UTF16 magic from the protocol"
   (var sofar 1)
-  (for [i 1 line :until (not sofar)]
+  (for [_ 1 line :until (not sofar)]
     (set sofar (next-line str sofar)))
   (if sofar
     (+ sofar col)
