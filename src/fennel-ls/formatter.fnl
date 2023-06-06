@@ -24,7 +24,9 @@ user code."
   "formats a special using its builtin metadata magic"
   (..
     (code-block
-      (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")"))
+      (if metadata.fnl/arglist
+        (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")")
+        (tostring binding)))
     "\n"
     metadata.fnl/docstring))
 

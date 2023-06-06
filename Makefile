@@ -4,6 +4,7 @@ EXE=fennel-ls
 
 SRC=$(wildcard src/*.fnl)
 SRC+=$(wildcard src/fennel-ls/*.fnl)
+SRC+=$(wildcard src/fennel-ls/doc/*.fnl)
 
 DESTDIR ?=
 PREFIX ?= /usr/local
