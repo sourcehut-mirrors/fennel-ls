@@ -50,7 +50,8 @@ fennel-ls default settings:
     "fennel-path": "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl",
     "macro-path": "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl",
     "checks": {
-      "unused-definition": true
+      "unused-definition": true,
+      "unknown-module-field": true
     }
   }
 }
