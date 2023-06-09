@@ -6,6 +6,7 @@ later by fennel-ls.language to answer requests from the client."
 (local {: sym? : list? : sequence? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
+(local searcher (require :fennel-ls.searcher))
 
 ;; words surrounded by - are symbols,
 ;; because fennel doesn't allow 'require in a runtime file
@@ -40,7 +41,7 @@ later by fennel-ls.language to answer requests from the client."
 (λ is-values? [?ast]
   (and (list? ?ast) (= (sym :values) (. ?ast 1))))
 
-(λ compile [self file]
+(λ compile [{:configuration {: macro-path} : root-uri} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
@@ -263,15 +264,23 @@ later by fennel-ls.language to answer requests from the client."
                 : scope}
           parser (partial pcall (fennel.parser file.text file.uri opts))
           ast (icollect [ok ok-2 ast parser &until (not (and ok ok-2))] ast)]
-      ;; compile
-      (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
-        (case (xpcall #(fennel.compile form opts) fennel.traceback)
-          (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
-          (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
-                     "\n\n^^^ the error message above here is the root problem\n\n"))))
+
+
+      ;; This is bad; we mutate fennel.macro-path
+      (let [old-macro-path fennel.macro-path]
+        (set fennel.macro-path (searcher.add-workspaces-to-path macro-path [root-uri]))
+
+        ;; compile
+        (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
+          (case (xpcall #(fennel.compile form opts) fennel.traceback)
+            (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
+            (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
+                       "\n\n^^^ the error message above here is the root problem\n\n"))))
           ; (table.insert diagnostics
           ;   {:range (message.pos->range 0 0 0 0)
           ;    :message (.. "unrecoverable compiler error: " err)})
+
+        (set fennel.macro-path old-macro-path))
 
       ; (each [sym target (pairs references)]
       ;   (if

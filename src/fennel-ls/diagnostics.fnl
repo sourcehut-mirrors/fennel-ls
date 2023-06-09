@@ -1,3 +1,7 @@
+"Diagnostics
+
+Goes through a file and mutates the `file.diagnostics` field, filling it with diagnostics."
+
 (local language (require :fennel-ls.language))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))

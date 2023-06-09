@@ -1,9 +1,9 @@
 "State
 This module keeps track of the state of the language server.
-There are helpers to get file objects, and in the future, there
-will be functions for managing user options. There is no global
-state in this project: all state will be stored in the \"self\"
-object."
+There are helpers to get files (get-by functions are all for
+getting files), and there's stuff for configuration options.
+There is no global state in this project: all state is stored
+in the \"self\" object."
 
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
@@ -65,7 +65,7 @@ object."
 ;; allow some globals
 ;; pick from existing libraries of globals (ie love2d)
 ;; pick between different versions of lua (ie luajit)
-;; pick a "compat always" mode that accpets anything if it could be valid in any lua
+;; pick a "compat always" mode that accepts anything if it could be valid in any lua
 ;; make a "compat strict" mode that warns about any lua-version-specific patterns
 ;; ie using (unpack) without saying (or table.unpack _G.unpack) or something like that
 

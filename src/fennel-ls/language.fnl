@@ -40,7 +40,6 @@ the data provided by compiler.fnl."
          :fields ?fields} assignment]
     (if (and (= 0 (length stack)) opts.stop-early?)
         (values assignment file) ;; BASE CASE!!
-
         ;; search a virtual field from :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
         (search-assignment self file (. ?fields (table.remove stack)) stack opts)
@@ -67,19 +66,24 @@ the data provided by compiler.fnl."
         (let [newitem (. newfile.ast (length newfile.ast))]
           (search self newfile newitem stack (doto opts (tset :searched-through-require true))))))
     ;; A . form  indexes into item 1 with the other items
-    [-dot- & split]
+    (where [-dot- & split] (. split 1))
     (search self file (. split 1) (stack-add-split! stack split) opts)
 
     ;; A do block returns the last form
-    [-do- & body]
+    (where [-do- & body] (. body 1))
     (search self file (. body (length body)) stack opts)
 
-    [-let- _binding & body]
+    (where [-let- _binding & body] (. body 1))
     (search self file (. body (length body)) stack opts)
 
     ;; functions evaluate to "themselves"
     [-fn-]
-    (values {:definition call} file))) ;; BASE CASE !!
+    (values {:definition call} file) ;; BASE CASE !!
+
+    ;; if we don't know, give up
+    _
+    (if (= 0 (length stack))
+        (values {:definition call} file)))) ;; BASE CASE!!
 
 (set search
   (λ search [self file item stack opts]
@@ -91,7 +95,8 @@ the data provided by compiler.fnl."
         (error (.. "I don't know what to do with " (view item))))))
 
 (local {:metadata METADATA
-        :scopes {:global {:specials SPECIALS}}}
+        :scopes {:global {:specials SPECIALS
+                          :macros MACROS}}}
   (require :fennel.compiler))
 
 (λ search-main [self file symbol opts ?byte]
@@ -150,7 +155,7 @@ Returns:
   "find a definition just from the name of the item, and the scope it is in"
   (assert (= (type name) :string))
   (let [stack (stack-add-multisym! [] name)]
-    (case (. METADATA (. SPECIALS name))
+    (case (. METADATA (or (. MACROS name) (. SPECIALS name)))
       metadata {:binding (sym name) : metadata}
       _ (case (global-info self name)
          global-item global-item

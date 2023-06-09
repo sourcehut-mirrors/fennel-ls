@@ -36,7 +36,22 @@
           ,(view pattern)
           ,(and ?msg `(.. "\n" ,?msg))))))
 
+(fn is-casing [item pattern ?msg]
+  "check if item matches a pattern according to fennel's `match` builtin"
+  `(case ,item
+    ,pattern nil
+    ?otherwise#
+    (error
+      (.. "Pattern did not match:\n"
+          (let [fennel# (require :fennel)]
+            (fennel#.view ?otherwise#))
+          "\ndid not match pattern:\n"
+          ,(view pattern)
+          ,(and ?msg `(.. "\n" ,?msg))))))
+
+
 {: it
  : describe
  : is-matching
+ : is-casing
  : before-each}

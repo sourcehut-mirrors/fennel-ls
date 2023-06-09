@@ -41,4 +41,5 @@ I suspect this file may be gone after a bit of refactoring."
     modname (utils.path->uri modname)
     nil nil))
 
-{: lookup}
+{: lookup
+ : add-workspaces-to-path}

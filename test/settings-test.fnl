@@ -14,12 +14,12 @@
         [{:result {:range _range}}]
         "error message")))
 
-  ;; (it "can set the path"
-  ;;   (let [client (doto (create-client {:fennel-ls {:macro-path "./?/?.fnl"}})
-  ;;                  (: :open-file! (.. ROOT-URI :/test.fnl) "(import-macros {: this-is-in-modname} :modname)"))]
-  ;;     (is-matching
-  ;;         (client:definition (.. ROOT-URI :/test.fnl) 0 12)
-  ;;         [{:result {:range message}}]))))
+  (it "can set the macro path"
+    (let [client (create-client {:fennel-ls {:macro-path "./?/?.fnl"}})
+          responses (client:open-file! (.. ROOT-URI :/test.fnl) "(import-macros {: this-is-in-modname} :modname)")]
+      (print ((. (require :fennel) :view) responses))))
+
+  ;; (it "recompiles modules if the macro files are modified)"
 
   ;; (it "can infer the macro path from fennel-path"
   ;;   (local self (doto [] (setup-server {:fennel-ls {:fennel-path "./?/?.fnl"}}))))

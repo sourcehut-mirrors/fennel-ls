@@ -8,11 +8,13 @@ These functions are all pure functions, which makes me happy."
     (= (str:sub 1 len) pre)))
 
 (λ uri->path [uri]
+  "Strips the \"file://\" prefix from a uri to turn it into a path. Throws an error if it is not a path uri"
   (local prefix "file://")
-  (assert (startswith uri prefix))
+  (assert (startswith uri prefix) "encountered a URI that is not a file???")
   (string.sub uri (+ (length prefix) 1)))
 
 (λ path->uri [path]
+  "Prepents the \"file://\" prefix to a path to turn it into a uri"
   (.. "file://" path))
 
 (λ next-line [str ?from]
@@ -25,7 +27,7 @@ These functions are all pure functions, which makes me happy."
 (λ pos->byte [str line col]
   "convert a 0-indexed line and column into a 1-indexed byte. Doesn't yet handle UTF8 UTF16 magic from the protocol"
   (var sofar 1)
-  (for [_ 1 line :until (not sofar)]
+  (for [_ 1 line &until (not sofar)]
     (set sofar (next-line str sofar)))
   (if sofar
     (+ sofar col)

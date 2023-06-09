@@ -137,7 +137,9 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ make-completion-item [self file name scope]
   ;; TODO consider passing stop-early?
   (case (language.search-name-and-scope self file name scope)
-    def (formatter.completion-item-format name def)))
+    def (formatter.completion-item-format name def)
+    _ {:label name}))
+
 
 (λ scope-completion [self file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
@@ -150,8 +152,8 @@ Every time the client sends a message, it gets handled by a function in the corr
         in-call-position? (and ?parent (= ?symbol (. ?parent 1)))]
     (collect-scope scope :manglings #(make-completion-item self file $ scope) result)
     (when in-call-position?
-      (collect-scope scope :macros #{:label $ :kind kinds.Keyword} result)
-      (collect-scope scope :specials #(make-completion-item self file $ scope) result))
+      (collect-scope scope :macros #(doto (make-completion-item self file $ scope) (tset :kind kinds.Keyword)) result)
+      (collect-scope scope :specials #(doto (make-completion-item self file $ scope) (tset :kind kinds.Operator)) result))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
       (make-completion-item self file k scope))))
 
@@ -195,9 +197,14 @@ Every time the client sends a message, it gets handled by a function in the corr
   (send (message.diagnostics file))
   (set file.open? true))
 
+(λ notifications.textDocument/didSave [self send {:textDocument {: uri}}]
+  ;; TODO be careful about which modules need to be recomputed, and also eagerly flush existing files
+  (tset (require :fennel) :macro-loaded []))
+
 (λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (set file.open? false)
+  (tset (require :fennel) :macro-loaded [])
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (state.flush-uri self uri))
 

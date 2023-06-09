@@ -1,4 +1,4 @@
-(import-macros {: is-matching : describe : it : before-each} :test)
+(import-macros {: is-matching : is-casing : describe : it : before-each} :test)
 (local is (require :test.is))
 
 (local {: view} (require :fennel))
@@ -30,6 +30,9 @@
   (it "suggests locals in scope"
     (check-completion "(local x 10)\n(print )" 1 7 [:x]))
 
+  (it "suggests locals where the definition can't be found"
+    (check-completion "(local x (doto 10 or and +))\n(print )" 1 7 [:x]))
+
   (it "suggests locals in scope at the top level"
     (check-completion "(local x 10)\n\n" 1 0 [:x]))
 
@@ -58,6 +61,9 @@
 
     (it "still completes with no body in the `let`"
       (check-completion "(let [x 10 y 20]\n  )" 1 2 [:x :y]))
+
+    (it "still completes with no body in the `let` and no close parentheses"
+      (check-completion "(local foo 10)\n(local x (let [y f]\n" 1 18 [:foo]))
 
     (it "still completes items from the previous definitions in the same `let`"
       (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b]))
@@ -110,6 +116,13 @@
     (check-completion "(local x {:field (fn [])})\n(x:fi" 1 5 [:field] [:table]))
 
   (describe "metadata"
+    ;; CompletionItemKind
+    (local kinds
+      {:Text 1 :Method 2 :Function 3 :Constructor 4 :Field 5 :Variable 6 :Class 7
+       :Interface 8 :Module 9 :Property 10 :Unit 11 :Value 12 :Enum 13 :Keyword 14
+       :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
+       :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
+
     (it "offers rich information about function completions"
       (let [client (doto (create-client)
                      (: :open-file! filename "(fn xyzzy [x y z] \"docstring\" nil)\n(xyzz"))
@@ -117,9 +130,35 @@
         ;; TODO this seems a little bit weird to assert
         (is.same :xyzzy completion.label "the first completion should be xyzzy")
         (assert completion.kind "completion kind should be present")
-        (assert completion.documentation "completion documentation should be present")))))
+        (assert completion.documentation "completion documentation should be present")))
 
-    ; (it "offers rich information about global completions"
+    (it "offers rich information about builtin/special completions"
+      (let [client (doto (create-client)
+                     (: :open-file! filename "("))
+            [{:result completions}] (client:completion filename 0 1)
+            completion (accumulate [item nil _ completion (ipairs completions) &until item] (if (= completion.label :local) completion))]
+        (is-casing
+          completion
+          (where
+            {:label :local
+             :kind (= kinds.Operator)
+             :documentation documentation}
+            (not= documentation :nil)))))
+
+    (it "offers rich information about builtin-macro completions"
+      (let [client (doto (create-client)
+                     (: :open-file! filename "("))
+            [{:result completions}] (client:completion filename 0 1)
+            completion (accumulate [item nil _ completion (ipairs completions) &until item] (if (= completion.label :-?>) completion))]
+        (is-casing
+          completion
+          (where
+            {:label :-?>
+             :kind (= kinds.Keyword)
+             :documentation documentation}
+            (not= documentation :nil)))))))
+
+    ; (it "offers rich information about everything"
     ;   (let [client (doto (create-client)
     ;                  (: :open-file! filename "("))
     ;         [{:result completions}] (client:completion filename 0 1)
@@ -135,15 +174,15 @@
     ;     (each [_ completion (ipairs completions)]
     ;       (is.same (type completion.label) :string "unlabeled completion")
     ;       (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
-    ;       (is.same (type completion.documentation) :table (.. completion.label " needs documentation")))))))
+    ;       (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
+    ;       (is.not.same completion.documentation :nil (.. completion.label " needs documentation")))))))
 
 
-    ;; (it "offers rich information about macro completions")
     ;; (it "offers rich information about variable completions")
     ;; (it "offers rich information about field completions")
     ;; (it "offers rich information about method completions")
     ;; (it "offers rich information about module completions")
-    ;; (it "offers rich information about macromodule completions")))
+    ;; (it "offers rich information about macro-module completions")))
 
   ;; (it "suggests known fn keys when using the `:` special")
   ;; (it "suggests known keys when using the `.` special")
