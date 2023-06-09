@@ -274,11 +274,12 @@ later by fennel-ls.language to answer requests from the client."
         (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
           (case (xpcall #(fennel.compile form opts) fennel.traceback)
             (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
-            (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
-                       "\n\n^^^ the error message above here is the root problem\n\n"))))
-          ; (table.insert diagnostics
-          ;   {:range (message.pos->range 0 0 0 0)
-          ;    :message (.. "unrecoverable compiler error: " err)})
+            (if (os.getenv :TESTING)
+              (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
+                         "\n\n^^^ the error message above here is the root problem\n\n"))
+              (table.insert diagnostics
+                {:range (message.pos->range 0 0 0 0)
+                 :message (.. "unrecoverable compiler error: " err)}))))
 
         (set fennel.macro-path old-macro-path))
 

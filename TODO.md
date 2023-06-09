@@ -15,8 +15,8 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [X] Neovim (This project isn't a neovim plugin, but there are instructions on how to inform neovim of the fennel-ls binary once you build it.)
     - [X] emacs
     - [X] helix
-    - [ ] vscode
-    - [ ] vim+coc
+    - [ ] vscode (publish an extension)
+    - [ ] vim+coc (publish a node thingy)
 - [x] Go-to-definition:
     - [X] literal table constructor
     - [X] table destructuring
@@ -36,12 +36,12 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
 - [ ] Completion Suggestions
     - [X] from globals
     - [X] from current scope
-    - [ ] from macros (only on first form in a list)
-    - [ ] from specials (only on first form in a list)
+    - [X] from macros (only on first form in a list)
+    - [X] from specials (only on first form in a list)
     - [X] "dot completion" for table fields
     - [ ] dot completion is aware of a stdlib
     - [ ] actually compliant rules about lexical scope (only see things declared before, not after)
-    - [ ] show docs/icons on each suggestion
+    - [x] show docs/icons on each suggestion
     - [ ] "dot completion" for metatable `__index` fields
     - [ ] `(. obj :` string completions
     - [ ] `(: "foo" :` string completions
@@ -52,6 +52,7 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [X] Report more than one error per top-level form
 - [ ] Reports linting issues
     - [X] Unused locals
+    - [X] Unknown fields of modules
     - [ ] Discarding results from pcall/xpcall/other functions
     - [ ] `unpack` or `values` into a special
     - [ ] `do`/`values` with only one inner form
@@ -67,7 +68,7 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] respond to signature help queries
     - [ ] hide or grey out the `self` in an `a:b` multisym call
 - [ ] Go-to-references
-    - [ ] lexical scope in the same file
+    - [x] lexical scope in the same file
     - [ ] fields
     - [ ] go to references of fields when tables are aliased
     - [ ] global search across other files

@@ -25,7 +25,7 @@ clean:
 	rm -f $(EXE)
 
 test:
-	LUA_PATH="./src/?.lua;./?.lua" FENNEL_PATH="./src/?.fnl;./?.fnl" \
+	TESTING=1 LUA_PATH="./src/?.lua;./?.lua" FENNEL_PATH="./src/?.fnl;./?.fnl" \
 		$(FENNEL) test/init.fnl
 
 install: $(EXE)
