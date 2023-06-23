@@ -14,6 +14,7 @@ the data provided by compiler.fnl."
 (local -let- (sym :let))
 (local -fn- (sym :fn))
 (local -nil- (sym :nil))
+(local -setmetatable- (sym :setmetatable))
 
 (var search nil) ;; all of the search functions are mutually recursive
 
@@ -61,10 +62,12 @@ the data provided by compiler.fnl."
 (λ search-list [self file call stack opts]
   (match call
     [-require- mod]
-    (let [newfile (state.get-by-module self mod)]
-      (when newfile
-        (let [newitem (. newfile.ast (length newfile.ast))]
-          (search self newfile newitem stack (doto opts (tset :searched-through-require true))))))
+    (when (= :string (type mod))
+      (let [newfile (state.get-by-module self mod)]
+        (when newfile
+          (let [newitem (. newfile.ast (length newfile.ast))]
+            (search self newfile newitem stack (doto opts (tset :searched-through-require true)))))))
+
     ;; A . form  indexes into item 1 with the other items
     (where [-dot- & split] (. split 1))
     (search self file (. split 1) (stack-add-split! stack split) opts)
@@ -75,6 +78,10 @@ the data provided by compiler.fnl."
 
     (where [-let- _binding & body] (. body 1))
     (search self file (. body (length body)) stack opts)
+
+    ;; TODO care about the setmetatable call
+    (where [-setmetatable- tbl _mt])
+    (search self file tbl stack opts)
 
     ;; functions evaluate to "themselves"
     [-fn-]
@@ -91,8 +98,8 @@ the data provided by compiler.fnl."
         (sym? item)               (search-symbol self file item stack opts)
         (list? item)              (search-list self file item stack opts)
         (= :table (type item))    (search-table self file item stack opts)
-        (= 0 (length stack))      {:definition item} ;; BASE CASE !!
-        (error (.. "I don't know what to do with " (view item))))))
+        (= 0 (length stack))      {:definition item}))) ;; BASE CASE !!
+        ;; (error (.. "I don't know what to do with " (view item))))))
 
 (local {:metadata METADATA
         :scopes {:global {:specials SPECIALS

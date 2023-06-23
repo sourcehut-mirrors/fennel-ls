@@ -8,14 +8,14 @@
 
 (local filename (.. ROOT-URI "/imaginary-file.fnl"))
 
-(fn check-references [body line col expected]
+(fn check-references [body line col ?expected]
   (let [client (doto (create-client)
                  (: :open-file! filename body))
         response (client:references filename line col)]
     (is-matching response
       (where [{:jsonrpc "2.0" :id client.prev-id
-               : result}]
-        (is.same result expected)))))
+               :result ?result}]
+        (is.same ?result ?expected)))))
 
 (describe "references"
   (it "finds a reference from let"
@@ -24,4 +24,8 @@
 
   (it "finds a reference from let"
     (check-references "(let [x 10] x)" 0 6
-      [{:uri filename :range (message.pos->range 0 12 0 13)}])))
+      [{:uri filename :range (message.pos->range 0 12 0 13)}]))
+
+  (it "doesn't crash here"
+    (check-references "(let [x nil] x.y)" 0 14
+      nil)))

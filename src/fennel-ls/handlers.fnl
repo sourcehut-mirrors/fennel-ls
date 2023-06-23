@@ -93,10 +93,10 @@ Every time the client sends a message, it gets handled by a function in the corr
       (if (. file.definitions symbol)
         (values (. file.definitions symbol) file)
         (language.search-main self file symbol {:stop-early? true} byte))
-      (definition result-file)
+      ({: referenced-by &as definition} result-file)
       (let [result
-            (icollect [_ symbol (ipairs definition.referenced-by)]
-              ;; TODO we currently assume all references are in the same file
+            (icollect [_ symbol (ipairs referenced-by)]
+              ;; TODO I currently assume all references are in the same file
               (message.range-and-uri symbol result-file))]
         (if ?include-declaration?
           (table.insert result
@@ -114,7 +114,6 @@ Every time the client sends a message, it gets handled by a function in the corr
       result {:contents (formatter.hover-format result)
               :range (message.ast->range symbol file)}
       (catch _ nil))))
-
 
 ;; All of the helper functions for textDocument/completion are here until I
 ;; finish refactoring them, and then they can find a home in language.fnl

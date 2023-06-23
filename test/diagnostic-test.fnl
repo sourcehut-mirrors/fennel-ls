@@ -5,8 +5,8 @@
 (local {: ROOT-URI
         : create-client} (require :test.mock-client))
 
-(macro find [t body ?sentinel]
-  (assert-compile (not ?sentinel) "you can only have one thing here, put a `(do)`")
+(macro find [t body ?should-be-nil]
+  (assert-compile (= nil ?should-be-nil) "you can only have one thing here, put a `(do)`")
   (assert-compile (sequence? t) "[] square brackets please")
   (local result (gensym :result))
   (local nil* (sym :nil))

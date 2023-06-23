@@ -17,7 +17,7 @@
   (it "can set the macro path"
     (let [client (create-client {:fennel-ls {:macro-path "./?/?.fnl"}})
           responses (client:open-file! (.. ROOT-URI :/test.fnl) "(import-macros {: this-is-in-modname} :modname)")]
-      (print ((. (require :fennel) :view) responses))))
+      (assert (not (. responses 1 :params 1)) "if the import-macros fails it generates a diagnostic (for now at least)")))
 
   ;; (it "recompiles modules if the macro files are modified)"
 
