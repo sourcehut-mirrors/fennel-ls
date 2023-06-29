@@ -12,6 +12,8 @@ later by fennel-ls.language to answer requests from the client."
 ;; because fennel doesn't allow 'require in a runtime file
 (local -require- (sym :require))
 (local -fn- (sym :fn))
+(local -lambda- (sym :lambda))
+(local -λ- (sym :λ))
 
 (λ ast->macro-ast [ast]
   [(fennel.list (sym :eval-compiler)
@@ -49,7 +51,8 @@ later by fennel-ls.language to answer requests from the client."
         diagnostics   {} ; [diagnostic]
         references    {} ; symbol -> references
         scopes        {} ; ast -> scope
-        require-calls {}]; ast -> boolean (does this ast start with the symbol `require)
+        require-calls {} ; ast -> boolean (does this ast start with the symbol `require)
+        calls         {}]; array of all lists
 
     (λ find-definition [name ?scope]
       (when ?scope
@@ -183,13 +186,14 @@ later by fennel-ls.language to answer requests from the client."
       (tset scopes ast scope))
 
     (λ call [ast scope]
+      (tset calls ast (. ast 1))
       (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:
       (case ast
         ;; This cannot be done through the :fn feature of the compiler plugin system
         ;; because it needs to be called *before* the body of the function is processed.
         ;; TODO check if hashfn needs to be here
-        (where [(= -fn-)])
+        (where (or [(= -fn-)] [(= -lambda-)] [(= -λ-)] false))  ;; TODO, this false pattern should not ever match, and should be removed once I update fennel
         (define-function ast scope)
         (where [(= -require-) _modname])
         (tset require-calls ast true)
@@ -291,6 +295,7 @@ later by fennel-ls.language to answer requests from the client."
       ;     ;; base case???
 
       (set file.ast ast)
+      (set file.calls calls)
       (set file.scope scope)
       (set file.scopes scopes)
       (set file.definitions definitions)

@@ -22,7 +22,7 @@ in the \"self\" object."
         file)))
 
 (λ get-by-path [self path]
-  (get-by-uri (utils.path->uri path)))
+  (get-by-uri self (utils.path->uri path)))
 
 (λ get-by-module [self module]
   ;; check the cache

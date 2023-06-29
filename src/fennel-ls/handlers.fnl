@@ -5,7 +5,6 @@ Every time the client sends a message, it gets handled by a function in the corr
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
  and a textDocument/defintion request will call requests.textDocument/definition)"
 
-(local {: pos->byte : apply-changes} (require :fennel-ls.utils))
 (local diagnostics (require :fennel-ls.diagnostics))
 (local message (require :fennel-ls.message))
 (local state (require :fennel-ls.state))

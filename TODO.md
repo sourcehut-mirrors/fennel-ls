@@ -58,6 +58,12 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] `do`/`values` with only one inner form
     - [ ] redundant `do` as the last/only item in a form that accepts a "body"
     - [ ] `var` forms that could be `local`
+    - [ ] Arity checking
+      - [ ] Too many args (assuming there is no ... argument)
+      - [ ] Too few args (assuming the last argument is statically countable, and also account for ?optional arguments)
+      - [ ] I need to also make it work for built-in functions
+      - [ ] warn if an optional arg is present, but no call ever passes the arg
+    - [ ] Code that matches the shape of `accumulate` or `icollect` or `collect`?? or other macros??
     - [ ] Dead code (I'm not sure what sort of things cause dead code)
     - [ ] Unused fields (difficult)
     - [ ] unification in a `match` pattern (difficult)
