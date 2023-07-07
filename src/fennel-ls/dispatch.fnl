@@ -13,9 +13,9 @@ In general, this involves:
 (λ handle-request [self send id method ?params]
   ;; Call the appropriate request handler.
   ;; The return value of the request is sent back to the server.
-  (match (. handlers.requests method)
+  (case (. handlers.requests method)
     callback
-    (match (callback self send ?params)
+    (case (callback self send ?params)
       (nil err) (send (message.create-error :InternalError err id))
       ?response (send (message.create-response id ?response)))
     nil
@@ -35,7 +35,7 @@ In general, this involves:
 
 (λ handle-notification [self send method ?params]
   ;; Call the appropriate notification handler.
-  (match (. handlers.notifications method)
+  (case (. handlers.notifications method)
     callback (callback self send ?params)))
     ;; Silent error for unknown notifications
 
@@ -48,7 +48,7 @@ Takes:
 * `self`, which is the state of the server,
 * `send`, which is a callback for sending responses, and
 * `msg`, which is the message to receive."
-  (match (values msg (type msg))
+  (case (values msg (type msg))
     {:jsonrpc "2.0" : id : method :params ?params}
     (handle-request self send id method ?params)
     {:jsonrpc "2.0" : method :params ?params}

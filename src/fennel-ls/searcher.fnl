@@ -36,8 +36,8 @@ I suspect this file may be gone after a bit of refactoring."
     (table.concat result ";")))
 
 (λ lookup [{:configuration {: fennel-path} : root-uri} mod]
-  (match (or ;; TODO support lua ;; (fennel.searchModule mod (add-workspaces-to-path luapath [root-uri]))
-             (fennel.searchModule mod (add-workspaces-to-path fennel-path [root-uri])))
+  (case (or ;; TODO support lua ;; (fennel.searchModule mod (add-workspaces-to-path luapath [root-uri]))
+            (fennel.searchModule mod (add-workspaces-to-path fennel-path [root-uri])))
     modname (utils.path->uri modname)
     nil nil))
 

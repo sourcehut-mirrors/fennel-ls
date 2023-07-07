@@ -20,7 +20,7 @@ These functions are all pure functions, which makes me happy."
 (λ next-line [str ?from]
   "Find the start of the next line from a given byte offset, or from the start of the string."
   (let [from (or ?from 1)]
-    (match (str:find "[\r\n]" from)
+    (case (str:find "[\r\n]" from)
       i (+ i (length (str:match "\r?\n?" i)))
       nil nil)))
 
@@ -59,14 +59,12 @@ These functions are all pure functions, which makes me happy."
   (accumulate
     [contents initial-text
      _ change (ipairs contentChanges)]
-    (match change
+    (case change
       ;; Handle a change
       {:range {: start : end} : text}
       (replace contents
-        start.line
-        start.character
-        end.line
-        end.character
+        start.line start.character
+        end.line   end.character
         text)
       ;; A replacment of the entire body
       {: text}

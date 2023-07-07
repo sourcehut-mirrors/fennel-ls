@@ -57,8 +57,8 @@ to look to fix this in the future."
    :end   {:line el :character ec}})
 
 (λ ast->range [?ast file]
-  (match (values (utils.get-ast-info ?ast :bytestart)
-                 (utils.get-ast-info ?ast :byteend))
+  (case (values (utils.get-ast-info ?ast :bytestart)
+                (utils.get-ast-info ?ast :byteend))
     (i j)
     (let [(start-line start-col) (utils.byte->pos file.text i)
           (end-line   end-col)   (utils.byte->pos file.text (+ j 1))]
@@ -66,7 +66,7 @@ to look to fix this in the future."
 
 (λ range-and-uri [?ast {: uri &as file}]
   "if possible, returns the location of a symbol"
-  (match (ast->range ?ast file)
+  (case (ast->range ?ast file)
     range {: range : uri}))
 
 (λ log [msg]

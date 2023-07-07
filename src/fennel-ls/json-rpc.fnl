@@ -16,7 +16,7 @@ Luckily, I'm testing with Neovim, so I can pretend these problems don't exist fo
 (λ read-header [in ?header]
   "Reads the header of a JSON-RPC message"
   (let [header (or ?header {})]
-    (match (in:read)
+    (case (in:read)
       "\r" header ;; hit an empty line, I'm done reading
       nil nil ;; hit end of stream, return nil
       ;; reading an actual line
@@ -33,7 +33,7 @@ If there aren't enough bytes, return nil"
   (local buffer (or ?buffer []))
   (if (<= len 0)
     (table.concat buffer)
-    (match (in:read len)
+    (case (in:read len)
       content
       (read-n in
               (- len (length content))
@@ -51,7 +51,6 @@ Returns a table with the message if it succeeded, or a string with the parse err
           (read-content in)
           (pcall decode))]
     result))
-
 
 (λ write [out msg]
   "Serializes and writes a JSON-RPC message to the given output stream"

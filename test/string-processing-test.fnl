@@ -11,13 +11,6 @@
     ;; test for multiline edits
     ;; test for unicode utf8 utf16 nightmare
 
-    ;; (it "can handle unicode"
-    ;;   (utils.apply-changes ""
-    ;;     [{:range (range 0 0 0 0) :text "どれみふぁそらてぃど")
-    ;;   (document.replace my-document 0 1 0 3 "😀")
-    ;;   (document.replace my-document 0 11 0 11 "end")
-    ;;   (is-matching my-document {:text "ど😀ふぁそらてぃどend"})))
-
   (describe "apply-changes"
 
     (fn range [start-line start-col end-line end-col]

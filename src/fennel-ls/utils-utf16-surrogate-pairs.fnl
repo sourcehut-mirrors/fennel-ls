@@ -22,18 +22,8 @@
         (set o16 (+ o16 a16))))
     (if (= o8 unit8)
       o16
-      (error :utf8-error)))
+      (error :utf8-error))))
 
-
-  (let [byte (or ?byte (length str))
-        substr (str:sub 1 byte)]
-    (accumulate
-      [total (accumulate
-               [total byte
-                _ (substr:gmatch "[\192-\223]")]
-               (- total 1))
-       _ (substr:gmatch "[\224-\247]")]
-      (- total 2))))
 
 (fn unit16->byte [str unit16]
   "convert from utf16 garbage to normal units"
