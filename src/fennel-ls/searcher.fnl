@@ -20,8 +20,10 @@ I suspect this file may be gone after a bit of refactoring."
   (-> (.. path sep suffix)
     ;; delete duplicate
     ;; windows
+    (: :gsub "%.\\" "")
     (: :gsub "\\+" "\\")
     ;; modern society
+    (: :gsub "%./" "")
     (: :gsub "/+" "/")
     (->> (pick-values 1))))
 
