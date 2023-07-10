@@ -64,6 +64,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.initialize [self send params]
   (state.init-state self params)
   {:capabilities capabilities
+   :positionEncoding self.position-encoding
    :serverInfo {:name "fennel-ls" :version "0.0.0"}})
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]

@@ -100,10 +100,27 @@ in the \"self\" object."
 (λ make-configuration [?c]
   (make-configuration-from-template default-configuration ?c))
 
+(λ choose-position-encoding [init-params]
+  "fennel-ls natively uses utf-8, so ideally we will choose positionEncoding=utf-8.
+However, fennel-ls can fall back to positionEncoding=utf-16 (with a performance hit)."
+  (let [?position-encodings (?. init-params :capabilities :general :positionEncodings)
+        utf8?
+        (if (= (type ?position-encodings) :table)
+          (accumulate [utf-8? false
+                       _ encoding (ipairs ?position-encodings)]
+            (or (= encoding :utf-8)
+                (= encoding :utf8)))
+          false)]
+    (if utf8?
+     :utf-8
+     :utf-16)))
+
+
 (λ init-state [self params]
   (set self.files {})
   (set self.modules {})
   (set self.root-uri params.rootUri)
+  (set self.position-encoding (choose-position-encoding params))
   (set self.configuration (make-configuration)))
 
 (λ write-configuration [self ?configuration]

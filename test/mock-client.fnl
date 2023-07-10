@@ -6,14 +6,11 @@
       (: :read :*a)
       (: :sub 1 -2) ;; take off newline
       (.. "/test/test-project")))
+
 (local ROOT-URI
   (.. "file://" ROOT-PATH))
 
-(local initialization-message
-  {:id 1
-   :jsonrpc "2.0"
-   :method "initialize"
-   :params
+(local default-params
    {:capabilities {}
     :clientInfo {:name "Neovim" :version "0.7.2"}
     :initializationOptions {}
@@ -22,17 +19,23 @@
     :rootUri ROOT-URI
     :trace "off"
     :workspaceFolders [{:name ROOT-PATH
-                        :uri ROOT-URI}]}})
+                        :uri ROOT-URI}]})
 
 (local mt {})
-(fn create-client [?config]
-  (let [self (doto {:server [] :prev-id 1} (setmetatable mt))]
-    (dispatch.handle* self.server initialization-message)
-    (if ?config
-      (dispatch.handle* self.server {:jsonrpc "2.0"
-                                     :method :workspace/didChangeConfiguration
-                                     :params {:settings ?config}}))
-    self))
+(fn create-client [?opts]
+  (let [self (doto {:server [] :prev-id 1} (setmetatable mt))
+        initialize {:id 1
+                    :jsonrpc "2.0"
+                    :method "initialize"
+                    :params (or (?. ?opts :params) default-params)}
+        result (dispatch.handle* self.server initialize)]
+    (case (?. ?opts :settings)
+      settings
+      (dispatch.handle* self.server
+        {:jsonrpc "2.0"
+         :method :workspace/didChangeConfiguration
+         :params {: settings}}))
+    (values self result)))
 
 (fn next-id! [self]
   (set self.prev-id (+ self.prev-id 1))
@@ -80,4 +83,5 @@
       : references})
 
 {: create-client
- : ROOT-URI}
+ : ROOT-URI
+ : ROOT-PATH}

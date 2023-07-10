@@ -64,7 +64,7 @@ function lust.it(name, fn)
       end
     end
   end
-  
+
   if has(arg, "--quit-at-first-test") then os.exit(1) end
 end
 

@@ -1,3 +1,4 @@
+(require :test.capabilities-test)
 (require :test.completion-test)
 (require :test.diagnostic-test)
 (require :test.goto-definition-test)

@@ -26,6 +26,22 @@
     (check-references "(let [x 10] x)" 0 6
       [{:uri filename :range (message.pos->range 0 12 0 13)}]))
 
+  (let [x 10] x x x)
+  (it "finds multiple reference from let"
+    (check-references "(let [x 10] x x x)" 0 6
+      [{:uri filename :range (message.pos->range 0 12 0 13)}
+       {:uri filename :range (message.pos->range 0 14 0 15)}
+       {:uri filename :range (message.pos->range 0 16 0 17)}]))
+
+  (it "finds a reference from fn"
+    (check-references "(fn x []) x" 0 10
+      [{:uri filename :range (message.pos->range 0 10 0 11)}]))
+
+  ; (it "finds a reference from fn"
+  ;   (check-references "(fn x []) x" 0 4
+  ;     [{:uri filename :range (message.pos->range 0 10 0 11)}]))
+
+
   (it "doesn't crash here"
     (check-references "(let [x nil] x.y)" 0 14
       nil)))
