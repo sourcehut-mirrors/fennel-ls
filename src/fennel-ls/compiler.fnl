@@ -40,10 +40,18 @@ later by fennel-ls.language to answer requests from the client."
        (tset self key val)
        val))})
 
+(λ line+byte->range [self file line byte]
+  (let [line (- line 1)
+        ;; TODO think about this further when upstream bug #180 is fixed
+        byte (math.max 0 byte)
+        position (utils.pos->position file.text line byte self.position-encoding)]
+    {:start position :end position}))
+
+
 (λ is-values? [?ast]
   (and (list? ?ast) (= (sym :values) (. ?ast 1))))
 
-(λ compile [{:configuration {: macro-path} : root-uri} file]
+(λ compile [{:configuration {: macro-path} : root-uri &as self} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
@@ -193,7 +201,7 @@ later by fennel-ls.language to answer requests from the client."
         ;; This cannot be done through the :fn feature of the compiler plugin system
         ;; because it needs to be called *before* the body of the function is processed.
         ;; TODO check if hashfn needs to be here
-        (where (or [(= -fn-)] [(= -lambda-)] [(= -λ-)] false))  ;; TODO, this false pattern should not ever match, and should be removed once I update fennel
+        (where (or [(= -fn-)] [(= -lambda-)] [(= -λ-)]))
         (define-function ast scope)
         (where [(= -require-) _modname])
         (tset require-calls ast true)
@@ -210,8 +218,8 @@ later by fennel-ls.language to answer requests from the client."
           (= 1 (msg:find "expected at least one pattern/body pair"))))
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
-      (let [range (or (message.ast->range ast file)
-                      (message.pos->range 0 0 0 0))]
+      (let [range (or (message.ast->range self file ast)
+                      (line+byte->range self file 1 1))]
         (table.insert diagnostics
           {:range range
            :message msg
@@ -224,10 +232,9 @@ later by fennel-ls.language to answer requests from the client."
           (call-me-to-reset-the-compiler)
           (error "__NOT_AN_ERROR"))))
 
-    (λ on-parse-error [msg file line byte]
-      ;; assume byte and char count is the same, ie no UTF-8
-      (let [line (- line 1)
-            range (message.pos->range line byte line byte)]
+    (λ on-parse-error [msg filename line byte _source call-me-to-reset-the-compiler]
+      (let [line (if (= line "?") 1 line)
+            range (line+byte->range self file line byte)]
         (table.insert diagnostics
           {:range range
            :message msg
@@ -236,7 +243,9 @@ later by fennel-ls.language to answer requests from the client."
            :codeDescription "parse error"}))
       (if (recoverable? msg)
         true
-        (error "__NOT_AN_ERROR")))
+        (do
+          (call-me-to-reset-the-compiler)
+          (error "__NOT_AN_ERROR"))))
 
     (local allowed-globals
       (icollect [k _ (pairs _G)]
@@ -247,7 +256,7 @@ later by fennel-ls.language to answer requests from the client."
     (let [macro-file? (= (: file.text :sub 1 24) ";; fennel-ls: macro-file")
           plugin
           {:name "fennel-ls"
-           :versions ["1.3.1"]
+           :versions ["1.3.2"]
            : symbol-to-expression
            : call
            : destructure
@@ -266,8 +275,20 @@ later by fennel-ls.language to answer requests from the client."
                 :allowedGlobals allowed-globals
                 :requireAsInclude false
                 : scope}
-          parser (partial pcall (fennel.parser file.text file.uri opts))
-          ast (icollect [ok ok-2 ast parser &until (not (and ok ok-2))] ast)]
+
+          parser (let [p (fennel.parser file.text file.uri opts)]
+                   (fn p1 [p2 p3]
+                     (case (xpcall #(p p2 p3) fennel.traceback)
+                       (true r1 r2) (values r1 r2)
+                       (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
+                       (if (os.getenv :TESTING)
+                         (error (.. "\nYou have crashed the fennel parser or fennel-ls with the following message\n:" err
+                                    "\n\n^^^ the error message above here is the root problem\n\n"))
+                         (table.insert diagnostics
+                           {:range (line+byte->range self file 1 1)
+                            :message (.. "unrecoverable compiler error: " err)})))))
+
+          ast (icollect [ok ast parser &until (not ok)] ast)]
 
 
       ;; This is bad; we mutate fennel.macro-path
@@ -282,7 +303,7 @@ later by fennel-ls.language to answer requests from the client."
               (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
                          "\n\n^^^ the error message above here is the root problem\n\n"))
               (table.insert diagnostics
-                {:range (message.pos->range 0 0 0 0)
+                {:range (line+byte->range self file 1 1)
                  :message (.. "unrecoverable compiler error: " err)}))))
 
         (set fennel.macro-path old-macro-path))

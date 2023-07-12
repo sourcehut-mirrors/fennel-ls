@@ -52,25 +52,17 @@ to look to fix this in the future."
    : id
    :result ?result})
 
-(λ pos->range [sl sc el ec]
-  {:start {:line sl :character sc}
-   :end   {:line el :character ec}})
-
-(λ ast->range [?ast file]
+(λ ast->range [self file ?ast]
   (case (values (utils.get-ast-info ?ast :bytestart)
                 (utils.get-ast-info ?ast :byteend))
-    (i j)
-    (let [(start-line start-col) (utils.byte->pos file.text i)
-          (end-line   end-col)   (utils.byte->pos file.text (+ j 1))]
-      (pos->range start-line start-col end-line end-col))))
+    (bytestart byteend)
+    {:start (utils.byte->position file.text bytestart self.position-encoding)
+     :end   (utils.byte->position file.text (+ byteend 1) self.position-encoding)}))
 
-(λ range-and-uri [?ast {: uri &as file}]
+(λ range-and-uri [self {: uri &as file} ?ast]
   "if possible, returns the location of a symbol"
-  (case (ast->range ?ast file)
+  (case (ast->range self file ?ast)
     range {: range : uri}))
-
-(λ log [msg]
-  (create-notification :window/logMessage {: msg :type 4}))
 
 (λ diagnostics [file]
   (create-notification
@@ -82,9 +74,7 @@ to look to fix this in the future."
  : create-request
  : create-response
  : create-error
- : pos->range
  : ast->range
- : log
  : range-and-uri
  : diagnostics
  : severity}

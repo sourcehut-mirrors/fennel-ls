@@ -57,7 +57,7 @@
 
   (describe "When the program doesn't compile"
     (it "still completes without requiring the close parentheses"
-      (check-completion "(fn foo [z]\n  (let [x 10 y 20]\n    " 1 2 [:x :y :z]))
+      (check-completion "(fn foo [z]\n  (let [x 10 y 20]\n    " 2 4 [:x :y :z]))
 
     (it "still completes with no body in the `let`"
       (check-completion "(let [x 10 y 20]\n  )" 1 2 [:x :y]))

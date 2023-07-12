@@ -18,7 +18,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local notifications [])
 
 (local capabilities
-  {:textDocumentSync 1 ;; FIXME: upgrade to 2
+  {:textDocumentSync {:openClose true :change 2}
    ;; :notebookDocumentSync nil
    :completionProvider {:workDoneProgress false} ;; TODO
    :hoverProvider {:workDoneProgress false
@@ -69,25 +69,24 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
-        byte (utils.pos->byte file.text position.line position.character)]
+        byte (utils.position->byte file.text position self.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
-      (symbol parents)
-      ;; TODO unruin this match-try
-      (let [parent (. parents 1)]
-        (if (. file.require-calls parent)
-          (language.search self file parent [] {:stop-early? true})
-          (language.search-main self file symbol {:stop-early? true} byte)))
+      (symbol [parent])
+      (if
+        ;; require call
+        (. file.require-calls parent)
+        (language.search self file parent [] {:stop-early? true})
+        ;; regular symbol
+        (language.search-main self file symbol {:stop-early? true} byte))
       (result result-file)
-      (message.range-and-uri
-        (or result.binding result.definition)
-        result-file)
+      (message.range-and-uri self result-file (or result.binding result.definition))
       (catch _ nil))))
 
-(λ requests.textDocument/references [self send {:position {: line : character}
+(λ requests.textDocument/references [self send {: position
                                                 :textDocument {: uri}
                                                 :context {:includeDeclaration ?include-declaration?}}]
   (let [file (state.get-by-uri self uri)
-        byte (utils.pos->byte file.text line character)]
+        byte (utils.position->byte file.text position self.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol
       (if (. file.definitions symbol)
@@ -97,10 +96,10 @@ Every time the client sends a message, it gets handled by a function in the corr
       (let [result
             (icollect [_ symbol (ipairs referenced-by)]
               ;; TODO I currently assume all references are in the same file
-              (message.range-and-uri symbol result-file))]
+              (message.range-and-uri self result-file symbol))]
         (if ?include-declaration?
           (table.insert result
-                (message.range-and-uri definition.binding result-file)))
+            (message.range-and-uri self result-file definition.binding)))
 
         ;; TODO don't include duplicates
         result)
@@ -108,11 +107,11 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
-        byte (utils.pos->byte file.text position.line position.character)]
+        byte (utils.position->byte file.text position self.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol (language.search-main self file symbol {} byte)
       result {:contents (formatter.hover-format result)
-              :range (message.ast->range symbol file)}
+              :range (message.ast->range self file symbol)}
       (catch _ nil))))
 
 ;; All of the helper functions for textDocument/completion are here until I
@@ -177,7 +176,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
-        byte (utils.pos->byte file.text position.line position.character)
+        byte (utils.position->byte file.text position self.position-encoding)
         (?symbol parents) (language.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
       (where (or nil [_ nil])) (scope-completion self file byte ?symbol parents)
@@ -186,7 +185,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
-  (state.set-uri-contents self uri (utils.apply-changes file.text contentChanges))
+  (state.set-uri-contents self uri (utils.apply-changes file.text contentChanges self.position-encoding))
   (diagnostics.check self file)
   (send (message.diagnostics file)))
 

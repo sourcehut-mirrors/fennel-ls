@@ -1,18 +1,6 @@
 # Wishlist of features
 ([X] = complete,  [ ] = planned)
 
-                  code unit count (not to be confused with code points)
-code point #    |utf8 |utf16| offset
-000000 - 00007F |  1  |  1  |   0
-000080 - 0007FF |  2  |  1  |  -1
-000800 - 00FFFF |  3  |  1  |  -2
-010000 - 10FFFF |  4  |  2  |  -2
-
-utf8 chart
-000000 - 00007F	0xxxxxxx	
-000080 - 0007FF	110xxxxx	10xxxxxx	
-000800 - 00FFFF	1110xxxx	10xxxxxx	10xxxxxx	
-010000 - 10FFFF	11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
 My current goal is to work on completions a little bit more.
 
 - [ ] Fix crash-files.test2
@@ -86,6 +74,7 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] hide or grey out the `self` in an `a:b` multisym call
 - [ ] Go-to-references
     - [x] lexical scope in the same file
+    - [ ] function names work properly and are counted once
     - [ ] fields
     - [ ] go to references of fields when tables are aliased
     - [ ] global search across other files

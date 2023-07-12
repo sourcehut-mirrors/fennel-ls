@@ -1,12 +1,15 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :test.is))
-(local message (require :fennel-ls.message))
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
         : create-client} (require :test.mock-client))
 
 (local filename (.. ROOT-URI "/imaginary-file.fnl"))
+
+(fn range [a b c d]
+  {:start {:line a :character b}
+   :end   {:line c :character d}})
 
 (fn check-references [body line col ?expected]
   (let [client (doto (create-client)
@@ -20,22 +23,22 @@
 (describe "references"
   (it "finds a reference from let"
     (check-references "(let [x 10] x)" 0 12
-      [{:uri filename :range (message.pos->range 0 12 0 13)}]))
+      [{:uri filename :range (range 0 12 0 13)}]))
 
   (it "finds a reference from let"
     (check-references "(let [x 10] x)" 0 6
-      [{:uri filename :range (message.pos->range 0 12 0 13)}]))
+      [{:uri filename :range (range 0 12 0 13)}]))
 
   (let [x 10] x x x)
   (it "finds multiple reference from let"
     (check-references "(let [x 10] x x x)" 0 6
-      [{:uri filename :range (message.pos->range 0 12 0 13)}
-       {:uri filename :range (message.pos->range 0 14 0 15)}
-       {:uri filename :range (message.pos->range 0 16 0 17)}]))
+      [{:uri filename :range (range 0 12 0 13)}
+       {:uri filename :range (range 0 14 0 15)}
+       {:uri filename :range (range 0 16 0 17)}]))
 
   (it "finds a reference from fn"
     (check-references "(fn x []) x" 0 10
-      [{:uri filename :range (message.pos->range 0 10 0 11)}]))
+      [{:uri filename :range (range 0 10 0 11)}]))
 
   ; (it "finds a reference from fn"
   ;   (check-references "(fn x []) x" 0 4

@@ -3,6 +3,90 @@ A collection of utility functions. Many of these convert data between a
 Language-Server-Protocol representation and a Lua representation.
 These functions are all pure functions, which makes me happy."
 
+(λ next-line [str ?from]
+  "Find the start of the next line from a given byte offset, or from the start of the string."
+  (let [from (or ?from 1)]
+    (case (str:find "[\r\n]" from)
+      i (+ i (length (str:match "\r?\n?" i)))
+      nil nil)))
+
+(λ next-lines [str nlines ?from]
+  "Find the start of the next line from a given byte offset, or from the start of the string."
+  (faccumulate [from (or ?from 1)
+                i 1 nlines]
+    (next-line str from)))
+
+(fn utf [byte]
+  "returns the number of (utf8) bytes, and (utf-16) code units from the first byte of a character"
+  (if
+    (<= 0x00 byte 0x80)
+    (values 1 1)
+    (<= 0xC0 byte 0xDF)
+    (values 2 1)
+    (<= 0xE0 byte 0xEF)
+    (values 3 1)
+    (<= 0xF0 byte 0xF7)
+    (values 4 2)
+    (error :utf8-error)))
+
+(fn byte->unit16 [str ?byte]
+  "convert from normal units to utf16 garbage"
+  ;; TODO reconsider this when upstream #180 is fixed
+  (let [unit8 (math.min (length str) ?byte)]
+    (var o8 0)
+    (var o16 0)
+    (while (< o8 unit8)
+      (let [(a8 a16) (utf (str:byte (+ 1 o8)))]
+        (set o8 (+ o8 a8))
+        (set o16 (+ o16 a16))))
+    (if (= o8 unit8)
+      o16
+      (error :utf8-error))))
+
+
+(fn unit16->byte [str unit16]
+  "convert from utf16 garbage to normal units"
+  (var o8 0)
+  (var o16 0)
+  (while (< o16 unit16)
+    (let [(a8 a16) (utf (str:byte (+ 1 o8)))]
+      (set o8 (+ o8 a8))
+      (set o16 (+ o16 a16))))
+  (if (= o16 unit16)
+    o8
+    (error :utf8-error)))
+
+(λ pos->position [str line character encoding]
+  (case encoding
+    :utf-8 {: line : character}
+    :utf-16 (let [pos (next-lines str line)]
+              {: line
+               :character (byte->unit16 (str:sub pos) character)})
+    _ (error (.. "unknown encoding: " encoding))))
+
+(λ byte->position [str byte encoding]
+  "take a 1-indexed byte, and convert it to an LSP position based on the given encoding"
+  (var line 0)
+  (var pos 1)
+  (while (let [npos (next-line str pos)]
+           (when (and npos (<= npos byte))
+             (set pos npos)
+             (set line (+ line 1))
+             true)))
+  (case encoding
+    :utf-8 {: line :character (- byte pos)}
+    :utf-16 {: line :character (byte->unit16 (str:sub pos) (- byte pos))}
+    _ (error (.. "unknown encoding: " encoding))))
+
+(λ position->byte [str {: line : character} encoding]
+  "take an LSP position and convert it to a 1-indexed byte based on the given encoding"
+  (let [pos (next-lines str line)]
+    (assert pos :bad-pos)
+    (case encoding
+      :utf-8 (+ pos character)
+      :utf-16 (+ pos (unit16->byte (str:sub pos) character))
+      _ (error (.. "unknown encoding: " encoding)))))
+
 (λ startswith [str pre]
   (let [len (length pre)]
     (= (str:sub 1 len) pre)))
@@ -17,55 +101,24 @@ These functions are all pure functions, which makes me happy."
   "Prepents the \"file://\" prefix to a path to turn it into a uri"
   (.. "file://" path))
 
-(λ next-line [str ?from]
-  "Find the start of the next line from a given byte offset, or from the start of the string."
-  (let [from (or ?from 1)]
-    (case (str:find "[\r\n]" from)
-      i (+ i (length (str:match "\r?\n?" i)))
-      nil nil)))
-
-(λ pos->byte [str line col]
-  "convert a 0-indexed line and column into a 1-indexed byte. Doesn't yet handle UTF8 UTF16 magic from the protocol"
-  (var sofar 1)
-  (for [_ 1 line &until (not sofar)]
-    (set sofar (next-line str sofar)))
-  (if sofar
-    (+ sofar col)
-    nil))
-
-(λ byte->pos [str byte]
-  "convert a 1-indexed byte into a 0-indexed line and column. Doesn't yet handle UTF8 UTF16 magic from the protocol"
-  (local up-to (str:sub 1 (- byte 1)))
-  (var lines 0)
-  (var pos 1)
-  (var prev nil)
-  (while (do (set prev pos)
-             (set pos (next-line up-to pos))
-             pos)
-    (set lines (+ 1 lines)))
-  (values lines (+ (length up-to) (- prev) 1)))
-
-(λ replace [text start-line start-col end-line end-col replacement]
-  "Replaces a range of text with a replacement, using the protocol's definition of range. Doesn't yet handle UTF8 UTF16 magic from the protocol"
-  (let [start (pos->byte text start-line start-col)
-        end   (pos->byte text end-line   end-col)]
+(λ replace [text start-position end-position replacement encoding]
+  "Replaces a range of text with a replacement, using the protocol's definition of range."
+  (let [start (position->byte text start-position encoding)
+        end   (position->byte text end-position   encoding)]
     (..
       (text:sub 1 (- start 1))
       replacement
       (text:sub end))))
 
-(λ apply-changes [initial-text contentChanges]
-  "Takes a list of Language-Server-Protocol `contentChanges` and applies them to a piece of text. Doesn't yet handle UTF8 UTF16 magic from the protocol"
+(λ apply-changes [initial-text changes encoding]
+  "Takes a list of Language-Server-Protocol `contentChanges` and applies them to a piece of text."
   (accumulate
     [contents initial-text
-     _ change (ipairs contentChanges)]
+     _ change (ipairs changes)]
     (case change
       ;; Handle a change
       {:range {: start : end} : text}
-      (replace contents
-        start.line start.character
-        end.line   end.character
-        text)
+      (replace contents start end text encoding)
       ;; A replacment of the entire body
       {: text}
       text)))
@@ -94,8 +147,9 @@ These functions are all pure functions, which makes me happy."
 
 {: uri->path
  : path->uri
- : pos->byte
- : byte->pos
+ : pos->position
+ : byte->position
+ : position->byte
  : apply-changes
  : multi-sym-split
  : get-ast-info

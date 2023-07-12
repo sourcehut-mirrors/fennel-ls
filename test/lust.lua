@@ -206,7 +206,7 @@ function lust.expect(v)
           err = nerr or err
         end
         if not res then
-          error(err or 'unknown failure', 2)
+          error(err or 'unknown failure')
         end
       end
     end

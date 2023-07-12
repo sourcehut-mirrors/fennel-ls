@@ -26,21 +26,21 @@ in the \"self\" object."
 
 (λ get-by-module [self module]
   ;; check the cache
-  (match (. self.modules module)
+  (case (. self.modules module)
     uri
     (or (get-by-uri self uri)
       ;; if the cached uri isn't found, clear the cache and try again
       (do (tset self.modules module nil)
           (get-by-module self module)))
     nil
-    (match (searcher.lookup self module)
+    (case (searcher.lookup self module)
       uri
       (do
         (tset self.modules module uri)
         (get-by-uri self uri)))))
 
 (λ set-uri-contents [self uri text]
-  (match (. self.files uri)
+  (case (. self.files uri)
     ;; modify existing file
     file
     (do
@@ -77,7 +77,7 @@ in the \"self\" object."
 (fn make-configuration-from-template [default ?user ?parent]
   (if (= option-mt (getmetatable default))
       (let [setting
-             (match-try ?user
+             (case-try ?user
                nil (?. ?parent :all)
                nil (. default 1))]
         (assert (= (type (. default 1)) (type setting)))

@@ -11,7 +11,7 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
   (icollect [symbol definition (pairs file.definitions) &into file.diagnostics]
     (if (and (= 0 (length definition.referenced-by))
              (not= "_" (: (tostring symbol) :sub 1 1)))
-      {:range (message.ast->range symbol file)
+      {:range (message.ast->range self file symbol)
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
        :code 301
@@ -24,7 +24,7 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
       (let [opts {}
             item (language.search self file symbol [] opts)]
         (if (and (not item) opts.searched-through-require)
-          {:range (message.ast->range symbol file)
+          {:range (message.ast->range self file symbol)
            :message (.. "unknown field " (tostring symbol))
            :severity message.severity.WARN
            :code 302

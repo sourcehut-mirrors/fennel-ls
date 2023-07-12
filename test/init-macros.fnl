@@ -28,7 +28,7 @@
   `(match ,item
     ,pattern nil
     ?otherwise#
-    (error
+    (is false
       (.. "Pattern did not match:\n"
           (let [fennel# (require :fennel)]
             (fennel#.view ?otherwise#))
