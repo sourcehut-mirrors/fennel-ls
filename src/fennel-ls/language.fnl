@@ -196,7 +196,7 @@ Returns:
              (+ 1 (get-ast-info ?ast :byteend))))))
 
 (λ find-symbol [ast byte]
-  (local parents [])
+  (local parents [ast])
   (λ recurse [ast]
     (if
       (sym? ast)

@@ -1,4 +1,5 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
+(local {: view} (require :fennel))
 
 (local is (require :test.is))
 
@@ -85,6 +86,16 @@
 
   (it "can go to identifiers introduced by (each)"
     (check :goto-definition.fnl 64 2 :goto-definition.fnl 63 7 63 8))
+
+  (it "can go to a top level identifier"
+    (let [c (create-client)
+          _ (c:open-file! :foo.fnl "(fn x []) x")
+          response (c:definition :foo.fnl 0 10)]
+      (is-matching response
+        [{:jsonrpc "2.0" :id c.prev-id
+          :result {:uri :foo.fnl
+                   :range {:start {:line 0 :character 4}
+                           :end   {:line 0 :character 5}}}}])))
 
   ;; (it "can go through more than one extra file")
   ;; (it "will give up instead of freezing on recursive requires")
