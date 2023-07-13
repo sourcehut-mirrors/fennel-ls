@@ -4,7 +4,7 @@
 (local is (require :test.is))
 (local {: ROOT-URI
         : ROOT-PATH
-        : create-client} (require :test.mock-client))
+        : create-client} (require :test.client))
 
 (fn default [tbl field value]
   (when (= nil (. tbl field))

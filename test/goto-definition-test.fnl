@@ -4,7 +4,7 @@
 (local is (require :test.is))
 
 (local {: ROOT-URI
-        : create-client} (require :test.mock-client))
+        : create-client} (require :test.client))
 
 (describe "jump to definition"
 

@@ -3,7 +3,7 @@
 (local {: view} (require :fennel))
 
 (local {: ROOT-URI
-        : create-client} (require :test.mock-client))
+        : create-client} (require :test.client))
 
 (describe "settings"
   (it "can set the path"

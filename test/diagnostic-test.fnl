@@ -3,7 +3,7 @@
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
-        : create-client} (require :test.mock-client))
+        : create-client} (require :test.client))
 
 (macro find [t body ?should-be-nil]
   (assert-compile (= nil ?should-be-nil) "you can only have one thing here, put a `(do)`")

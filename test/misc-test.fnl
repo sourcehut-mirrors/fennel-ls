@@ -4,7 +4,7 @@
 (local {: view &as fennel} (require :fennel))
 (local {: create-client
         : ROOT-URI}
-  (require :test.mock-client))
+  (require :test.client))
 
 (local language (require :fennel-ls.language))
 (local utils    (require :fennel-ls.utils))
