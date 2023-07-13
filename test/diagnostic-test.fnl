@@ -81,19 +81,19 @@
             "not found")
         _ (error "did not match"))))
 
-  ; (it "warns about unused functions"
-  ;   (let [self (create-client)
-  ;         responses (self:open-file! filename "(fn x [])")]
-  ;     (match responses
-  ;       [{:params {: diagnostics}}]
-  ;       (is (find [i v (ipairs diagnostics)]
-  ;            (match v
-  ;              {:message "unused definition: x"
-  ;               :range {:start {:character 7 :line 0}
-  ;                       :end   {:character 8 :line 0}}}
-  ;              v))
-  ;           "not found")
-  ;       _ (error "did not match"))))
+  (it "warns about unused functions"
+    (let [self (create-client)
+          responses (self:open-file! filename "(fn x [])")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [i v (ipairs diagnostics)]
+             (match v
+               {:message "unused definition: x"
+                :range {:start {:character 4 :line 0}
+                        :end   {:character 5 :line 0}}}
+               v))
+            "not found")
+        _ (error "did not match"))))
 
   (it "does not warn if a field is used"
     (let [self (create-client)

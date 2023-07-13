@@ -143,27 +143,29 @@ later by fennel-ls.language to answer requests from the client."
         (define to from scope)
         (mutate to from scope)))
 
+    (λ add-field [ast multisym scope]
+      "the multisym has the main name and the root name"
+      (case-try (utils.multi-sym-split multisym)
+        [ref field nil] ;; TODO more powerful function name metadata
+        (find-definition ref scope)
+        target
+        (do
+          (set target.fields (or target.fields {}))
+          (tset target.fields field
+            {:binding multisym
+             :definition ast
+             ;; referenced-by inherits from all other symbols
+             :referenced-by (or (?. definitions multisym :referenced-by) [])}))))
+
     (λ define-function-name [ast scope]
       ;; add a function definition to the definitions
       (case ast
         (where [_fn name args]
           (and (sym? name)
                (sequence? args)))
-        (let [def {:binding name
-                   :definition ast
-                   ;; referenced-by inherits from all other symbols
-                   :referenced-by (or (?. definitions name :referenced-by) [])}]
-          (if (multisym? name)
-            (case (utils.multi-sym-split name)
-              [ref field nil] ;; TODO more powerful function name metadata
-              (let [target (find-definition ref scope)]
-                (when target
-                  (set target.fields (or target.fields {}))
-                  (tset target.fields field def))))
-
-            (tset (. definitions-by-scope scope)
-                  (tostring name)
-                  def)))))
+        (if (multisym? name)
+          (add-field ast name scope)
+          (define ast name scope))))
 
     (λ define-function-args [ast scope]
       ;; add the definitions of function arguments to the definitions
