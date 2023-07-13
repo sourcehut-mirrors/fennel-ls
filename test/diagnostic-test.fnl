@@ -57,8 +57,8 @@
       (is-matching responses
         [{:params
           {:diagnostics
-           [{:range {:start {:character a :line b}
-                     :end   {:character c :line d}}}]}}]
+           [{:range {:start {:character 0 :line 0}
+                     :end   {:character 7 :line 0}}}]}}]
         "diagnostics should always have a range")))
 
   (it "gives more than one error"

@@ -59,6 +59,20 @@ to look to fix this in the future."
     {:start (utils.byte->position file.text bytestart self.position-encoding)
      :end   (utils.byte->position file.text (+ byteend 1) self.position-encoding)}))
 
+(λ multisym->range [self file ast n]
+  (let [spl (utils.multi-sym-split ast)]
+    (case (values (utils.get-ast-info ast :bytestart)
+                  (utils.get-ast-info ast :byteend))
+      (bytestart byteend)
+      (let [bytesubstart (faccumulate [b bytestart
+                                       i 1 (- n 1)]
+                           (+ b (length (. spl i)) 1))
+            bytesubend (faccumulate [b byteend
+                                     i (+ n 1) (length spl)]
+                         (- b (length (. spl i)) 1))]
+        {:start (utils.byte->position file.text bytesubstart self.position-encoding)
+         :end   (utils.byte->position file.text (+ bytesubend 1) self.position-encoding)}))))
+
 (λ range-and-uri [self {: uri &as file} ?ast]
   "if possible, returns the location of a symbol"
   (case (ast->range self file ?ast)
@@ -75,6 +89,7 @@ to look to fix this in the future."
  : create-response
  : create-error
  : ast->range
+ : multisym->range
  : range-and-uri
  : diagnostics
  : severity}

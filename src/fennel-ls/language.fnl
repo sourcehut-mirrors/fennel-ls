@@ -218,7 +218,6 @@ Returns:
               (recurse key byte)
               (contains? value byte)
               (recurse value byte)))))))
-
   (values
     (accumulate [result nil i top-level-form (ipairs ast) &until result]
       (if (contains? top-level-form byte)
@@ -226,8 +225,13 @@ Returns:
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 
+(λ find-nearest-definition [self file symbol ?byte]
+  (if (. file.definitions symbol)
+    (values (. file.definitions symbol) file)
+    (search-main self file symbol {:stop-early? true} ?byte)))
 
 {: find-symbol
+ : find-nearest-definition
  : search-main
  : search-assignment
  : search-name-and-scope

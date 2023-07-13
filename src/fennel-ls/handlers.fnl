@@ -40,7 +40,7 @@ Every time the client sends a message, it gets handled by a function in the corr
    ;; :documentFormattingProvider nil
    ;; :documentRangeFormattingProvider nil
    ;; :documentOnTypeFormattingProvider nil
-   ;; :renameProvider nil
+   :renameProvider {:workDoneProgress false}
    ;; :foldingRangeProvider nil
    ;; :executeCommandProvider nil
    ;; :selectionRangeProvider nil
@@ -89,17 +89,13 @@ Every time the client sends a message, it gets handled by a function in the corr
         byte (utils.position->byte file.text position self.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol
-      (if (. file.definitions symbol)
-        (values (. file.definitions symbol) file)
-        (language.search-main self file symbol {:stop-early? true} byte))
-      ({: referenced-by &as definition} result-file)
-      (let [result
-            (icollect [_ symbol (ipairs referenced-by)]
-              ;; TODO I currently assume all references are in the same file
-              (message.range-and-uri self result-file symbol))]
+      (language.find-nearest-definition self file symbol byte)
+      (where (definition def-file) (not= definition.referenced-by nil))
+      (let [result (icollect [_ symbol (ipairs definition.referenced-by)]
+                     (message.range-and-uri self def-file symbol))]
         (if ?include-declaration?
           (table.insert result
-            (message.range-and-uri self result-file definition.binding)))
+            (message.range-and-uri self def-file definition.binding)))
 
         ;; TODO don't include duplicates
         result)
@@ -137,7 +133,6 @@ Every time the client sends a message, it gets handled by a function in the corr
   (case (language.search-name-and-scope self file name scope)
     def (formatter.completion-item-format name def)
     _ {:label name}))
-
 
 (λ scope-completion [self file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
@@ -182,6 +177,24 @@ Every time the client sends a message, it gets handled by a function in the corr
       (where (or nil [_ nil])) (scope-completion self file byte ?symbol parents)
       [_a _b &as split] (field-completion self file ?symbol split))))
 
+(λ requests.textDocument/rename [self send {: position :textDocument {: uri} :newName new-name}]
+  (let [file (state.get-by-uri self uri)
+        byte (utils.position->byte file.text position self.position-encoding)]
+    (case-try (language.find-symbol file.ast byte)
+      symbol
+      (language.find-nearest-definition self file symbol symbol.bytestart)
+      ;; TODO we are assuming that every reference is in the same file
+      (where (definition def-file) (not= definition.referenced-by nil))
+      (let [usages (icollect [_ symbol (ipairs definition.referenced-by)
+                              &into [{:range (message.multisym->range self def-file definition.binding 1)
+                                      :newText new-name}]]
+                     {:newText new-name
+                      :range (message.multisym->range self def-file symbol 1)})]
+        ;; NOTE: I don't care about encoding here because we just need the relative positions
+        (table.sort usages #(> (utils.position->byte def-file.text $1.range.start :utf-8)
+                               (utils.position->byte def-file.text $2.range.start :utf-8)))
+        {:changes {def-file.uri usages}})
+      (catch _ nil))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))

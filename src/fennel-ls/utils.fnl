@@ -119,9 +119,21 @@ These functions are all pure functions, which makes me happy."
       ;; Handle a change
       {:range {: start : end} : text}
       (replace contents start end text encoding)
-      ;; A replacment of the entire body
+      ;; A replacement of the entire body
       {: text}
       text)))
+
+(λ apply-edits [initial-text edits encoding]
+  "Takes a list of Language-Server-Protocol `TextEdit` or `AnnotatedTextEdit` and applies them to a piece of text.
+
+WARNING: this is only used in the test code, not in the real language server"
+  (accumulate
+    [contents initial-text
+     _ edit (ipairs edits)]
+    (case edit
+      ;; Handle a change
+      {:range {: start : end} : newText}
+      (replace contents start end newText encoding))))
 
 (λ get-ast-info [?ast info]
   ;; find a given key of info from an AST object
@@ -151,6 +163,7 @@ These functions are all pure functions, which makes me happy."
  : byte->position
  : position->byte
  : apply-changes
+ : apply-edits
  : multi-sym-split
  : get-ast-info
  : type=}

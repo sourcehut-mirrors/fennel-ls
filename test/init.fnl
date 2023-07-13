@@ -6,6 +6,7 @@
 (require :test.json-rpc-test)
 (require :test.misc-test)
 (require :test.references-test)
+(require :test.rename-test)
 (require :test.settings-test)
 (require :test.string-processing-test)
 

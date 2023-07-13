@@ -75,12 +75,20 @@
       :textDocument {:uri file}
       :context {:includeDeclaration (not (not ?includeDeclaration))}})))
 
+(fn rename [self file line character newName]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :textDocument/rename
+     {:position {: line : character}
+      :textDocument {:uri file}
+      : newName})))
+
 (set mt.__index
      {: open-file!
       : completion
       : definition
       : hover
-      : references})
+      : references
+      : rename})
 
 {: create-client
  : ROOT-URI

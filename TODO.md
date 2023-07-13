@@ -7,10 +7,8 @@ My current goal is to work on completions a little bit more.
 
 Here is my feature wishlist. I don't expect to ever get all of this done, but these are the sort of enhancements I am thinking about.
 - [X] Able to connect to a client
-- [ ] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
-- [ ] Settings to configure lua / fennel path, allowed globals, etc
-- [ ] Supporting builds for anything other than arch linux
-- [ ] Testing/support/instructions for any clients: (LSP is supposed to be editor-agnostic, but that's only if you're able to actually follow the spec, and I'm not sure that fennel-ls is compliant)
+- [X] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
+- [ ] People have tried fennel-ls in:
     - [X] Neovim (This project isn't a neovim plugin, but there are instructions on how to inform neovim of the fennel-ls binary once you build it.)
     - [X] emacs
     - [X] helix
@@ -86,8 +84,8 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] lua version
     - [ ] allowed global list
     - [X] enable/disable various linters
-- [ ] rename
-    - [ ] local symbols
+- [X] rename
+    - [X] local symbols
     - [ ] module fields (may affect code behavior, may modify other files)
     - [ ] arbitrary fields (may affect code behavior, may modify other files)
 - [ ] formatting with fnlfmt

@@ -40,9 +40,9 @@
     (check-references "(fn x []) x" 0 10
       [{:uri filename :range (range 0 10 0 11)}]))
 
-  ; (it "finds a reference from fn"
-  ;   (check-references "(fn x []) x" 0 4
-  ;     [{:uri filename :range (range 0 10 0 11)}]))
+  (it "finds a reference from fn"
+    (check-references "(fn x []) x" 0 4
+      [{:uri filename :range (range 0 10 0 11)}]))
 
   (it "doesn't crash here"
     (check-references "(let [x nil] x.y)" 0 14
