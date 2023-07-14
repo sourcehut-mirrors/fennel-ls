@@ -3,7 +3,7 @@ This file is responsible for the low level tasks of analysis. Its main job
 is to recieve a file object and run all of the basic analysis that will be used
 later by fennel-ls.language to answer requests from the client."
 
-(local {: sym? : list? : sequence? : sym : view &as fennel} (require :fennel))
+(local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
@@ -82,30 +82,6 @@ later by fennel-ls.language to answer requests from the client."
       (if ?reference?
         (reference ast scope)))
 
-    (λ mutate [?definition binding scope]
-      ;; for now, mutating a field counts as a reference I guess
-      (λ recurse [binding keys]
-        (if (sym? binding)
-            (let [
-                  ;; ;; future work may need to care about mutations
-                  ;; _mutation
-                  ;; {: binding
-                  ;;  :new-definition ?definition
-                  ;;  :keys (if (< 0 (length keys))
-                  ;;          (fcollect [i 1 (length keys)]
-                  ;;            (. keys i)))}
-                  name (string.match (tostring binding) "[^%.:]+")]
-              (when (multisym? binding)
-                (case (find-definition (tostring name) scope)
-                  target
-                  (table.insert target.referenced-by binding))))
-            (= :table (type binding))
-            (each [k v (iter binding)]
-              (table.insert keys k)
-              (recurse v keys)
-              (table.remove keys))))
-      (recurse binding []))
-
     (λ define [?definition binding scope]
       ;; Add a definition to the definitions
       ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
@@ -129,6 +105,39 @@ later by fennel-ls.language to answer requests from the client."
               (for [i 1 (length binding)]
                 (define (. ?definition (+ i 1)) (. binding i) scope))
               (recurse (. binding 1) keys))
+            (table? binding)
+            (accumulate [prev nil
+                         k v (iter binding)]
+              (if (or (sym? k :&as) (sym? prev :&as))
+                  (recurse v)
+                  (or (sym? k :&) (sym? prev :&))
+                  ;; currently the "rest" isn't counted as a binding
+                  nil
+                  (or (sym? v :&as) (sym? v :&))
+                  v
+                  (do
+                    (table.insert keys k)
+                    (recurse v keys)
+                    (table.remove keys))))))
+      (recurse binding []))
+
+    (λ mutate [?definition binding scope]
+      ;; for now, mutating a field counts as a reference I guess
+      (λ recurse [binding keys]
+        (if (sym? binding)
+            (let [
+                  ;; ;; future work may need to care about mutations
+                  ;; _mutation
+                  ;; {: binding
+                  ;;  :new-definition ?definition
+                  ;;  :keys (if (< 0 (length keys))
+                  ;;          (fcollect [i 1 (length keys)]
+                  ;;            (. keys i)))}
+                  name (string.match (tostring binding) "[^%.:]+")]
+              (when (multisym? binding)
+                (case (find-definition (tostring name) scope)
+                  target
+                  (table.insert target.referenced-by binding))))
             (= :table (type binding))
             (each [k v (iter binding)]
               (table.insert keys k)
@@ -279,6 +288,7 @@ later by fennel-ls.language to answer requests from the client."
                 : scope}
 
           parser (let [p (fennel.parser file.text file.uri opts)]
+                   ;; TODO factor this garbage out into a function
                    (fn p1 [p2 p3]
                      (case (xpcall #(p p2 p3) fennel.traceback)
                        (true r1 r2) (values r1 r2)

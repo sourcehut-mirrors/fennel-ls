@@ -112,6 +112,18 @@
                         :end   {:character 6 :line 0}}}
                v))
             "not found")
+        _ (error "did not match"))))
+
+  (it "does not warn in this particular code"
+    (let [self (create-client)
+          responses (self:open-file! filename "(let [[x & y] [1 2 3]] (print x (. y 1) (. y 2)))")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is.nil (find [i v (ipairs diagnostics)]
+                 (match v
+                   {:message "unused definition: &"}
+                   v))
+            "not found")
         _ (error "did not match")))))
 
 

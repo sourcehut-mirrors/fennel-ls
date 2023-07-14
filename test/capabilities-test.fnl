@@ -24,20 +24,20 @@
 
 (describe "capabilities negotiations"
 
-  ; (it "chooses utf-16"
-  ;   (let [(self [response])
-  ;         (create-client
-  ;           {:params
-  ;             (client-initialization
-  ;                {:capabilities
-  ;                  {:general
-  ;                    {:positionEncodings
-  ;                      [:utf-16]}}})})]
-  ;     (is.equal :utf-16 (. response :result :positionEncoding))
-  ;     (self:open-file! "foo.fnl" "(let [𐐀𐐀 100] 𐐀𐐀)")
-  ;     (let [[response] (self:definition "foo.fnl" 0 16)]
-  ;       (is.equal 6 response.result.range.start.character)
-  ;       (is.equal 10 response.result.range.end.character))))
+  (it "chooses utf-16"
+    (let [(self [response])
+          (create-client
+            {:params
+              (client-initialization
+                 {:capabilities
+                   {:general
+                     {:positionEncodings
+                       [:utf-16]}}})})]
+      (is.equal :utf-16 (. response :result :positionEncoding))
+      (self:open-file! "foo.fnl" "(let [𐐀𐐀 100] 𐐀𐐀)")
+      (let [[response] (self:definition "foo.fnl" 0 16)]
+        (is.equal 6 response.result.range.start.character)
+        (is.equal 10 response.result.range.end.character))))
 
   (it "chooses utf-8 if at all possible"
     (let [(self [response])
