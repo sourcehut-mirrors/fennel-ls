@@ -109,7 +109,7 @@ later by fennel-ls.language to answer requests from the client."
             (accumulate [prev nil
                          k v (iter binding)]
               (if (or (sym? k :&as) (sym? prev :&as))
-                  (recurse v)
+                  (recurse v keys)
                   (or (sym? k :&) (sym? prev :&))
                   ;; currently the "rest" isn't counted as a binding
                   nil
