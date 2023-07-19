@@ -10,7 +10,7 @@ DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
-.PHONY: clean test install
+.PHONY: clean test install ci
 
 all: $(EXE)
 
@@ -28,5 +28,14 @@ test:
 	TESTING=1 LUA_PATH="./src/?.lua;./?.lua" FENNEL_PATH="./src/?.fnl;./?.fnl" \
 		$(FENNEL) test/init.fnl
 
+testall:
+	$(MAKE) test LUA=lua5.1
+	$(MAKE) test LUA=lua5.2
+	$(MAKE) test LUA=lua5.3
+	$(MAKE) test LUA=lua5.4
+	$(MAKE) test LUA=luajit
+
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
+
+ci: testall $(EXE)
