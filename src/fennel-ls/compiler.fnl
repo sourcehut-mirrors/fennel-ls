@@ -261,7 +261,11 @@ later by fennel-ls.language to answer requests from the client."
     (local allowed-globals
       (icollect [k _ (pairs _G)]
         k))
+
+    ;; just a couple of globals that are probably not errors
+    ;; TODO make this configurable in a better way
     (table.insert allowed-globals :vim)
+    (table.insert allowed-globals :love)
 
     ;; TODO clean up this code. It's awful now that there is error handling
     (let [macro-file? (= (: file.text :sub 1 24) ";; fennel-ls: macro-file")
@@ -286,46 +290,34 @@ later by fennel-ls.language to answer requests from the client."
                 :allowedGlobals allowed-globals
                 :requireAsInclude false
                 : scope}
+          filter-errors (fn _filter-errors [component ...]
+                          (case ...
+                            (true ?item1 ?item2) (values ?item1 ?item2)
+                            (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
+                            (if (os.getenv :TESTING)
+                              (error (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
+                                         "\n\n^^^ the error message above here is the root problem\n\n"))
+                              (table.insert diagnostics
+                                {:range (line+byte->range self file 1 1)
+                                 :message (.. "unrecoverable " component " error: " err)}))))
 
           parser (let [p (fennel.parser file.text file.uri opts)]
-                   ;; TODO factor this garbage out into a function
-                   (fn p1 [p2 p3]
-                     (case (xpcall #(p p2 p3) fennel.traceback)
-                       (true r1 r2) (values r1 r2)
-                       (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
-                       (if (os.getenv :TESTING)
-                         (error (.. "\nYou have crashed the fennel parser or fennel-ls with the following message\n:" err
-                                    "\n\n^^^ the error message above here is the root problem\n\n"))
-                         (table.insert diagnostics
-                           {:range (line+byte->range self file 1 1)
-                            :message (.. "unrecoverable compiler error: " err)})))))
+                   (fn _p1 [p2 p3]
+                     (filter-errors :parser (xpcall #(p p2 p3) fennel.traceback))))
 
           ast (icollect [ok ast parser &until (not ok)] ast)]
 
 
       ;; This is bad; we mutate fennel.macro-path
       (let [old-macro-path fennel.macro-path]
-        (set fennel.macro-path (searcher.add-workspaces-to-path macro-path [root-uri]))
+        (set fennel.macro-path
+             (searcher.add-workspaces-to-path macro-path [root-uri]))
 
         ;; compile
         (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
-          (case (xpcall #(fennel.compile form opts) fennel.traceback)
-            (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
-            (if (os.getenv :TESTING)
-              (error (.. "\nYou have crashed the fennel compiler or fennel-ls with the following message\n:" err
-                         "\n\n^^^ the error message above here is the root problem\n\n"))
-              (table.insert diagnostics
-                {:range (line+byte->range self file 1 1)
-                 :message (.. "unrecoverable compiler error: " err)}))))
+          (filter-errors :compiler (xpcall #(fennel.compile form opts) fennel.traceback)))
 
         (set fennel.macro-path old-macro-path))
-
-      ; (each [sym target (pairs references)]
-      ;   (if
-      ;     (sym? target)
-      ;     (list? target)
-      ;     (= :table (type target))))
-      ;     ;; base case???
 
       (set file.ast ast)
       (set file.calls calls)

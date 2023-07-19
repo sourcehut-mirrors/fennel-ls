@@ -115,7 +115,6 @@ However, fennel-ls can fall back to positionEncoding=utf-16 (with a performance 
      :utf-8
      :utf-16)))
 
-
 (λ init-state [self params]
   (set self.files {})
   (set self.modules {})

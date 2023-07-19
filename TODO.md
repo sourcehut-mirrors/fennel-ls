@@ -2,8 +2,20 @@
 ([X] = complete,  [ ] = planned)
 
 My current goal is to work on completions a little bit more.
+- [ ] create a release
 
-- [ ] Fix crash-files.test2
+refactor brainstorm:
+- [ ] get rid of `bytes` stuff and use "stack" everywhere
+- [ ] search caching
+- [ ] search depth limit / stop recursion
+- [ ] search into calls
+
+- [ ] entry point measurement for reference search
+
+- [ ] arg return count
+  - [ ] i guess searching into calls could do this?
+
+- [ ] diagnostic code actions
 
 Here is my feature wishlist. I don't expect to ever get all of this done, but these are the sort of enhancements I am thinking about.
 - [X] Able to connect to a client
@@ -36,7 +48,7 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [X] from macros (only on first form in a list)
     - [X] from specials (only on first form in a list)
     - [X] "dot completion" for table fields
-    - [ ] dot completion is aware of a stdlib
+    - [1/2] dot completion is aware of a stdlib
     - [ ] actually compliant rules about lexical scope (only see things declared before, not after)
     - [x] show docs/icons on each suggestion
     - [ ] "dot completion" for metatable `__index` fields

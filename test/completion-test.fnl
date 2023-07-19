@@ -156,26 +156,49 @@
             {:label :-?>
              :kind (= kinds.Keyword)
              :documentation documentation}
-            (not= documentation :nil)))))))
+            (not= documentation :nil)))))
 
-    ; (it "offers rich information about everything"
+    (it "offers rich information about all builtin/globals"
+      (let [client (doto (create-client)
+                     (: :open-file! filename "("))
+            [{:result completions}] (client:completion filename 0 1)
+            _ (table.sort completions #(< $1.label $2.label))
+            missing-docs (icollect [_ completion (ipairs completions)]
+                           (if (not (and (= (type completion.label) :string)
+                                         (= (type completion.kind) :number)
+                                         (= (type completion.documentation) :table)))
+                             completion.label))
+            allowed-missing-docs {:lua true
+                                  :set-forcibly! true
+                                  ;; TODO remove these from fennel-ls when they become configurable
+                                  :love true
+                                  :vim true}]
+        (each [_ completion (ipairs completions)]
+          (when (not (. allowed-missing-docs completion.label))
+            (is.same (type completion.label) :string "unlabeled completion")
+            (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
+            (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
+            (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
+
+    ; (it "offers rich information about fields"
     ;   (let [client (doto (create-client)
-    ;                  (: :open-file! filename "("))
-    ;         [{:result completions}] (client:completion filename 0 1)
+    ;                  (: :open-file! filename "(let [x (fn x [a b c] \"\"\"docstring\"\"\" nil)\n      t {: x}]\n  (t."))
+    ;         [{:result completions}] (client:completion filename 2 5)
     ;         _ (table.sort completions #(< $1.label $2.label))
-    ;         count (accumulate [sum 0 _ completion (ipairs completions)]
-    ;                (if (and (= (type completion.label) :string)
-    ;                        (= (type completion.kind) :number)
-    ;                        (= (type completion.documentation) :table))
-    ;                  (+ sum 1)
-    ;                  sum))]
-    ;     (if (< count (length completions))
-    ;       (print "!!!" (- (length completions) count) "items are missing a label or kind or doc"))
+    ;         missing-docs (icollect [_ completion (ipairs completions)]
+    ;                        (if (not (and (= (type completion.label) :string)
+    ;                                      (= (type completion.kind) :number)
+    ;                                      (= (type completion.documentation) :table)))
+    ;                          completion.label))
+    ;         allowed-missing-docs {}]
     ;     (each [_ completion (ipairs completions)]
-    ;       (is.same (type completion.label) :string "unlabeled completion")
-    ;       (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
-    ;       (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
-    ;       (is.not.same completion.documentation :nil (.. completion.label " needs documentation")))))))
+    ;       (when (not (. allowed-missing-docs completion.label))
+    ;         (is.same (type completion.label) :string "unlabeled completion")
+    ;         (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
+    ;         (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
+    ;         (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
+
+
 
 
     ;; (it "offers rich information about variable completions")
