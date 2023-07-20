@@ -40,7 +40,7 @@ Every time the client sends a message, it gets handled by a function in the corr
    ;; :documentFormattingProvider nil
    ;; :documentRangeFormattingProvider nil
    ;; :documentOnTypeFormattingProvider nil
-   :renameProvider {:workDoneProgress false}
+   :renameProvider {:workDoneProgress false}})
    ;; :foldingRangeProvider nil
    ;; :executeCommandProvider nil
    ;; :selectionRangeProvider nil
@@ -51,7 +51,8 @@ Every time the client sends a message, it gets handled by a function in the corr
    ;; :typeHierarchyProvider nil
    ;; :inlineValueProvider nil
    ;; :inlayHintProvider nil
-   :diagnosticProvider {:workDoneProgress false}})
+   ;; ;; this is for PULL diagnostics, but fennel-ls currently does PUSH diagnostics
+   ;; :diagnosticProvider {:workDoneProgress false}})
    ;; :workspaceSymbolProvider nil
    ;; :workspace {:workspaceFolders nil
    ;;             :documentOperations {:didCreate nil
