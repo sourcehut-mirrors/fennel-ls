@@ -10,4 +10,4 @@ sources:
   - https://git.sr.ht/~xerool/fennel-ls
 tasks:
   - build: |
-      make ci
+      make -C fennel-ls ci

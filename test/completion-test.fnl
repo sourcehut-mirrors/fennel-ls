@@ -170,6 +170,20 @@
                              completion.label))
             allowed-missing-docs {:lua true
                                   :set-forcibly! true
+
+                                  ;; TODO support other lua versions besides 5.4
+                                  :gcinfo true
+                                  :getfenv true
+                                  :setfenv true
+                                  :loadstring true
+                                  :module true
+                                  :newproxy true
+                                  :unpack true
+                                  :bit32 true
+                                  ;; luajit
+                                  :bit true
+                                  :jit true
+
                                   ;; TODO remove these from fennel-ls when they become configurable
                                   :love true
                                   :vim true}]
