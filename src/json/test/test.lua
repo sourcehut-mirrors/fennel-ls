@@ -243,3 +243,16 @@ test("encode escape", function()
     assert( res == v, fmt("'%s' was not escaped properly", k) )
   end
 end)
+
+test("encode null", function()
+  local t = {
+    a = "foo",
+    b = json.null,
+    c = 42,
+  }
+  local res = json.decode( json.encode(t) )
+  for k, v in pairs(t) do
+    assert( equal( v, res[k] ) )
+  end
+  assert( equal( json.null, res.b ) )
+end)
