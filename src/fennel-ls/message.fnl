@@ -7,6 +7,12 @@ missing fields with null fields, and I want to have one location
 to look to fix this in the future."
 
 (local utils (require :fennel-ls.utils))
+(local json (require :json.json))
+
+(λ nullify [?value]
+   (case ?value
+     nil json.null
+     v v))
 
 (local error-codes
   {;; JSON-RPC errors
@@ -50,7 +56,7 @@ to look to fix this in the future."
 (λ create-response [id ?result]
   {:jsonrpc "2.0"
    : id
-   :result ?result})
+   :result (nullify ?result)})
 
 (λ ast->range [self file ?ast]
   (case (values (utils.get-ast-info ?ast :bytestart)
