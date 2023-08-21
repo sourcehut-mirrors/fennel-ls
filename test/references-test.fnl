@@ -1,5 +1,7 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :test.is))
+(local {: null} (require :json.json))
+
 
 (local {: view} (require :fennel))
 (local {: ROOT-URI
@@ -11,14 +13,14 @@
   {:start {:line a :character b}
    :end   {:line c :character d}})
 
-(fn check-references [body line col ?expected]
+(fn check-references [body line col expected]
   (let [client (doto (create-client)
                  (: :open-file! filename body))
         response (client:references filename line col)]
     (is-matching response
       (where [{:jsonrpc "2.0" :id client.prev-id
                :result ?result}]
-        (is.same ?result ?expected)))))
+        (is.same ?result expected)))))
 
 (describe "references"
   (it "finds a reference from let"
@@ -46,5 +48,5 @@
 
   (it "doesn't crash here"
     (check-references "(let [x nil] x.y)" 0 14
-      nil)))
+      null)))
 
