@@ -3,6 +3,7 @@
 (local {: view} (require :fennel))
 
 (local {: ROOT-URI
+        : ROOT-PATH
         : create-client} (require :test.client))
 
 (describe "settings"
@@ -44,4 +45,17 @@
       (is-matching responses
         [{:method :textDocument/publishDiagnostics
           :params {:diagnostics [nil]}}]
-        "bad"))))
+        "bad")))
+
+  (it "can be configured with initialization options"
+      (let [initializationOptions {:fennel-ls {:checks {:unused-definition false}}}
+            client (create-client {:params {: initializationOptions
+                                            :rootPath ROOT-PATH
+                                            :rootUri ROOT-URI
+                                            :workspaceFolders [{:name ROOT-PATH
+                                                                :uri ROOT-URI}]}})
+            responses (client:open-file! (.. ROOT-URI :/test.fnl) "(local x 10)")]
+        (is-matching responses
+          [{:method :textDocument/publishDiagnostics
+            :params {:diagnostics [nil]}}]
+          "settings should apply when set through initializationOptions"))))

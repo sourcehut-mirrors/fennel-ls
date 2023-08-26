@@ -120,7 +120,7 @@ However, fennel-ls can fall back to positionEncoding=utf-16 (with a performance 
   (set self.modules {})
   (set self.root-uri params.rootUri)
   (set self.position-encoding (choose-position-encoding params))
-  (set self.configuration (make-configuration)))
+  (set self.configuration (make-configuration (?. params :initializationOptions :fennel-ls))))
 
 (λ write-configuration [self ?configuration]
   (set self.configuration (make-configuration ?configuration)))
