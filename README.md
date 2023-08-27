@@ -1,5 +1,5 @@
 # fennel-ls
-A language server for fennel-ls.
+A language server for fennel.
 Supports Go-to-definition, and a little bit of completion suggestions.
 Fennel-LS uses static analysis, and does not execute your code.
 
@@ -56,6 +56,10 @@ fennel-ls default settings:
   }
 }
 ```
+
+Your editor can send these settings using one of these two methods:
+* The client sends an `initialize` request with the structure `{initializationOptions: {"fennel-ls": {...}}, ...}`
+* The client sends a `workspace/didChangeConfiguration` notfication containing the field `{settings: {"fennel-ls": {YOUR_SETTINGS}}}`
 
 ## License
 fennel-ls is licensed under the MIT license. See LICENSE for more info.

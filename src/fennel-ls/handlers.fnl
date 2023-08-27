@@ -221,7 +221,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (state.flush-uri self uri))
 
 (λ notifications.workspace/didChangeConfiguration [self send {: settings}]
-  (state.write-configuration self settings.fennel-ls))
+  (state.write-configuration self (?. settings :fennel-ls)))
 
 (λ requests.shutdown [self send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"
