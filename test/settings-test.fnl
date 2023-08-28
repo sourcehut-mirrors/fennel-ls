@@ -26,11 +26,13 @@
   ;; (it "can infer the macro path from fennel-path"
   ;;   (local self (doto [] (setup-server {:fennel-ls {:fennel-path "./?/?.fnl"}}))))
 
-  ;; (it "can accept an allowed global"
-  ;;   (local self (doto [] (setup-server {:fennel-ls {:extra-globals "vim"}}))))
-
-  ;; (it "can accept a list of allowed globals"
-  ;;   (local self (doto [] (setup-server {:fennel-ls {:extra-globals "GAMESTATE,SCREEN_CENTER_X,ETC"}}))))
+  (it "can set extra allowed globals"
+    (let [client (create-client {:settings {:fennel-ls {:extra-globals "foo-100 bar"}}})
+          responses (client:open-file! (.. ROOT-URI :/test.fnl) "(foo-100 bar :baz)")]
+      (is-matching responses
+        [{:method :textDocument/publishDiagnostics
+          :params {:diagnostics [nil]}}]
+        "bad")))
 
   ;; (it "can turn off strict globals"
   ;;   (local self (doto [] (setup-server {:fennel-ls {:checks {:globals false}}}))))

@@ -60,3 +60,15 @@
      (is.not.nil (state.get-by-module self.server :crash-files.test1)))))
      ; (is.not.nil (searcher.lookup self.server :crash-files.test2))
      ; (is.not.nil (state.get-by-module self.server :crash-files.test2)))))
+
+(describe "split-spaces"
+  (it "should split empty string"
+    (is.same [] (utils.split-spaces "")))
+  (it "should split single word"
+    (is.same ["foo"] (utils.split-spaces "foo")))
+  (it "should trim single word"
+    (is.same ["foo"] (utils.split-spaces "  foo ")))
+  (it "should split multiple words"
+    (is.same ["foo-bar" "bar" "baz"] (utils.split-spaces "foo-bar bar baz")))
+  (it "should split multiple words with arbitrary white space"
+    (is.same ["foo-bar" "bar" "baz"] (utils.split-spaces " foo-bar  bar baz  "))))

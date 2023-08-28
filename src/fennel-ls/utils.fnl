@@ -171,6 +171,10 @@ WARNING: this is only used in the test code, not in the real language server"
         (table.insert result new-item)))
     result))
 
+(λ split-spaces [str]
+  (icollect [m (str:gmatch "[^ ]+")]
+    m))
+
 {: uri->path
  : path->uri
  : pos->position
@@ -181,4 +185,5 @@ WARNING: this is only used in the test code, not in the real language server"
  : multi-sym-split
  : get-ast-info
  : uniq-by
- : type=}
+ : type=
+ : split-spaces}

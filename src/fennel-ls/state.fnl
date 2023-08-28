@@ -62,7 +62,6 @@ in the \"self\" object."
 
 ;; TODO: set the warning levels of lints
 ;; allow all globals
-;; allow some globals
 ;; pick from existing libraries of globals (ie love2d)
 ;; pick between different versions of lua (ie luajit)
 ;; pick a "compat always" mode that accepts anything if it could be valid in any lua
@@ -97,7 +96,8 @@ in the \"self\" object."
    :checks {:unused-definition (option true)
             :unknown-module-field (option true)
             :unnecessary-method (option true)
-            :bad-unpack (option true)}})
+            :bad-unpack (option true)}
+   :extra-globals (option "")})
 
 (λ make-configuration [?c]
   (make-configuration-from-template default-configuration ?c))

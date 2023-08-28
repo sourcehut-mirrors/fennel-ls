@@ -263,11 +263,8 @@ later by fennel-ls.language to answer requests from the client."
     (local allowed-globals
       (icollect [k _ (pairs _G)]
         k))
-
-    ;; just a couple of globals that are probably not errors
-    ;; TODO make this configurable in a better way
-    (table.insert allowed-globals :vim)
-    (table.insert allowed-globals :love)
+    (each [_ v (ipairs (utils.split-spaces self.configuration.extra-globals))]
+      (table.insert allowed-globals v))
 
     ;; TODO clean up this code. It's awful now that there is error handling
     (let [macro-file? (= (file.text:sub 1 24) ";; fennel-ls: macro-file")

@@ -60,10 +60,14 @@ fennel-ls default settings:
     "checks": {
       "unused-definition": true,
       "unknown-module-field": true
-    }
+    },
+    "extra-globals": ""
   }
 }
 ```
+
+extra-globals
+: Space separated list of allowed global identifiers; in addition to a set of predefined lua globals.
 
 Your editor can send these settings using one of these two methods:
 * The client sends an `initialize` request with the structure `{initializationOptions: {"fennel-ls": {...}}, ...}`
