@@ -157,13 +157,15 @@ Every time the client sends a message, it gets handled by a function in the corr
     (let [stack (fcollect [i (- (length split) 1) 2 -1]
                   (. split i))]
       (case (language.search-assignment self file ref stack {})
-        {: definition}
+        ({: definition} file)
         (case (values definition (type definition))
-          (_str :string) (icollect [k _ (pairs string)]
-                           {:label k :kind kinds.Field})
-          (tbl :table) (icollect [k _ (pairs tbl)]
-                         (if (= (type k) :string)
-                           {:label k :kind kinds.Field})))
+          (_str :string) (icollect [label _ (pairs string)]
+                           {: label :kind kinds.Field})
+          (tbl :table) (icollect [label _ (pairs tbl)]
+                         (if (= (type label) :string)
+                           (case (language.search self file tbl [label] {})
+                             def (formatter.completion-item-format label def)
+                             _ {: label :kind kinds.Field}))))
         _ nil))))
 
 (λ create-completion-item [self file name scope]

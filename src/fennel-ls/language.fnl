@@ -98,7 +98,7 @@ the data provided by compiler.fnl."
         (sym? item)               (search-symbol self file item stack opts)
         (list? item)              (search-list self file item stack opts)
         (= :table (type item))    (search-table self file item stack opts)
-        (= 0 (length stack))      {:definition item}))) ;; BASE CASE !!
+        (= 0 (length stack))      (values {:definition item} file)))) ;; BASE CASE !!
         ;; (error (.. "I don't know what to do with " (view item))))))
 
 (local {:metadata METADATA

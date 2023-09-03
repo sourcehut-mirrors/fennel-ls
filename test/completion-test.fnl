@@ -192,25 +192,25 @@
             (is.same (type completion.label) :string "unlabeled completion")
             (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
             (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
-            (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
+            (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))
 
-    ; (it "offers rich information about fields"
-    ;   (let [client (doto (create-client)
-    ;                  (: :open-file! filename "(let [x (fn x [a b c] \"\"\"docstring\"\"\" nil)\n      t {: x}]\n  (t."))
-    ;         [{:result completions}] (client:completion filename 2 5)
-    ;         _ (table.sort completions #(< $1.label $2.label))
-    ;         missing-docs (icollect [_ completion (ipairs completions)]
-    ;                        (if (not (and (= (type completion.label) :string)
-    ;                                      (= (type completion.kind) :number)
-    ;                                      (= (type completion.documentation) :table)))
-    ;                          completion.label))
-    ;         allowed-missing-docs {}]
-    ;     (each [_ completion (ipairs completions)]
-    ;       (when (not (. allowed-missing-docs completion.label))
-    ;         (is.same (type completion.label) :string "unlabeled completion")
-    ;         (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
-    ;         (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
-    ;         (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
+    (it "offers rich information about fields"
+      (let [client (doto (create-client)
+                     (: :open-file! filename "(let [x (fn x [a b c] \"\"\"docstring\"\"\" nil)\n      t {: x}]\n  (t."))
+            [{:result completions}] (client:completion filename 2 5)
+            _ (table.sort completions #(< $1.label $2.label))
+            missing-docs (icollect [_ completion (ipairs completions)]
+                           (if (not (and (= (type completion.label) :string)
+                                         (= (type completion.kind) :number)
+                                         (= (type completion.documentation) :table)))
+                             completion.label))
+            allowed-missing-docs {}]
+        (each [_ completion (ipairs completions)]
+          (when (not (. allowed-missing-docs completion.label))
+            (is.same (type completion.label) :string "unlabeled completion")
+            (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
+            (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
+            (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
 
 
 
