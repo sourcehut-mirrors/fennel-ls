@@ -191,11 +191,14 @@ Every time the client sends a message, it gets handled by a function in the corr
       (let [usages (icollect [_ symbol (ipairs definition.referenced-by)
                               &into [{:range (message.multisym->range self def-file definition.binding 1)
                                       :newText new-name}]]
-                     {:newText new-name
-                      :range (message.multisym->range self def-file symbol 1)})]
+                     (if (not (rawequal symbol definition.binding))
+                       {:newText new-name
+                        :range (message.multisym->range self def-file symbol 1)}))]
+
         ;; NOTE: I don't care about encoding here because we just need the relative positions
-        (table.sort usages #(> (utils.position->byte def-file.text $1.range.start :utf-8)
-                               (utils.position->byte def-file.text $2.range.start :utf-8)))
+        (table.sort usages
+          #(> (utils.position->byte def-file.text $1.range.start :utf-8)
+              (utils.position->byte def-file.text $2.range.start :utf-8)))
         {:changes {def-file.uri usages}})
       (catch _ nil))))
 

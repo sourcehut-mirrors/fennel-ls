@@ -35,6 +35,8 @@
 
   (it "renames from destructure/args"
     (check-rename "(fn [{: x}] x)" 0 8 :foo "(fn [{: foo}] foo)")
-    (check-rename "(fn [{:x x}] x)" 0 9 :foo "(fn [{:x foo}] foo)")))
+    (check-rename "(fn [{:x x}] x)" 0 9 :foo "(fn [{:x foo}] foo)"))
 
-
+ (it "renames a sym inside of lambda"
+   (check-rename "(λ [foo] (print foo))" 0 6 :something
+                 "(λ [something] (print something))")))

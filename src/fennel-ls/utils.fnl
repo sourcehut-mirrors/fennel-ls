@@ -157,6 +157,17 @@ WARNING: this is only used in the test code, not in the real language server"
 (λ type= [val typ]
   (= (type val) typ))
 
+(λ uniq-by [list eq?]
+  "I know the big O of this is bad, but we'll come back to it if it's a performance problem"
+  (let [result []]
+    (each [_ new-item (ipairs list)]
+      (if (not (accumulate [any? nil
+                            _ seen-item (ipairs result)
+                            &until any?]
+                 (eq? seen-item new-item)))
+        (table.insert result new-item)))
+    result))
+
 {: uri->path
  : path->uri
  : pos->position
@@ -166,4 +177,5 @@ WARNING: this is only used in the test code, not in the real language server"
  : apply-edits
  : multi-sym-split
  : get-ast-info
+ : uniq-by
  : type=}
