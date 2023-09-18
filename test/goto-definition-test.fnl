@@ -97,6 +97,13 @@
                    :range {:start {:line 0 :character 4}
                            :end   {:line 0 :character 5}}}}])))
 
+  (it "doesn't crash when doing this"
+    (let [c (create-client)
+          _ (c:open-file! :foo.fnl "(macro cool [a b] `(let [,b 10] ,a))\n(cool x x)")
+          _response (c:definition :foo.fnl 1 6)
+          _response (c:definition :foo.fnl 1 8)]
+      nil))
+
   ;; (it "can go through more than one extra file")
   ;; (it "will give up instead of freezing on recursive requires")
   ;; (it "finds the definition of in-file macros")

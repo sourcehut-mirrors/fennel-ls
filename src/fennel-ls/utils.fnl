@@ -135,10 +135,13 @@ WARNING: this is only used in the test code, not in the real language server"
       {:range {: start : end} : newText}
       (replace contents start end newText encoding))))
 
-(λ get-ast-info [?ast info]
-  ;; find a given key of info from an AST object
-  (or (?. (getmetatable ?ast) info)
-      (?. ?ast info)))
+(λ get-ast-info [ast info]
+  "gets `info` from ast if possible"
+  (if (= :number (type ast))
+    nil
+    ;; find a given key of info from an AST object
+    (or (?. (getmetatable ast) info)
+        (?. ast info))))
 
 (fn multi-sym-split [symbol ?offset]
   (local symbol (tostring symbol))

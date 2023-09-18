@@ -327,7 +327,6 @@ later by fennel-ls.language to answer requests from the client."
       (set file.definitions-by-scope definitions-by-scope)
       (set file.diagnostics diagnostics)
       (set file.references references)
-      (set file.deep-references references)
       (set file.require-calls require-calls)
       (set file.allowed-globals allowed-globals))))
 
