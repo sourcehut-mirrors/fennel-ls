@@ -2,6 +2,7 @@
 
 Goes through a file and mutates the `file.diagnostics` field, filling it with diagnostics."
 
+(local fennel (require :fennel))
 (local language (require :fennel-ls.language))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
@@ -30,11 +31,26 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
            :code 302
            :codeDescription "field checking I guess"})))))
 
+(λ unnecessary-method [self file]
+  (icollect [[colon receiver method &as call] (pairs file.calls)
+             &into file.diagnostics]
+    (if (and (= (fennel.sym ":") colon)
+             (fennel.sym? receiver)
+             (= :string (type method)))
+        (case (message.ast->range self file call)
+          range {: range
+                 :message "unnecessary : call; use multisym"
+                 :severity message.severity.WARN
+                 :code 302
+                 :codeDescription "unnecessary colon"}))))
+
 (λ check [self file]
   "fill up the file.diagnostics table with linting things"
   (if self.configuration.checks.unused-definition
     (unused-definition self file))
   (if self.configuration.checks.unknown-module-field
-    (unknown-module-field self file)))
+    (unknown-module-field self file))
+  (if self.configuration.checks.unnecessary-method
+    (unnecessary-method self file)))
 
 {: check}

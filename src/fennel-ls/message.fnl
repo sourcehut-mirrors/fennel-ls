@@ -6,6 +6,7 @@ I have them all here because I have a feeling I am conflating
 missing fields with null fields, and I want to have one location
 to look to fix this in the future."
 
+(local fennel (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local json (require :json.json))
 
@@ -59,11 +60,11 @@ to look to fix this in the future."
    :result (nullify ?result)})
 
 (λ ast->range [self file ?ast]
-  (case (values (utils.get-ast-info ?ast :bytestart)
-                (utils.get-ast-info ?ast :byteend))
-    (bytestart byteend)
-    {:start (utils.byte->position file.text bytestart self.position-encoding)
-     :end   (utils.byte->position file.text (+ byteend 1) self.position-encoding)}))
+  (case (fennel.ast-source ?ast)
+    {: bytestart : byteend} {:start (utils.byte->position file.text bytestart
+                                                          self.position-encoding)
+                             :end   (utils.byte->position file.text (+ byteend 1)
+                                                          self.position-encoding)}))
 
 (λ multisym->range [self file ast n]
   (let [spl (utils.multi-sym-split ast)]

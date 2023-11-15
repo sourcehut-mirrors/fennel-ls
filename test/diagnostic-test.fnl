@@ -100,6 +100,18 @@
           responses (self:open-file! filename "(fn [abc] (set abc.xyz 10))")]
       (assert (not (?. responses 1 :params :diagnostics 1)))))
 
+  (it "warns when using the : special when a multisym would do"
+    (let [self (create-client)]
+      (match (self:open-file! filename "(let [x :haha] (: x :find :a))")
+        [{:params {: diagnostics}}]
+        (is (find [i v (ipairs diagnostics)]
+             (match v
+               {:message "unnecessary : call; use multisym"
+                :range {:start {:character 15 :line 0}
+                        :end   {:character 29 :line 0}}}
+               v)))
+        _ (error "did not match"))))
+
   (it "warns if a var is written but not read"
     (let [self (create-client)
           responses (self:open-file! filename "(var x 1) (set x 2) (set [x] [3])")]

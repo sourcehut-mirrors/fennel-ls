@@ -95,7 +95,8 @@ in the \"self\" object."
    :macro-path (option "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl")
    :version (option "lua54")
    :checks {:unused-definition (option true)
-            :unknown-module-field (option true)}})
+            :unknown-module-field (option true)
+            :unnecessary-method (option true)}})
 
 (λ make-configuration [?c]
   (make-configuration-from-template default-configuration ?c))
