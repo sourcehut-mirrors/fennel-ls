@@ -25,7 +25,7 @@
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
-            (is (find [i v (ipairs diagnostics)]
+            (is (find [_ v (ipairs diagnostics)]
                   (match v
                     {:message "tried to reference a special form without calling it"
                      :range {:start {:character 4 :line 0}
@@ -41,7 +41,7 @@
           diagnostic
           (match responses
             [{:params {: diagnostics}}]
-            (is (find [i v (ipairs diagnostics)]
+            (is (find [_ v (ipairs diagnostics)]
                  (match v
                    {:message "expected whitespace before opening delimiter ("
                     :range {:start {:character 17 :line 0}
@@ -72,7 +72,7 @@
           responses (self:open-file! filename "(local x 10)")]
       (match responses
         [{:params {: diagnostics}}]
-        (is (find [i v (ipairs diagnostics)]
+        (is (find [_ v (ipairs diagnostics)]
              (match v
                {:message "unused definition: x"
                 :range {:start {:character 7 :line 0}
@@ -86,7 +86,7 @@
           responses (self:open-file! filename "(fn x [])")]
       (match responses
         [{:params {: diagnostics}}]
-        (is (find [i v (ipairs diagnostics)]
+        (is (find [_ v (ipairs diagnostics)]
              (match v
                {:message "unused definition: x"
                 :range {:start {:character 4 :line 0}
@@ -105,7 +105,7 @@
           responses (self:open-file! filename "(var x 1) (set x 2) (set [x] [3])")]
       (match responses
         [{:params {: diagnostics}}]
-        (is (find [i v (ipairs diagnostics)]
+        (is (find [_ v (ipairs diagnostics)]
              (match v
                {:message "unused definition: x"
                 :range {:start {:character 5 :line 0}
@@ -114,17 +114,27 @@
             "not found")
         _ (error "did not match"))))
 
-  (it "does not warn in this particular code"
+  (it "does not warn on ampersand in destructuring"
     (let [self (create-client)
           responses (self:open-file! filename "(let [[x & y] [1 2 3]] (print x (. y 1) (. y 2)))")]
       (match responses
         [{:params {: diagnostics}}]
-        (is.nil (find [i v (ipairs diagnostics)]
+        (is.nil (find [_ v (ipairs diagnostics)]
                  (match v
                    {:message "unused definition: &"}
                    v))
             "not found")
-        _ (error "did not match")))))
+        _ (error "did not match"))))
+
+  (it "does not warn on ampersand in function parameters"
+    (let [self (create-client)
+          responses (self:open-file! filename "(fn [x & more] (print x more))")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is.nil (find [_ v (ipairs diagnostics)]
+                 (match v
+                   {:message "unused definition: &"}
+                   v)))))))
 
 
 

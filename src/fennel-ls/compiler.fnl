@@ -184,7 +184,8 @@ later by fennel-ls.language to answer requests from the client."
           (where [_fn _name args] (fennel.sequence? args)) args
           _ []))
       (each [_ argument (ipairs args)]
-        (define (sym :nil) argument scope))) ;; TODO  for now, function arguments are set to nil
+        (if (not (sym? argument :&))
+          (define (sym :nil) argument scope)))) ;; TODO  for now, function arguments are set to nil
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
