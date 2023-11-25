@@ -39,6 +39,14 @@ Generally this involves somehow configuring this information:
 
 If you get it working in any other environments, I'd love to know! It would be great to have instructions on how to set up other editors!
 
+## Batch mode
+
+You can gather diagnostics without connecting your editor:
+
+```sh
+fennel-ls --check my-file.fnl f2.fnl # prints diagnostics for the files given
+```
+
 # Default Settings
 
 fennel-ls can be configured over LSP. Any setting that's not provided will be filled in with the defaults, which means that `{}` will be a valid configuration with default settings. You can provide different settings in the same shape as the default settings in order to override the defaults.
