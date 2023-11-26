@@ -97,7 +97,7 @@
 
   (it "does not warn if a field is used"
     (let [self (create-client)
-          responses (self:open-file! filename "(fn [abc] (set abc.xyz 10))")]
+          responses (self:open-file! filename "(fn [a b] (set a.x 10) (fn b.f []))")]
       (assert (not (?. responses 1 :params :diagnostics 1)))))
 
   (it "warns when using the : special when a multisym would do"

@@ -80,7 +80,7 @@ later by fennel-ls.language to answer requests from the client."
             (table.insert target.referenced-by ast)))))
 
     (λ symbol-to-expression [ast scope ?reference?]
-      (if ?reference?
+      (when (or ?reference? (fennel.multi-sym? ast))
         (reference ast scope)))
 
     (λ define [?definition binding scope]
