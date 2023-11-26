@@ -13,7 +13,7 @@ These functions are all pure functions, which makes me happy."
 (λ next-lines [str nlines ?from]
   "Find the start of the next line from a given byte offset, or from the start of the string."
   (faccumulate [from (or ?from 1)
-                i 1 nlines]
+                _ 1 nlines]
     (next-line str from)))
 
 (fn utf [byte]

@@ -2,7 +2,6 @@
 (local json-rpc (require :fennel-ls.json-rpc))
 (local state (require :fennel-ls.state))
 (local diagnostics (require :fennel-ls.diagnostics))
-(local {: view} (require :fennel))
 
 (λ check [filename]
   (let [server (doto {}

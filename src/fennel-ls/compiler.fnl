@@ -3,7 +3,7 @@ This file is responsible for the low level tasks of analysis. Its main job
 is to recieve a file object and run all of the basic analysis that will be used
 later by fennel-ls.language to answer requests from the client."
 
-(local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
+(local {: sym? : list? : sequence? : table? : sym &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
@@ -122,7 +122,7 @@ later by fennel-ls.language to answer requests from the client."
                     (table.remove keys))))))
       (recurse binding []))
 
-    (λ mutate [?definition binding scope]
+    (λ mutate [_?definition binding scope]
       ;; for now, mutating a field counts as a reference I guess
       (λ recurse [binding keys]
         (if (sym? binding)
@@ -196,7 +196,7 @@ later by fennel-ls.language to answer requests from the client."
        (define (sym :nil) binding scope))
 
     (λ compile-each [ast bindings scope]
-      (each [i binding (ipairs bindings)]
+      (each [_ binding (ipairs bindings)]
         (define (sym :nil) binding scope)))
 
     (λ compile-fn [ast scope]
@@ -270,7 +270,7 @@ later by fennel-ls.language to answer requests from the client."
     (table.insert allowed-globals :love)
 
     ;; TODO clean up this code. It's awful now that there is error handling
-    (let [macro-file? (= (: file.text :sub 1 24) ";; fennel-ls: macro-file")
+    (let [macro-file? (= (file.text:sub 1 24) ";; fennel-ls: macro-file")
           plugin
           {:name "fennel-ls"
            :versions ["1.3.2"]

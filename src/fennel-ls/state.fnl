@@ -21,7 +21,7 @@ in the \"self\" object."
         (tset self.files uri file)
         file)))
 
-(λ get-by-path [self path]
+(λ _get-by-path [self path]
   (get-by-uri self (utils.path->uri path)))
 
 (λ get-by-module [self module]

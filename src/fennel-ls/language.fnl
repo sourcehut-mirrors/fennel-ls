@@ -2,7 +2,7 @@
 The high level analysis system that does deep searches following
 the data provided by compiler.fnl."
 
-(local {: sym? : list? : sequence? : varg? : sym : view} (require :fennel))
+(local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
@@ -169,7 +169,7 @@ Returns:
          _ (case (find-local-definition file name scope)
              def (search self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
 
-(λ past? [?ast byte]
+(λ _past? [?ast byte]
   ;; check if a byte is past an ast object
   (and (= (type ?ast) :table)
        (get-ast-info ?ast :bytestart)
@@ -185,7 +185,7 @@ Returns:
            byte
            (+ 1 (utils.get-ast-info ?ast :byteend)))))
 
-(λ does-not-contain? [?ast byte]
+(λ _does-not-contain? [?ast byte]
   ;; check if a byte is in range of the ast
   (and (= (type ?ast) :table)
        (get-ast-info ?ast :bytestart)
@@ -206,7 +206,7 @@ Returns:
         (if
           (or (sequence? ast) (list? ast))
           (accumulate [(result done) nil
-                       i child (ipairs ast)
+                       _ child (ipairs ast)
                        &until result]
             (if (contains? child byte)
               (recurse child byte)))
@@ -219,7 +219,7 @@ Returns:
               (contains? value byte)
               (recurse value byte)))))))
   (values
-    (accumulate [result nil i top-level-form (ipairs ast) &until result]
+    (accumulate [result nil _ top-level-form (ipairs ast) &until result]
       (if (contains? top-level-form byte)
         (recurse top-level-form byte)))
     (fcollect [i 1 (length parents)]

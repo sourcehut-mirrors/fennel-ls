@@ -10,23 +10,22 @@ DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
-.PHONY: clean test install ci
+OPTS=--add-package-path "./src/?.lua" --add-fennel-path "./src/?.fnl"
+
+.PHONY: clean test install ci selfcheck
 
 all: $(EXE)
 
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
-	LUA_PATH="./src/?.lua" \
-		FENNEL_PATH="./src/?.fnl" \
-		$(FENNEL) --require-as-include --compile src/fennel-ls.fnl >> $@
+	$(FENNEL) $(OPTS) --require-as-include --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
 clean:
 	rm -f $(EXE)
 
 test:
-	TESTING=1 LUA_PATH="./src/?.lua;./?.lua" FENNEL_PATH="./src/?.fnl;./?.fnl" \
-		$(FENNEL) test/init.fnl
+	TESTING=1 $(FENNEL) $(OPTS) test/init.fnl
 
 testall:
 	$(MAKE) test LUA=lua5.1
@@ -39,3 +38,6 @@ install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
 ci: testall $(EXE)
+
+selfcheck:
+	$(FENNEL) $(OPTS) src/fennel-ls.fnl --check $(SRC)

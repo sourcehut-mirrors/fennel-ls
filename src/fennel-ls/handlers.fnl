@@ -12,8 +12,6 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local formatter (require :fennel-ls.formatter))
 (local utils (require :fennel-ls.utils))
 
-(local {: view} (require :fennel))
-
 (local requests [])
 (local notifications [])
 
@@ -168,7 +166,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                              _ {: label :kind kinds.Field}))))
         _ nil))))
 
-(λ create-completion-item [self file name scope]
+(λ _create-completion-item [self file name scope]
   (let [result (language.search-name-and-scope self file name scope)]
     {:label result.label :kind result.kind}))
 
