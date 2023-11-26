@@ -16,7 +16,7 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
        :code 301
-       :codeDescription "warning error"})))
+       :codeDescription "I don't know"})))
 
 (λ unknown-module-field [self file]
   "any multisym whose definition can't be found through a (require) call"
@@ -26,7 +26,7 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
             item (language.search self file symbol [] opts)]
         (if (and (not item) opts.searched-through-require)
           {:range (message.ast->range self file symbol)
-           :message (.. "unknown field " (tostring symbol))
+           :message (.. "unknown field: " (tostring symbol))
            :severity message.severity.WARN
            :code 302
            :codeDescription "field checking I guess"})))))
@@ -34,14 +34,18 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
 (λ unnecessary-method [self file]
   (icollect [[colon receiver method &as call] (pairs file.calls)
              &into file.diagnostics]
-    (if (and (= (fennel.sym ":") colon)
+    (if (and (fennel.sym? colon ":")
              (fennel.sym? receiver)
-             (= :string (type method)))
+             (. file.lexical call)
+             (= :string (type method))
+             (not (method:find "^[0-9]"))
+             ;; questions: #
+             (not (method:find "[^!$%*+-/0-9<=>?A-Z\\^_a-z|\128-\255]")))
         (case (message.ast->range self file call)
           range {: range
-                 :message "unnecessary : call; use multisym"
+                 :message (.. "unnecessary : call: use (" (tostring receiver) ":" method ")")
                  :severity message.severity.WARN
-                 :code 302
+                 :code 303
                  :codeDescription "unnecessary colon"}))))
 
 (λ check [self file]

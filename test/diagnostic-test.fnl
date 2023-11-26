@@ -104,12 +104,36 @@
     (let [self (create-client)]
       (match (self:open-file! filename "(let [x :haha] (: x :find :a))")
         [{:params {: diagnostics}}]
-        (is (find [i v (ipairs diagnostics)]
+        (is (find [_ v (ipairs diagnostics)]
              (match v
-               {:message "unnecessary : call; use multisym"
+               {:message "unnecessary : call: use (x:find)"
+                :code 303
                 :range {:start {:character 15 :line 0}
                         :end   {:character 29 :line 0}}}
                v)))
+        _ (error "did not match"))))
+
+  (it "doesn't warn when using the : special when macros are involved"
+    (let [self (create-client)]
+      (match (self:open-file! filename "(let [x :haha y :find] (-> x (: y :a))
+                                        (let [x :haha] (-> x (: :find :a))")
+        [{:params {: diagnostics}}]
+        (is.nil (find [_ v (ipairs diagnostics)]
+                 (match v
+                   {:code 303
+                    :range _}
+                   v)))
+        _ (error "did not match"))))
+
+  (it "doesn't warn when using the : special when the string isn't valid"
+    (let [self (create-client)]
+      (match (self:open-file! filename "(let [x :haha] (: x \"bar baz\"))")
+        [{:params {: diagnostics}}]
+        (is.nil (find [_ v (ipairs diagnostics)]
+                 (match v
+                   {:code 303
+                    :range _}
+                   v)))
         _ (error "did not match"))))
 
   (it "warns if a var is written but not read"

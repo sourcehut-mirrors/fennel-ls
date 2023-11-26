@@ -59,8 +59,9 @@ later by fennel-ls.language to answer requests from the client."
         diagnostics   {} ; [diagnostic]
         references    {} ; symbol -> references
         scopes        {} ; ast -> scope
-        require-calls {} ; ast -> boolean (does this ast start with the symbol `require)
-        calls         {}]; array of all lists
+        calls         {} ; all calls in the macro-expanded code -> true
+        lexical       {} ; all lists and tables in the original source
+        require-calls {}] ; the keys are all the calls that start with `require
 
     (λ find-definition [name ?scope]
       (when ?scope
@@ -206,7 +207,7 @@ later by fennel-ls.language to answer requests from the client."
       (tset scopes ast scope))
 
     (λ call [ast scope]
-      (tset calls ast (. ast 1))
+      (tset calls ast true)
       (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:
       (case ast
@@ -308,6 +309,16 @@ later by fennel-ls.language to answer requests from the client."
 
           ast (icollect [ok ast parser &until (not ok)] ast)]
 
+      (λ collect-everything [ast result]
+        (when (or (table? ast) (list? ast))
+          (tset result ast true)
+          (each [k v (iter ast)]
+            (collect-everything k result)
+            (collect-everything v result))))
+
+      (collect-everything ast lexical)
+
+
 
       ;; This is bad; we mutate fennel.macro-path
       (let [old-macro-path fennel.macro-path]
@@ -322,6 +333,7 @@ later by fennel-ls.language to answer requests from the client."
 
       (set file.ast ast)
       (set file.calls calls)
+      (set file.lexical lexical)
       (set file.scope scope)
       (set file.scopes scopes)
       (set file.definitions definitions)
