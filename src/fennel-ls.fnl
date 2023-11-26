@@ -13,9 +13,11 @@
                                              :rootUri "file://"}}))
         file (state.get-by-uri server (.. "file://" filename))]
     (diagnostics.check server file)
-    (each [_ v (ipairs file.diagnostics)]
-      ;; perhaps nicer formatting in the future?
-      (print (view v)))))
+    (each [_ {: message :range {: start}} (ipairs file.diagnostics)]
+      (print (: "%s:%s:%s %s" :format filename
+                ;; LSP line numbers are zero-indexed, but Emacs and Vim both use
+                ;; 1-indexing for this.
+                (+ (or start.line 0) 1) (or start.character "?") message)))))
 
 (λ main-loop [in out]
   (local send (partial json-rpc.write out))
@@ -27,7 +29,6 @@
 (λ main []
   (case arg
     ["--check" & filenames] (each [_ filename (ipairs filenames)]
-                              (print "Checking" filename)
                               (check filename))
     (where (or ["--server"] [nil])) (main-loop (io.input)
                                                (io.output))
