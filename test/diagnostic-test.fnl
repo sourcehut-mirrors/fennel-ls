@@ -170,7 +170,96 @@
         (is.nil (find [_ v (ipairs diagnostics)]
                  (match v
                    {:message "unused definition: &"}
-                   v)))))))
+                   v))))))
+
+  (it "does not warn about a generated unpack"
+    (let [self (create-client)
+          responses (self:open-file! filename "(-> [1 2 3] unpack +)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is.nil (find [_ v (ipairs diagnostics)]
+                 (match v
+                   {:code 304}
+                   v))))))
+
+  (it "warns about unpack into +"
+    (let [self (create-client)
+          responses (self:open-file! filename "(+ (unpack [1 2 3]))")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [_ v (ipairs diagnostics)]
+             (match v
+               {:code 304}
+               v))))))
+
+  (it "mentions table.concat if you use unpack into .."
+    (let [self (create-client)
+          responses (self:open-file! filename "(.. (table.unpack [\"hello\" \"world\"]))")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [_ v (ipairs diagnostics)]
+             (and
+               (match v
+                 {:code 304}
+                 v)
+               (v.message:find "table.concat")))))))
+
+  (it "doesn't mention table.concat if you use unpack into another op"
+    (let [self (create-client)
+          responses (self:open-file! filename "(* (table.unpack [\"hello\" \"world\"]))")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is.nil (find [_ v (ipairs diagnostics)]
+                 (and
+                   (match v
+                     {:code 304}
+                     v)
+                   (v.message:find "table.concat"))))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

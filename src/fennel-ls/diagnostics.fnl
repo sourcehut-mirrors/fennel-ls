@@ -16,7 +16,7 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
        :code 301
-       :codeDescription "I don't know"})))
+       :codeDescription "unused-definition"})))
 
 (λ unknown-module-field [self file]
   "any multisym whose definition can't be found through a (require) call"
@@ -29,9 +29,10 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
            :message (.. "unknown field: " (tostring symbol))
            :severity message.severity.WARN
            :code 302
-           :codeDescription "field checking I guess"})))))
+           :codeDescription "unknown-module-field"})))))
 
 (λ unnecessary-method [self file]
+  "a call to the : builtin that could just be a multisym"
   (icollect [[colon receiver method &as call] (pairs file.calls)
              &into file.diagnostics]
     (if (and (fennel.sym? colon ":")
@@ -39,14 +40,38 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
              (. file.lexical call)
              (= :string (type method))
              (not (method:find "^[0-9]"))
-             ;; questions: #
              (not (method:find "[^!$%*+-/0-9<=>?A-Z\\^_a-z|\128-\255]")))
         (case (message.ast->range self file call)
           range {: range
                  :message (.. "unnecessary : call: use (" (tostring receiver) ":" method ")")
                  :severity message.severity.WARN
                  :code 303
-                 :codeDescription "unnecessary colon"}))))
+                 :codeDescription "unnecessary-method"}))))
+
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1})
+(λ bad-unpack [self file]
+  "an unpack call leading into an operator"
+  (icollect [[op &as call] (pairs file.calls)
+             &into file.diagnostics]
+    (if (and (fennel.sym? op)
+             (. ops (tostring op))
+             ;; last item is an unpack call
+             (fennel.list? (. call (length call)))
+             (or (fennel.sym? (. call (length call) 1) :unpack)
+                 (fennel.sym? (. call (length call) 1) :_G.unpack)
+                 (fennel.sym? (. call (length call) 1) :table.unpack))
+             ;; Only the unpack call needs to be present in the original file.
+             (. file.lexical (. call (length call))))
+        (case (message.ast->range self file (. call (length call)))
+          range {: range
+                 :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
+                              (if (fennel.sym? op "..")
+                                (let [unpackme (fennel.view (. call (length call) 2))]
+                                  (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
+                                (.. " Use a loop when you have a dynamic number of arguments to " (tostring op))))
+                 :severity message.severity.WARN
+                 :code 304
+                 :codeDescription "bad-unpack"}))))
 
 (λ check [self file]
   "fill up the file.diagnostics table with linting things"
@@ -55,6 +80,8 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
   (if self.configuration.checks.unknown-module-field
     (unknown-module-field self file))
   (if self.configuration.checks.unnecessary-method
-    (unnecessary-method self file)))
+    (unnecessary-method self file))
+  (if self.configuration.checks.bad-unpack
+    (bad-unpack self file)))
 
 {: check}
