@@ -8,7 +8,7 @@
                  (dispatch.handle* {:id 1
                                     :jsonrpc "2.0"
                                     :method "initialize"
-                                    :params {:capabilities {}
+                                    :params {:capabilities {:general {:positionEncodings [:utf-8]}}
                                              :clientInfo {:name "fennel-ls"}
                                              :rootUri "file://"}}))
         file (state.get-by-uri server (.. "file://" filename))]
