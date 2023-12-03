@@ -192,10 +192,10 @@ later by fennel-ls.language to answer requests from the client."
       ;; handle the definitions of a function
       (define-function-name ast scope))
 
-    (λ compile-for [ast binding scope]
+    (λ compile-for [ast scope binding]
        (define (sym :nil) binding scope))
 
-    (λ compile-each [ast bindings scope]
+    (λ compile-each [ast scope bindings]
       (each [_ binding (ipairs bindings)]
         (define (sym :nil) binding scope)))
 
@@ -270,7 +270,7 @@ later by fennel-ls.language to answer requests from the client."
     (let [macro-file? (= (file.text:sub 1 24) ";; fennel-ls: macro-file")
           plugin
           {:name "fennel-ls"
-           :versions ["1.3.2"]
+           :versions ["1.4.1"]
            : symbol-to-expression
            : call
            : destructure
@@ -279,10 +279,10 @@ later by fennel-ls.language to answer requests from the client."
            ;; :chunk I don't know what this one is
            :assert-compile on-compile-error
            :parse-error on-parse-error
-           :customhook-early-for compile-for
-           :customhook-early-each compile-each
-           :customhook-early-fn compile-fn
-           :customhook-early-do compile-do}
+           :pre-for compile-for
+           :pre-each compile-each
+           :pre-fn compile-fn
+           :pre-do compile-do}
           scope (fennel.scope)
           opts {:filename file.uri
                 :plugins [plugin]
