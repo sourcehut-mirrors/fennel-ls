@@ -73,6 +73,15 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
                  :code 304
                  :codeDescription "bad-unpack"}))))
 
+(λ var-never-set [self file]
+  (icollect [symbol definition (pairs file.definitions) &into file.diagnostics]
+    (if (and definition.var? (not definition.var-set))
+        {:range (message.ast->range self file symbol)
+         :message (.. "var is never set: " (tostring symbol))
+         :severity message.severity.WARN
+         :code 301
+         :codeDescription "var-never-set"})))
+
 (λ check [self file]
   "fill up the file.diagnostics table with linting things"
   (if self.configuration.checks.unused-definition
@@ -82,6 +91,8 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
   (if self.configuration.checks.unnecessary-method
     (unnecessary-method self file))
   (if self.configuration.checks.bad-unpack
-    (bad-unpack self file)))
+    (bad-unpack self file))
+  (if self.configuration.checks.var-never-set
+    (var-never-set self file)))
 
 {: check}

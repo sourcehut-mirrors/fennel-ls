@@ -83,7 +83,7 @@ later by fennel-ls.language to answer requests from the client."
       (when (or ?reference? (fennel.multi-sym? ast))
         (reference ast scope)))
 
-    (λ define [?definition binding scope]
+    (λ define [?definition binding scope ?opts]
       ;; Add a definition to the definitions
       ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
       ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
@@ -96,7 +96,8 @@ later by fennel-ls.language to answer requests from the client."
                    :referenced-by (or (?. definitions binding :referenced-by) [])
                    :keys (if (< 0 (length keys))
                            (fcollect [i 1 (length keys)]
-                             (. keys i)))}]
+                             (. keys i)))
+                   :var? (?. ?opts :isvar)}]
               (tset (. definitions-by-scope scope) (tostring binding) definition)
               (tset definitions binding definition))
             (list? binding)
@@ -104,7 +105,7 @@ later by fennel-ls.language to answer requests from the client."
                      (= (length binding)
                         (- (length ?definition) 1)))
               (for [i 1 (length binding)]
-                (define (. ?definition (+ i 1)) (. binding i) scope))
+                (define (. ?definition (+ i 1)) (. binding i) scope ?opts))
               (recurse (. binding 1) keys))
             (table? binding)
             (accumulate [prev nil
@@ -135,10 +136,10 @@ later by fennel-ls.language to answer requests from the client."
                   ;;          (fcollect [i 1 (length keys)]
                   ;;            (. keys i)))}
                   name (string.match (tostring binding) "[^%.:]+")]
-              (when (multisym? binding)
-                (case (find-definition (tostring name) scope)
-                  target
-                  (table.insert target.referenced-by binding))))
+              (case (find-definition (tostring name) scope)
+                target (if (multisym? binding)
+                           (table.insert target.referenced-by binding)
+                           (set target.var-set true))))
             (= :table (type binding))
             (each [k v (iter binding)]
               (table.insert keys k)
@@ -146,11 +147,11 @@ later by fennel-ls.language to answer requests from the client."
               (table.remove keys))))
       (recurse binding []))
 
-    (λ destructure [to from scope {:declaration ?declaration?}]
+    (λ destructure [to from scope {:declaration ?declaration? &as opts}]
       ;; I really don't understand symtype
       ;; I think I need an explanation
       (if ?declaration?
-        (define to from scope)
+        (define to from scope opts)
         (mutate to from scope)))
 
     (λ add-field [ast multisym scope]

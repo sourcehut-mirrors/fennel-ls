@@ -96,7 +96,8 @@ in the \"self\" object."
    :checks {:unused-definition (option true)
             :unknown-module-field (option true)
             :unnecessary-method (option true)
-            :bad-unpack (option true)}
+            :bad-unpack (option true)
+            :var-never-set (option true)}
    :extra-globals (option "")})
 
 (λ make-configuration [?c]

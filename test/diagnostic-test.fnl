@@ -81,6 +81,20 @@
             "not found")
         _ (error "did not match"))))
 
+  (it "warns about vars that are never set"
+    (let [self (create-client)
+          responses (self:open-file! filename "(var x nil) (print x)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [_ v (ipairs diagnostics)]
+             (match v
+               {:message "var is never set: x"
+                :range {:start {:character 5 :line 0}
+                        :end   {:character 6 :line 0}}}
+               v))
+            "not found")
+        _ (error "did not match"))))
+
   (it "warns about unused functions"
     (let [self (create-client)
           responses (self:open-file! filename "(fn x [])")]
