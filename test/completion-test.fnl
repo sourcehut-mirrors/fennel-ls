@@ -2,6 +2,7 @@
 (local is (require :test.is))
 
 (local {: view} (require :fennel))
+
 (local {: ROOT-URI
         : create-client} (require :test.client))
 
@@ -170,7 +171,6 @@
                              completion.label))
             allowed-missing-docs {:lua true
                                   :set-forcibly! true
-
                                   ;; TODO support other lua versions besides 5.4
                                   :gcinfo true
                                   :getfenv true
@@ -182,11 +182,7 @@
                                   :bit32 true
                                   ;; luajit
                                   :bit true
-                                  :jit true
-
-                                  ;; TODO remove these from fennel-ls when they become configurable
-                                  :love true
-                                  :vim true}]
+                                  :jit true}]
         (each [_ completion (ipairs completions)]
           (when (not (. allowed-missing-docs completion.label))
             (is.same (type completion.label) :string "unlabeled completion")
@@ -211,9 +207,6 @@
             (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
             (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
             (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
-
-
-
 
     ;; (it "offers rich information about variable completions")
     ;; (it "offers rich information about field completions")
