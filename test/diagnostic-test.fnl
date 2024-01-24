@@ -230,58 +230,11 @@
                      v)
                    (v.message:find "table.concat"))))))))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ;; TODO lints:
 ;; unnecessary (do) in body position
 ;; Unused variables / fields (maybe difficult)
 ;; discarding results to various calls
 ;; unnecessary `do`/`values` with only one inner form
+;; `pairs` or `ipairs` call in a (for) table
 ;; mark when unification is happening on a `match` pattern (may be difficult)
 ;; think of more lints
