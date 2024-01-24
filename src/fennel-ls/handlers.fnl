@@ -74,7 +74,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       (if
         ;; require call
         (. file.require-calls parent)
-        (language.search self file parent [] {:stop-early? true})
+        (language.search-ast self file parent [] {:stop-early? true})
         ;; regular symbol
         (language.search-main self file symbol {:stop-early? true} byte))
       (result result-file)
@@ -157,11 +157,13 @@ Every time the client sends a message, it gets handled by a function in the corr
       (case (language.search-assignment self file ref stack {})
         ({: definition} file)
         (case (values definition (type definition))
+          ;; fields of a string are hardcoded to "string"
           (_str :string) (icollect [label _ (pairs string)]
                            {: label :kind kinds.Field})
+          ;; fields of a table
           (tbl :table) (icollect [label _ (pairs tbl)]
                          (if (= (type label) :string)
-                           (case (language.search self file tbl [label] {})
+                           (case (language.search-ast self file tbl [label] {})
                              def (formatter.completion-item-format label def)
                              _ {: label :kind kinds.Field}))))
         _ nil))))

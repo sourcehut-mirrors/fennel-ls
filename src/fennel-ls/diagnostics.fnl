@@ -23,7 +23,7 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
   (icollect [symbol (pairs file.references) &into file.diagnostics]
     (if (. (utils.multi-sym-split symbol) 2)
       (let [opts {}
-            item (language.search self file symbol [] opts)]
+            item (language.search-ast self file symbol [] opts)]
         (if (and (not item) opts.searched-through-require)
           {:range (message.ast->range self file symbol)
            :message (.. "unknown field: " (tostring symbol))

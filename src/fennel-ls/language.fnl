@@ -16,7 +16,7 @@ the data provided by compiler.fnl."
 (local -nil- (sym :nil))
 (local -setmetatable- (sym :setmetatable))
 
-(var search nil) ;; all of the search functions are mutually recursive
+(var search-ast nil) ;; all of the search functions are mutually recursive
 
 (λ stack-add-keys! [stack ?keys]
   "add the keys to the end of the stack in reverse order"
@@ -44,7 +44,7 @@ the data provided by compiler.fnl."
         ;; search a virtual field from :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
         (search-assignment self file (. ?fields (table.remove stack)) stack opts)
-        (search self file ?definition (stack-add-keys! stack ?keys) opts))))
+        (search-ast self file ?definition (stack-add-keys! stack ?keys) opts))))
 
 (λ search-symbol [self file symbol stack opts]
   (if (= symbol -nil-)
@@ -54,7 +54,7 @@ the data provided by compiler.fnl."
 
 (λ search-table [self file tbl stack opts]
   (if (. tbl (. stack (length stack)))
-      (search self file (. tbl (table.remove stack)) stack opts)
+      (search-ast self file (. tbl (table.remove stack)) stack opts)
       (= 0 (length stack))
       (values {:definition tbl} file) ;; BASE CASE !!
       nil)) ;; BASE CASE Give up
@@ -66,22 +66,22 @@ the data provided by compiler.fnl."
       (let [newfile (state.get-by-module self mod)]
         (when newfile
           (let [newitem (. newfile.ast (length newfile.ast))]
-            (search self newfile newitem stack (doto opts (tset :searched-through-require true)))))))
+            (search-ast self newfile newitem stack (doto opts (tset :searched-through-require true)))))))
 
     ;; A . form  indexes into item 1 with the other items
     (where [-dot- & split] (. split 1))
-    (search self file (. split 1) (stack-add-split! stack split) opts)
+    (search-ast self file (. split 1) (stack-add-split! stack split) opts)
 
     ;; A do block returns the last form
     (where [-do- & body] (. body 1))
-    (search self file (. body (length body)) stack opts)
+    (search-ast self file (. body (length body)) stack opts)
 
     (where [-let- _binding & body] (. body 1))
-    (search self file (. body (length body)) stack opts)
+    (search-ast self file (. body (length body)) stack opts)
 
     ;; TODO care about the setmetatable call
     (where [-setmetatable- tbl _mt])
-    (search self file tbl stack opts)
+    (search-ast self file tbl stack opts)
 
     ;; functions evaluate to "themselves"
     [-fn-]
@@ -92,8 +92,8 @@ the data provided by compiler.fnl."
     (if (= 0 (length stack))
         (values {:definition call} file)))) ;; BASE CASE!!
 
-(set search
-  (λ search [self file item stack opts]
+(set search-ast
+  (λ [self file item stack opts]
     (if
         (sym? item)               (search-symbol self file item stack opts)
         (list? item)              (search-list self file item stack opts)
@@ -146,7 +146,7 @@ Returns:
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)
             _ (case (. file.definitions symbol)
-                def (search self file def.definition (stack-add-keys! stack def.keys) opts)))))))
+                def (search-ast self file def.definition (stack-add-keys! stack def.keys) opts)))))))
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
@@ -167,7 +167,7 @@ Returns:
       _ (case (global-info self name)
          global-item global-item
          _ (case (find-local-definition file name scope)
-             def (search self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
+             def (search-ast self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
 
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object
@@ -235,4 +235,4 @@ Returns:
  : search-main
  : search-assignment
  : search-name-and-scope
- : search}
+ : search-ast}
