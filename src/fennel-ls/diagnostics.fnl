@@ -10,8 +10,12 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
 (λ unused-definition [self file]
   "local variable that is defined but not used"
   (icollect [symbol definition (pairs file.definitions) &into file.diagnostics]
-    (if (and (= 0 (length definition.referenced-by))
-             (not= "_" (: (tostring symbol) :sub 1 1)))
+    (if (and (not= "_" (: (tostring symbol) :sub 1 1))
+             (not (accumulate [reference false
+                               _ ref (ipairs definition.referenced-by)
+                               &until reference]
+                    (or (= ref.ref-type :read)
+                        (= ref.ref-type :mutate)))))
       {:range (message.ast->range self file symbol)
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
@@ -77,9 +81,9 @@ Goes through a file and mutates the `file.diagnostics` field, filling it with di
   (icollect [symbol definition (pairs file.definitions) &into file.diagnostics]
     (if (and definition.var? (not definition.var-set))
         {:range (message.ast->range self file symbol)
-         :message (.. "var is never set: " (tostring symbol))
+         :message (.. "var is never set: " (tostring symbol) " Consider using (local) instead of (var)")
          :severity message.severity.WARN
-         :code 301
+         :code 305
          :codeDescription "var-never-set"})))
 
 (λ check [self file]

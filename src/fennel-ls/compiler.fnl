@@ -3,10 +3,20 @@ This file is responsible for the low level tasks of analysis. Its main job
 is to recieve a file object and run all of the basic analysis that will be used
 later by fennel-ls.language to answer requests from the client."
 
-(local {: sym? : list? : sequence? : table? : sym &as fennel} (require :fennel))
+(local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
+
+(fn scope? [candidate]
+  ;; just checking a couple of the fields
+  (and
+    (= (type candidate) :table)
+    (= (type candidate.includes) :table)
+    (= (type candidate.macros) :table)
+    (= (type candidate.manglings) :table)
+    (= (type candidate.specials) :table)
+    (= (type candidate.gensyms) :table)))
 
 ;; words surrounded by - are symbols,
 ;; because fennel doesn't allow 'require in a runtime file
@@ -64,24 +74,34 @@ later by fennel-ls.language to answer requests from the client."
         require-calls {}] ; the keys are all the calls that start with `require
 
     (λ find-definition [name ?scope]
-      (when ?scope
+      (if ?scope
         (or (. definitions-by-scope ?scope name)
             (find-definition name ?scope.parent))))
 
-    (λ reference [ast scope]
-      ;; Add a reference to the references
-      (assert (sym? ast))
+    (λ reference [symbol scope ref-type]
+      (assert (or (= ref-type :read) (= ref-type :write) (= ref-type :mutate)) "wrong ref-type")
+      (assert (sym? symbol) :not-a-symbol)
+      (assert (scope? scope) :not-a-scope)
       ;; find reference
-      (let [name (string.match (tostring ast) "[^%.:]+")]
+      (let [name (string.match (tostring symbol) "[^%.:]+")]
         (case (find-definition (tostring name) scope)
           target
-          (do
-            (tset references ast target)
-            (table.insert target.referenced-by ast)))))
+          (if (. references symbol)
+            (do ;; already exists
+              (assert (= symbol (. references symbol :symbol)) (.. "the symbol should always be the same")))
+              ;; (assert (= target (. references symbol :target)) (.. "different targets: " (view target) (view (. references symbol :target)))))
+              ;; (print "old and new" ref-type (. references symbol :ref-type)))
+            (let [ref {: symbol : target : ref-type}]
+              (tset references symbol ref)
+              (table.insert target.referenced-by ref))))))
 
     (λ symbol-to-expression [ast scope ?reference?]
-      (when (or ?reference? (fennel.multi-sym? ast))
-        (reference ast scope)))
+      (assert (sym? ast) "symbols only")
+      (reference ast scope (if ?reference?
+                             :read
+                             (not (multisym? ast))
+                             :write
+                             :mutate)))
 
     (λ define [?definition binding scope ?opts]
       ;; Add a definition to the definitions
@@ -124,22 +144,19 @@ later by fennel-ls.language to answer requests from the client."
       (recurse binding []))
 
     (λ mutate [_?definition binding scope]
-      ;; for now, mutating a field counts as a reference I guess
       (λ recurse [binding keys]
         (if (sym? binding)
-            (let [
-                  ;; ;; future work may need to care about mutations
-                  ;; _mutation
-                  ;; {: binding
-                  ;;  :new-definition ?definition
-                  ;;  :keys (if (< 0 (length keys))
-                  ;;          (fcollect [i 1 (length keys)]
-                  ;;            (. keys i)))}
-                  name (string.match (tostring binding) "[^%.:]+")]
-              (case (find-definition (tostring name) scope)
-                target (if (multisym? binding)
-                           (table.insert target.referenced-by binding)
-                           (set target.var-set true))))
+            ;; (let [;; future work may need to care about mutations
+            ;;       _mutation
+            ;;       {: binding
+            ;;        :new-definition ?definition
+            ;;        :keys (if (< 0 (length keys))
+            ;;                (fcollect [i 1 (length keys)]
+            ;;                  (. keys i)))}]
+            (when (not (multisym? binding))
+              (reference binding scope :write)
+              (if (. references binding)
+                (tset (. references binding :target) :var-set true)))
             (= :table (type binding))
             (each [k v (iter binding)]
               (table.insert keys k)
@@ -147,7 +164,7 @@ later by fennel-ls.language to answer requests from the client."
               (table.remove keys))))
       (recurse binding []))
 
-    (λ destructure [to from scope {:declaration ?declaration? &as opts}]
+    (λ destructure [to from scope {:declaration ?declaration? : symtype &as opts}]
       ;; I really don't understand symtype
       ;; I think I need an explanation
       (if ?declaration?
@@ -164,9 +181,9 @@ later by fennel-ls.language to answer requests from the client."
           (set target.fields (or target.fields {}))
           (tset target.fields field
             {:binding multisym
-             :definition ast
-             ;; referenced-by inherits from all other symbols
-             :referenced-by (or (?. definitions multisym :referenced-by) [])}))))
+             :definition ast}))))
+             ;; ;; referenced-by inherits from all other symbols
+             ;; :referenced-by (or (?. definitions multisym :referenced-by) [])}))))
 
     (λ define-function-name [ast scope]
       ;; add a function definition to the definitions
@@ -221,7 +238,7 @@ later by fennel-ls.language to answer requests from the client."
         (tset require-calls ast true)
         ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
         (where [sym] (multisym? sym) (: (tostring sym) :find ":"))
-        (reference sym scope)))
+        (reference sym scope :read)))
 
     (λ recoverable? [msg]
       (or (= 1 (msg:find "unknown identifier"))
@@ -295,6 +312,8 @@ later by fennel-ls.language to answer requests from the client."
                             (true ?item1 ?item2) (values ?item1 ?item2)
                             (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
                             (if (os.getenv :TESTING)
+                              (print (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
+                                         "\n\n^^^ the error message above here is the root problem\n\n"))
                               (error (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
                                          "\n\n^^^ the error message above here is the root problem\n\n"))
                               (table.insert diagnostics

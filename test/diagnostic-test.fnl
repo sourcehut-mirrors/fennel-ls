@@ -88,7 +88,7 @@
         [{:params {: diagnostics}}]
         (is (find [_ v (ipairs diagnostics)]
              (match v
-               {:message "var is never set: x"
+               {:code 305
                 :range {:start {:character 5 :line 0}
                         :end   {:character 6 :line 0}}}
                v))
@@ -112,7 +112,7 @@
   (it "does not warn if a field is used"
     (let [self (create-client)
           responses (self:open-file! filename "(fn [a b] (set a.x 10) (fn b.f []))")]
-      (assert (not (?. responses 1 :params :diagnostics 1)))))
+      (assert (not (?. responses 1 :params :diagnostics 1)) (?. responses 1 :params :diagnostics 1 :message))))
 
   (it "warns when using the : special when a multisym would do"
     (let [self (create-client)]
@@ -150,18 +150,40 @@
                    v)))
         _ (error "did not match"))))
 
-  (it "warns if a var is written but not read"
+  (it "warns 'unused' if a var is written but not read"
     (let [self (create-client)
           responses (self:open-file! filename "(var x 1) (set x 2) (set [x] [3])")]
       (match responses
         [{:params {: diagnostics}}]
         (is (find [_ v (ipairs diagnostics)]
              (match v
-               {:message "unused definition: x"
+               {:code 301
                 :range {:start {:character 5 :line 0}
                         :end   {:character 6 :line 0}}}
                v))
             "not found")
+        _ (error "did not match"))))
+
+  (it "warns 'var-never-set' if a var is not written"
+    (let [self (create-client)
+          responses (self:open-file! filename "(var x 1) (print x)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [_ v (ipairs diagnostics)]
+             (match v
+               {:code 305
+                :range {:start {:character 5 :line 0}
+                        :end   {:character 6 :line 0}}}
+               v))
+            "not found")
+        _ (error "did not match"))))
+
+  (it "does not warn 'var-never-set' if a var is written"
+    (let [self (create-client)
+          responses (self:open-file! filename "(var x 1) (set x 2) (print x)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is.equal 0 (length diagnostics) "this code has no problems")
         _ (error "did not match"))))
 
   (it "does not warn on ampersand in destructuring"

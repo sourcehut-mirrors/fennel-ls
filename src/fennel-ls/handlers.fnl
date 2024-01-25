@@ -90,7 +90,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       symbol
       (language.find-nearest-definition self file symbol byte)
       (where (definition def-file) (not= definition.referenced-by nil))
-      (let [result (icollect [_ symbol (ipairs definition.referenced-by)]
+      (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
                      (message.range-and-uri self def-file symbol))]
         (if ?include-declaration?
           (table.insert result
@@ -188,7 +188,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       (language.find-nearest-definition self file symbol symbol.bytestart)
       ;; TODO we are assuming that every reference is in the same file
       (where (definition def-file) (not= definition.referenced-by nil))
-      (let [usages (icollect [_ symbol (ipairs definition.referenced-by)
+      (let [usages (icollect [_ {: symbol} (ipairs definition.referenced-by)
                               &into [{:range (message.multisym->range self def-file definition.binding 1)
                                       :newText new-name}]]
                      (if (not (rawequal symbol definition.binding))

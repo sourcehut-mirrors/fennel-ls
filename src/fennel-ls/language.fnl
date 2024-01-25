@@ -2,7 +2,7 @@
 The high level analysis system that does deep searches following
 the data provided by compiler.fnl."
 
-(local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
+(local {: sym? : list? : sequence? : varg? : sym &as fennel} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
@@ -35,15 +35,16 @@ the data provided by compiler.fnl."
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-assignment [self file assignment stack opts]
-  (let [{:binding _
-         :definition ?definition
-         :keys ?keys
-         :fields ?fields} assignment]
+  (assert assignment.target (.. "WRONG TYPE" (fennel.traceback)))
+  (let [{:target {:binding _
+                  :definition ?definition
+                  :keys ?keys
+                  :fields ?fields}} assignment]
     (if (and (= 0 (length stack)) opts.stop-early?)
-        (values assignment file) ;; BASE CASE!!
+        (values assignment.target file) ;; BASE CASE!!
         ;; search a virtual field from :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
-        (search-assignment self file (. ?fields (table.remove stack)) stack opts)
+        (search-assignment self file {:target (. ?fields (table.remove stack))} stack opts)
         (search-ast self file ?definition (stack-add-keys! stack ?keys) opts))))
 
 (λ search-symbol [self file symbol stack opts]
