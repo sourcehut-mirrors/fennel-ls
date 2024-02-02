@@ -102,24 +102,10 @@ later by fennel-ls.language to answer requests from the client."
                              :write
                              :mutate)))
 
-    (λ define [?definition binding scope ?opts]
-      ;; Add a definition to the definitions
-      ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
-      ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
-      ;; also, there's no logic for (values)
+    (λ for-each-binding-in [binding ?definition action]
       (λ recurse [binding keys depth]
         (if (sym? binding)
-            (let [definition
-                  {: binding
-                   :definition ?definition
-                   :referenced-by (or (?. definitions binding :referenced-by) [])
-                   :keys (if (< 0 (length keys))
-                           (fcollect [i 1 (length keys)]
-                             (. keys i)))
-                   :multival keys.multival
-                   :var? (?. ?opts :isvar)}]
-              (tset (. definitions-by-scope scope) (tostring binding) definition)
-              (tset definitions binding definition))
+            (action binding ?definition keys keys.multival)
             (list? binding)
             (let [nested? (not= depth 0)]
               (if nested? (error (.. "I didn't expect to find a multival destructure in " (view binding) " at " (view keys))))
@@ -135,7 +121,7 @@ later by fennel-ls.language to answer requests from the client."
                   (recurse child keys (+ depth 1))
                   (or (sym? key :&) (sym? prev :&))
                   ;; currently the "rest" param is defined to []
-                  (define [] child scope ?opts)
+                  (for-each-binding-in child [] action)
                   (or (sym? child :&as) (sym? child :&))
                   child
                   (do
@@ -144,26 +130,28 @@ later by fennel-ls.language to answer requests from the client."
                     (table.remove keys))))))
       (recurse binding [] 0))
 
+    (λ define [?definition binding scope ?opts]
+      (for-each-binding-in binding ?definition
+        (fn [symbol ?definition keys ?multival]
+          (let [definition
+                {:binding symbol
+                 :definition ?definition
+                 :referenced-by (or (?. definitions symbol :referenced-by) [])
+                 :keys (if (< 0 (length keys))
+                         (fcollect [i 1 (length keys)]
+                           (. keys i)))
+                 :multival ?multival
+                 :var? (?. ?opts :isvar)}]
+            (tset (. definitions-by-scope scope) (tostring symbol) definition)
+            (tset definitions symbol definition)))))
+
     (λ mutate [_?definition binding scope]
-      (λ recurse [binding keys]
-        (if (sym? binding)
-            ;; (let [;; future work may need to care about mutations
-            ;;       _mutation
-            ;;       {: binding
-            ;;        :new-definition ?definition
-            ;;        :keys (if (< 0 (length keys))
-            ;;                (fcollect [i 1 (length keys)]
-            ;;                  (. keys i)))}]
-            (when (not (multisym? binding))
-              (reference binding scope :write)
-              (if (. references binding)
-                (tset (. references binding :target) :var-set true)))
-            (= :table (type binding))
-            (each [k v (iter binding)]
-              (table.insert keys k)
-              (recurse v keys)
-              (table.remove keys))))
-      (recurse binding []))
+      (for-each-binding-in binding _?definition
+        (fn [symbol _?definition _keys]
+          (when (not (multisym? symbol))
+            (reference symbol scope :write)
+            (if (. references symbol)
+              (tset (. references symbol :target) :var-set true))))))
 
     (λ destructure [to from scope {:declaration ?declaration? : symtype &as opts}]
       ;; I really don't understand symtype
