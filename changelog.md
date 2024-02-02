@@ -1,5 +1,8 @@
 # Changelog
 
+* Fix bug with renaming vars
+* Improve multival tracking
+
 ## 0.1.0
 
 ### Initial Features

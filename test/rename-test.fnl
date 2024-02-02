@@ -37,18 +37,22 @@
     (check-rename "(fn [{: x}] x)" 0 8 :foo "(fn [{: foo}] foo)")
     (check-rename "(fn [{:x x}] x)" 0 9 :foo "(fn [{:x foo}] foo)"))
 
- (it "renames a sym inside of lambda"
-   (check-rename "(λ [foo] (print foo))" 0 6 :something
-                 "(λ [something] (print something))"))
+  (it "renames a sym inside of lambda"
+    (check-rename "(λ [foo] (print foo))" 0 6 :something
+                  "(λ [something] (print something))"))
 
- (it "renames a sym inside of set"
-   (check-rename "(var x 10)\n(set x 20)" 1 6 :something
-                 "(var something 10)\n(set something 20)"))
+  (it "renames a sym inside of set"
+    (check-rename "(var x 10)\n(set x 20)" 1 6 :something
+                  "(var something 10)\n(set something 20)"))
 
- (it "renames a sym inside of set 2"
-   (check-rename "(var x 10)\n(var m 0)\n(set (m x) (values 10 20))" 2 8 :something
-                 "(var something 10)\n(var m 0)\n(set (m something) (values 10 20))"))
+  (it "renames a sym inside of set 2"
+    (check-rename "(var x 10)\n(var m 0)\n(set (m x) (values 10 20))" 2 8 :something
+                  "(var something 10)\n(var m 0)\n(set (m something) (values 10 20))"))
 
- (it "renames a sym inside of macro that uses multiple times"
-   (check-rename "(var x 10)\n(doto x (set 20) (set 30))" 1 6 :something
-                 "(var something 10)\n(doto something (set 20) (set 30))")))
+  (it "renames a sym inside of set 3"
+    (check-rename "(var (x y) 10)\n(set (x y) 10)" 1 8 :something
+                  "(var (x something) 10)\n(set (x something) 10)"))
+
+  (it "renames a sym inside of macro that uses multiple times"
+    (check-rename "(var x 10)\n(doto x (set 20) (set 30))" 1 6 :something
+                  "(var something 10)\n(doto something (set 20) (set 30))")))

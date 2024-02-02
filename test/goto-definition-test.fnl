@@ -104,6 +104,15 @@
           _response (c:definition :foo.fnl 1 8)]
       nil))
 
+  (it "can go through multival destructures"
+    (let [c (doto (create-client)
+                  (: :open-file! :foo.fnl "(local [x y] (values [1 2] [3 4]))\n(local (a b) (values {:x y : y} {: x : y}))\n(print b.x a)"))
+          [find_b] (c:definition :foo.fnl 2 9)]
+      ;; it finds the first `x` symbol
+      (print (view find_b))
+      (is.same find_b.result.range {:start {:line 0 :character 8} :end {:line 0 :character 9}})
+      nil))
+
   ;; (it "can go through more than one extra file")
   ;; (it "will give up instead of freezing on recursive requires")
   ;; (it "finds the definition of in-file macros")

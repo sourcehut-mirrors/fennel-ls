@@ -2,7 +2,7 @@
 The high level analysis system that does deep searches following
 the data provided by compiler.fnl."
 
-(local {: sym? : list? : sequence? : varg? : sym &as fennel} (require :fennel))
+(local {: sym? : list? : sequence? : varg? : sym : view} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
@@ -34,18 +34,28 @@ the data provided by compiler.fnl."
 (λ stack-add-multisym! [stack symbol]
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
+(λ search-multival [self file ast stack ?multival opts]
+  (let [multival (or ?multival 1)]
+    (if (= 1 multival)
+      (search-ast self file ast stack opts)
+      (sym? ast)               (values nil file) ;; BASE CASE !!
+      (list? ast)              (if (sym? (. ast 1) :values)
+                                 (search-ast self file (. ast (+ 1 multival)) stack opts)
+                                 (values nil file)) ;; GIVING UP !!
+      (= :table (type ast))    (values nil file)))) ;; GIVING UP !!
+
 (λ search-assignment [self file assignment stack opts]
-  (assert assignment.target (.. "WRONG TYPE" (fennel.traceback)))
   (let [{:target {:binding _
                   :definition ?definition
                   :keys ?keys
+                  :multival ?multival
                   :fields ?fields}} assignment]
     (if (and (= 0 (length stack)) opts.stop-early?)
         (values assignment.target file) ;; BASE CASE!!
         ;; search a virtual field from :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
         (search-assignment self file {:target (. ?fields (table.remove stack))} stack opts)
-        (search-ast self file ?definition (stack-add-keys! stack ?keys) opts))))
+        (search-multival self file ?definition (stack-add-keys! stack ?keys) ?multival opts))))
 
 (λ search-symbol [self file symbol stack opts]
   (if (= symbol -nil-)
@@ -84,7 +94,7 @@ the data provided by compiler.fnl."
     (where [-setmetatable- tbl _mt])
     (search-ast self file tbl stack opts)
 
-    ;; functions evaluate to "themselves"
+    ;; fn marks a function literal
     [-fn-]
     (values {:definition call} file) ;; BASE CASE !!
 

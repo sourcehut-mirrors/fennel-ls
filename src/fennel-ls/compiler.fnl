@@ -90,7 +90,6 @@ later by fennel-ls.language to answer requests from the client."
             (do ;; already exists
               (assert (= symbol (. references symbol :symbol)) (.. "the symbol should always be the same")))
               ;; (assert (= target (. references symbol :target)) (.. "different targets: " (view target) (view (. references symbol :target)))))
-              ;; (print "old and new" ref-type (. references symbol :ref-type)))
             (let [ref {: symbol : target : ref-type}]
               (tset references symbol ref)
               (table.insert target.referenced-by ref))))))
@@ -108,7 +107,7 @@ later by fennel-ls.language to answer requests from the client."
       ;; recursively explore the binding (which, in the general case, is a destructuring assignment)
       ;; right now I'm not keeping track of *how* the symbol was destructured: just finding all the symbols for now.
       ;; also, there's no logic for (values)
-      (λ recurse [binding keys]
+      (λ recurse [binding keys depth]
         (if (sym? binding)
             (let [definition
                   {: binding
@@ -117,31 +116,33 @@ later by fennel-ls.language to answer requests from the client."
                    :keys (if (< 0 (length keys))
                            (fcollect [i 1 (length keys)]
                              (. keys i)))
+                   :multival keys.multival
                    :var? (?. ?opts :isvar)}]
               (tset (. definitions-by-scope scope) (tostring binding) definition)
               (tset definitions binding definition))
             (list? binding)
-            (if (and (is-values? ?definition)
-                     (= (length binding)
-                        (- (length ?definition) 1)))
-              (for [i 1 (length binding)]
-                (define (. ?definition (+ i 1)) (. binding i) scope ?opts))
-              (recurse (. binding 1) keys))
+            (let [nested? (not= depth 0)]
+              (if nested? (error (.. "I didn't expect to find a multival destructure in " (view binding) " at " (view keys))))
+              (each [i child (ipairs binding)]
+                (set keys.multival i)
+                (recurse child keys (+ depth 1))
+                (set keys.multival nil)))
             (table? binding)
             (accumulate [prev nil
-                         k v (iter binding)]
-              (if (or (sym? k :&as) (sym? prev :&as))
-                  (recurse v keys)
-                  (or (sym? k :&) (sym? prev :&))
-                  ;; currently the "rest" isn't counted as a binding
-                  nil
-                  (or (sym? v :&as) (sym? v :&))
-                  v
+                         key child (iter binding)]
+              (if (or (sym? key :&as) (sym? prev :&as))
+                  ;; if its &as, just keep the keys the same
+                  (recurse child keys (+ depth 1))
+                  (or (sym? key :&) (sym? prev :&))
+                  ;; currently the "rest" param is defined to []
+                  (define [] child scope ?opts)
+                  (or (sym? child :&as) (sym? child :&))
+                  child
                   (do
-                    (table.insert keys k)
-                    (recurse v keys)
+                    (table.insert keys key)
+                    (recurse child keys (+ depth 1))
                     (table.remove keys))))))
-      (recurse binding []))
+      (recurse binding [] 0))
 
     (λ mutate [_?definition binding scope]
       (λ recurse [binding keys]

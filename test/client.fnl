@@ -11,7 +11,7 @@
   (.. "file://" ROOT-PATH))
 
 (local default-params
-   {:capabilities {}
+   {:capabilities {:general {:positionEncodings [:utf-8]}}
     :clientInfo {:name "Neovim" :version "0.7.2"}
     :initializationOptions {}
     :processId 16245
