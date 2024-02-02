@@ -14,6 +14,7 @@ the data provided by compiler.fnl."
 (local -let- (sym :let))
 (local -fn- (sym :fn))
 (local -nil- (sym :nil))
+(local -values- (sym :nil))
 (local -setmetatable- (sym :setmetatable))
 
 (var search-ast nil) ;; all of the search functions are mutually recursive
@@ -36,13 +37,20 @@ the data provided by compiler.fnl."
 
 (λ search-multival [self file ast stack ?multival opts]
   (let [multival (or ?multival 1)]
-    (if (= 1 multival)
+    (if
+      ;; we're looking at a (values), just solve it now
+      (and (list? ast) (sym? (. ast 1) :values))
+      (search-ast self file (. ast (+ 1 multival)) stack opts)
+
+      ;; we're looking for value number 1 anyway
+      (= 1 multival)
       (search-ast self file ast stack opts)
+
+      ;; other cases
       (sym? ast)               (values nil file) ;; BASE CASE !!
-      (list? ast)              (if (sym? (. ast 1) :values)
-                                 (search-ast self file (. ast (+ 1 multival)) stack opts)
-                                 (values nil file)) ;; GIVING UP !!
-      (= :table (type ast))    (values nil file)))) ;; GIVING UP !!
+      (list? ast)              (values nil file) ;; GIVING UP !!
+      ;; (varg? ast)           something
+      (= :table (type ast))    (values nil file)))) ;; BASE CASE !!
 
 (λ search-assignment [self file assignment stack opts]
   (let [{:target {:binding _
@@ -90,12 +98,15 @@ the data provided by compiler.fnl."
     (where [-let- _binding & body] (. body 1))
     (search-ast self file (. body (length body)) stack opts)
 
+    (where [-values- first])
+    (search-ast self file first stack opts)
+
     ;; TODO care about the setmetatable call
     (where [-setmetatable- tbl _mt])
     (search-ast self file tbl stack opts)
 
     ;; fn marks a function literal
-    [-fn-]
+    (where [fn*] (or (sym? fn* :fn) (sym? fn* :lambda) (sym? fn* :λ)))
     (values {:definition call} file) ;; BASE CASE !!
 
     ;; if we don't know, give up
@@ -157,7 +168,7 @@ Returns:
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)
             _ (case (. file.definitions symbol)
-                def (search-ast self file def.definition (stack-add-keys! stack def.keys) opts)))))))
+                def (search-multival self file def.definition (stack-add-keys! stack def.keys) def.multival opts)))))))
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
