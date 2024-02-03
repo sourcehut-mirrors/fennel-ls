@@ -52,4 +52,13 @@
     (check "hover.fnl" 22 22 "```fnl\n{:AB :CD}\n```"))
 
   (it "hovers over a special"
-    (check "hover.fnl" 5 2 "```fnl\n(let [name1 val1 ... nameN valN] ...)\n```\nIntroduces a new scope in which a given set of local bindings are used.")))
+    (check "hover.fnl" 5 2 "```fnl\n(let [name1 val1 ... nameN valN] ...)\n```\nIntroduces a new scope in which a given set of local bindings are used."))
+
+  (it "hovers over a multival destructure over (values)"
+    (let [client (doto (create-client)
+                       (: :open-file! :foo.fnl "(local (a b) (values 1 2))"))
+          [hover-a] (client:hover :foo.fnl 0 8)
+          [hover-b] (client:hover :foo.fnl 0 10)]
+      (is (hover-a.result.contents.value:find "```fnl\n1\n```"))
+      (is (hover-b.result.contents.value:find "```fnl\n2\n```"))
+      nil)))
