@@ -28,8 +28,6 @@
     (is.same ["a" "b" "c" "d" "e" "f"] (utils.multi-sym-split "a.b.c.d.e.f"))
     (is.same ["obj" "bar"] (utils.multi-sym-split (fennel.sym "obj.bar")))))
 
-(describe "utf8") ;; TODO
-
 (describe "find-symbol"
   (it "finds a symbol and parents"
     (let [state (doto (create-client)

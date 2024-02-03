@@ -128,10 +128,9 @@ Every time the client sends a message, it gets handled by a function in the corr
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
 (λ make-completion-item [self file name scope]
-  ;; TODO consider passing stop-early?
   (case (language.search-name-and-scope self file name scope)
     def (formatter.completion-item-format name def)
-    _ {:label name}))
+    _ {:label name :textEdit {:newText name}}))
 
 (λ scope-completion [self file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
@@ -142,7 +141,8 @@ Every time the client sends a message, it gets handled by a function in the corr
         ?parent (. parents 1)
         result []
         in-call-position? (and ?parent (= ?symbol (. ?parent 1)))]
-    (collect-scope scope :manglings #(make-completion-item self file $ scope) result)
+    (collect-scope scope :manglings #(doto (make-completion-item self file $ scope) (tset :kind kinds.Variable)) result)
+
     (when in-call-position?
       (collect-scope scope :macros #(doto (make-completion-item self file $ scope) (tset :kind kinds.Keyword)) result)
       (collect-scope scope :specials #(doto (make-completion-item self file $ scope) (tset :kind kinds.Operator)) result))
@@ -159,26 +159,40 @@ Every time the client sends a message, it gets handled by a function in the corr
         (case (values definition (type definition))
           ;; fields of a string are hardcoded to "string"
           (_str :string) (icollect [label _ (pairs string)]
-                           {: label :kind kinds.Field})
+                           {: label :kind kinds.Field :textEdit {:newText label}})
           ;; fields of a table
           (tbl :table) (icollect [label _ (pairs tbl)]
                          (if (= (type label) :string)
                            (case (language.search-ast self file tbl [label] {})
                              def (formatter.completion-item-format label def)
-                             _ {: label :kind kinds.Field}))))
+                             _ {: label :kind kinds.Field :textEdit {:newText label}}))))
         _ nil))))
-
-(λ _create-completion-item [self file name scope]
-  (let [result (language.search-name-and-scope self file name scope)]
-    {:label result.label :kind result.kind}))
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
         byte (utils.position->byte file.text position self.position-encoding)
         (?symbol parents) (language.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
-      (where (or nil [_ nil])) (scope-completion self file byte ?symbol parents)
-      [_a _b &as split] (field-completion self file ?symbol split))))
+
+      ;; completion from current scope
+      (where (or nil [_ nil]))
+      (let [input-range (if ?symbol (message.multisym->range self file ?symbol -1) {:start position :end position})
+            ?completions (scope-completion self file byte ?symbol parents)]
+        (if ?completions
+          (each [_ completion (ipairs ?completions)]
+            (set completion.textEdit.range input-range)))
+        ?completions)
+
+      ;; completion from field
+      [_a _b &as split]
+      (let [input-range (message.multisym->range self file ?symbol -1)
+            ?completions (field-completion self file ?symbol split input-range)]
+        (if ?completions
+          (each [_ completion (ipairs ?completions)]
+            (set completion.textEdit.range input-range)))
+        ?completions))))
+
+
 
 (λ requests.textDocument/rename [self send {: position :textDocument {: uri} :newName new-name}]
   (let [file (state.get-by-uri self uri)

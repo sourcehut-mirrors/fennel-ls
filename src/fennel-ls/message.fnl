@@ -67,7 +67,8 @@ to look to fix this in the future."
                                                           self.position-encoding)}))
 
 (λ multisym->range [self file ast n]
-  (let [spl (utils.multi-sym-split ast)]
+  (let [spl (utils.multi-sym-split ast)
+        n (if (< n 0) (+ n 1 (length spl)) n)]
     (case (values (utils.get-ast-info ast :bytestart)
                   (utils.get-ast-info ast :byteend))
       (bytestart byteend)

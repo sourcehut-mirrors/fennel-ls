@@ -99,9 +99,11 @@ fntype is one of fn or λ or lambda"
   (doto
     (case (analyze-fn def.definition)
       {:fntype _} {: label
-                   :kind (if (label:find ":") kinds.Method kinds.Function)}
+                   :kind (if (label:find ":") kinds.Method kinds.Function)
+                   :textEdit {:newText label}}
       _ {: label
-         :kind kinds.Variable})
+         :kind kinds.Variable
+         :textEdit {:newText label}})
     (tset :documentation (hover-format def))))
 
 {: hover-format

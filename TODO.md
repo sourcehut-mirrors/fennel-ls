@@ -63,7 +63,7 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [X] Unused locals
     - [X] Unknown fields of modules
     - [ ] Discarding results from pcall/xpcall/other functions
-    - [ ] `unpack` or `values` into a special
+    - [.] `unpack` or `values` into a special
     - [ ] `do`/`values` with only one inner form
     - [ ] redundant `do` as the last/only item in a form that accepts a "body"
     - [ ] `var` forms that could be `local`

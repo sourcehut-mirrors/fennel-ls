@@ -143,7 +143,8 @@
           (where
             {:label :local
              :kind (= kinds.Operator)
-             :documentation documentation}
+             :documentation documentation
+             :textEdit {:range {:start {:line 0 :character 1} :end {:line 0 :character 1}}}}
             (not= documentation :nil)))))
 
     (it "offers rich information about builtin-macro completions"
