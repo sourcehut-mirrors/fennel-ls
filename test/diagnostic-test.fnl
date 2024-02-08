@@ -81,6 +81,20 @@
             "not found")
         _ (error "did not match"))))
 
+  (it "warns about unused variables from multival destructuring"
+    (let [self (create-client)
+          responses (self:open-file! filename "(let [(x y) (values 1 2)] x)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [_ v (ipairs diagnostics)]
+             (match v
+               {:code 301
+                :range {:start {:character 9 :line 0}
+                        :end   {:character 10 :line 0}}}
+               v))
+            "not found")
+        _ (error "did not match"))))
+
   (it "warns about vars that are never set"
     (let [self (create-client)
           responses (self:open-file! filename "(var x nil) (print x)")]
