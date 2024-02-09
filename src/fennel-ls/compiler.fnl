@@ -1,7 +1,9 @@
 "Compiler
-This file is responsible for the low level tasks of analysis. Its main job
-is to recieve a file object and run all of the basic analysis that will be used
-later by fennel-ls.language to answer requests from the client."
+This module is responsible for calling the actual fennel parser and compiler,
+and turning it into a \"fennel-ls file object\". It creates a plugin to the
+fennel compiler, and then tries to store into it gets from the fennel compiler's
+plugin hooks (aka callbacks). It stores lexical info about which identifiers
+are declared / referenced in which places."
 
 (local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
@@ -52,7 +54,7 @@ later by fennel-ls.language to answer requests from the client."
 
 (λ line+byte->range [self file line byte]
   (let [line (- line 1)
-        ;; TODO think about this further when upstream bug #180 is fixed
+        ;; TODO think about this further when upstream bug fennel#180 is fixed
         byte (math.max 0 byte)
         position (utils.pos->position file.text line byte self.position-encoding)]
     {:start position :end position}))
@@ -108,7 +110,7 @@ later by fennel-ls.language to answer requests from the client."
             (action binding ?definition keys keys.multival)
             (list? binding)
             (let [nested? (not= depth 0)]
-              (if nested? (error (.. "I didn't expect to find a multival destructure in " (view binding) " at " (view keys))))
+              (if nested? (error (.. "I didn't expect to find a nested multival destructure in " (view binding) " at " (view keys))))
               (each [i child (ipairs binding)]
                 (set keys.multival i)
                 (recurse child keys (+ depth 1))

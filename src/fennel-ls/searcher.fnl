@@ -1,5 +1,6 @@
 "Searcher
-This file has all the logic needed to take the name of a module and find the corresponding URI.
+This module is responsible for resolving (require) calls. It has all the logic
+for using the name of a module and find the corresponding URI.
 I suspect this file may be gone after a bit of refactoring."
 
 (local fennel (require :fennel))

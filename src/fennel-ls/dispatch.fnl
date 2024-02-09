@@ -3,7 +3,6 @@ This module is responsible for deciding which code to call in response
 to a given LSP request from the client.
 
 In general, this involves:
-* parsing the message
 * determining the type of the message
 * calling the appropriate handler"
 

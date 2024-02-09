@@ -1,6 +1,6 @@
 "Diagnostics
-
-Goes through a file and mutates the `file.diagnostics` field, filling it with diagnostics."
+Provides the function (check self file), which goes through a file and mutates
+the `file.diagnostics` field, filling it with diagnostics."
 
 (local fennel (require :fennel))
 (local language (require :fennel-ls.language))

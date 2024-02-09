@@ -2,9 +2,8 @@
 Here are all the message constructor helpers for the various
 LSP and JSON-RPC responses that may need to be sent to the client.
 
-I have them all here because I have a feeling I am conflating
-missing fields with null fields, and I want to have one location
-to look to fix this in the future."
+This module is responsible for any tables that need to correlate 1:1 with the
+LSP json objects."
 
 (local fennel (require :fennel))
 (local utils (require :fennel-ls.utils))

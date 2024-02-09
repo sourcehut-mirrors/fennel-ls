@@ -1,6 +1,22 @@
 "Language
-The high level analysis system that does deep searches following
-the data provided by compiler.fnl."
+This module is for searching through the data provided by compiler.fnl. It
+provides functions to search through a file.
+
+To find the defintion of something, we recursively search backward until we find
+where something is defined. Yes it does a full search each time.
+Imagine you have the following code.
+```fnl
+(local x 10)
+(local y x)
+(local z y)
+z
+```
+It doesn't forward propagate the \"type\" of x and y and z on compile. Instead,
+any time information about x or y or z is needed, it recursively traverses the
+definitions backward.
+
+As of now, there's no caching, but that could be a way to improve performance.
+"
 
 (local {: sym? : list? : sequence? : varg? : sym : view} (require :fennel))
 (local utils (require :fennel-ls.utils))

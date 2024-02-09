@@ -5,12 +5,9 @@ There are only two functions exposed here:
 * `read` receives and parses a message from the client.
 * `write` serializes and sends a message to the client.
 
-It's probably not compliant yet, because serialization of [] and {} is the same,
-and there are also some places where a field has to be present, but filled with null.
-
+It's probably not compliant yet, because serialization of [] and {} is the same.
 Luckily, I'm testing with Neovim, so I can pretend these problems don't exist for now."
 
-;; TODO find json library that doesn't conflate missing fields with null
 (local {: encode : decode} (require :json.json))
 
 (λ read-header [in ?header]

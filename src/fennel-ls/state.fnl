@@ -3,7 +3,8 @@ This module keeps track of the state of the language server.
 There are helpers to get files (get-by functions are all for
 getting files), and there's stuff for configuration options.
 There is no global state in this project: all state is stored
-in the \"self\" object."
+in the \"self\" object. Pretty much every \"self\" in the
+entire fennel-ls project is referring to the same object."
 
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
