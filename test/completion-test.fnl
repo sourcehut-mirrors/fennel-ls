@@ -8,46 +8,49 @@
 
 (local filename (.. ROOT-URI "/imaginary-file.fnl"))
 
-(fn check-completion [body line col expected ?unexpected]
+(fn check-completion [body line col expected unexpected ?line-start ?col-start]
   (let [client (doto (create-client)
                  (: :open-file! filename body))
         [{: result}] (client:completion filename line col)
         seen (if result
                (collect [_ suggestion (ipairs result)]
-                 suggestion.label suggestion.label))]
-    (if expected
-      (each [_ exp (ipairs expected)]
-        (is (. seen exp) (.. exp " was not suggested, but should be"))))
-    (if ?unexpected
-      (each [_ exp (ipairs ?unexpected)]
-        (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be"))))))
+                 (do
+                   (if ?line-start
+                     (is.same suggestion.textEdit.range.start {:line ?line-start :character ?col-start}))
+                   (values suggestion.label suggestion.label))))]
+    (each [_ exp (ipairs expected)]
+      (is (. seen exp) (.. exp " was not suggested, but should be")))
+    (each [_ exp (ipairs unexpected)]
+      (is.nil (. seen exp) (.. exp " was suggested, but shouldn't be")))))
 
 (describe "completions"
   (it "suggests globals"
-    (check-completion "(" 0 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next])
-    (check-completion "#nil\n(" 1 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next]))
+    (check-completion "(" 0 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next] [] 0 1)
+    (check-completion "#nil\n(" 1 1 [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next] [] 1 1))
 
 
   (it "suggests locals in scope"
-    (check-completion "(local x 10)\n(print )" 1 7 [:x]))
+    (check-completion "(local x 10)\n(print )" 1 7 [:x] [] 1 7))
 
   (it "suggests locals where the definition can't be found"
-    (check-completion "(local x (doto 10 or and +))\n(print )" 1 7 [:x]))
+    (check-completion "(local x (doto 10 or and +))\n(print )" 1 7 [:x] [] 1 7))
 
   (it "suggests locals in scope at the top level"
-    (check-completion "(local x 10)\n\n" 1 0 [:x]))
+    (check-completion "(local x 10)\n\n" 1 0 [:x] []))
 
   (it "suggests more locals in scope"
-    (check-completion "(let [x 10] (let [y 100] \n    nil\n    ))" 2 4 [:x :y]))
+    (check-completion "(let [x 10] (let [y 100] \n    nil\n    ))" 2 4 [:x :y] []))
 
   (it "suggests specials and macros at beginning of list"
-    (check-completion "()" 0 1 [:do :let :fn :doto :-> :-?>> :?.])
+    (check-completion "()" 0 1 [:do :let :fn :doto :-> :-?>> :?.] [])
     ;; it's not the language server's job to do filtering,
     ;; so there's no negative assertions here for other symbols
-    (check-completion "(d)" 0 2 [:do :doto]))
+    (check-completion "(d)" 0 2 [:do :doto] [] 0 1)
+    ;; in fact, for fuzzy-matching clients, you especially want to make sure the server isn't filtering
+    (check-completion "(t)" 0 2 [:doto :setmetatable] [] 0 1))
 
   (it "suggests macros in scope"
-    (check-completion "(macro funny [] `nil)\n()" 1 1 [:funny]))
+    (check-completion "(macro funny [] `nil)\n()" 1 1 [:funny] []))
 
   (it "does not suggest locals out of scope"
     (check-completion "(do (local x 10))\n" 1 0 [] [:x]))
@@ -58,29 +61,29 @@
 
   (describe "When the program doesn't compile"
     (it "still completes without requiring the close parentheses"
-      (check-completion "(fn foo [z]\n  (let [x 10 y 20]\n    " 2 4 [:x :y :z]))
+      (check-completion "(fn foo [z]\n  (let [x 10 y 20]\n    " 2 4 [:x :y :z] []))
 
     (it "still completes with no body in the `let`"
-      (check-completion "(let [x 10 y 20]\n  )" 1 2 [:x :y]))
+      (check-completion "(let [x 10 y 20]\n  )" 1 2 [:x :y] []))
 
     (it "still completes with no body in the `let` and no close parentheses"
-      (check-completion "(local foo 10)\n(local x (let [y f]\n" 1 18 [:foo]))
+      (check-completion "(local foo 10)\n(local x (let [y f]\n" 1 18 [:foo] []))
 
     (it "still completes items from the previous definitions in the same `let`"
-      (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b]))
+      (check-completion "(let [a 10\n      b 20\n      " 1 6 [:a :b] []))
 
     (it "completes fields with a partially typed multisym that ends in :"
       (check-completion "(local x {:field (fn [])})\n(x:" 1 3 [:field] [:local]))
 
     (it "doesn't crash with a partially typed multisym contains ::"
-      (check-completion "(local x {:field (fn [])})\n(x::f" 1 3 [])))
+      (check-completion "(local x {:field (fn [])})\n(x::f" 1 3 [] [])))
 
   ;; Functions
   (it "suggests function arguments at the top scope of the function"
-    (check-completion "(fn foo [arg1 arg2 arg3]\n  )" 1 2 [:arg1 :arg2 :arg3]))
+    (check-completion "(fn foo [arg1 arg2 arg3]\n  )" 1 2 [:arg1 :arg2 :arg3] [] 1 2))
 
   (it "suggests function arguments at the top scope of the function"
-    (check-completion "(fn foo [arg1 arg2 arg3]\n  (do (do (do ))))" 1 14 [:arg1 :arg2 :arg3]))
+    (check-completion "(fn foo [arg1 arg2 arg3]\n  (do (do (do ))))" 1 14 [:arg1 :arg2 :arg3] [] 1 14))
 
   ;; ;; Scope Ordering Rules
   ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
