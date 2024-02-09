@@ -77,7 +77,7 @@ Your editor can send these settings using one of these two methods:
 fennel-ls is licensed under the MIT license. See LICENSE for more info.
 This project also contains files from other projects:
 * test/pl/* comes from [Penlight](https://github.com/lunarmodules/Penlight) [MIT license]
-* src/json/* comes from [json.lua](https://github.com/rxi/json.lua) [MIT license]
+* src/json/* is modified, but is originally from [json.lua](https://github.com/rxi/json.lua) [MIT license]
 * src/fennel-ls/docs/* contains information from the [lua](https://lua.org) reference [MIT license]
 * test/lust.lua is modified, but originially comes from from [lust](https://github.com/bjornbytes/lust) [MIT license]
 * fennel and src/fennel.lua are compiled from [fennel](https://git.sr.ht/~technomancy/fennel) [MIT license]

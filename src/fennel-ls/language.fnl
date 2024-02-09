@@ -243,15 +243,15 @@ Returns:
         (table.insert parents ast)
         (if
           (or (sequence? ast) (list? ast))
-          (accumulate [(result done) nil
+          (accumulate [(result _parent) nil
                        _ child (ipairs ast)
                        &until result]
             (if (contains? child byte)
               (recurse child byte)))
           (and (not (sym? ast)) (not (varg? ast)))
-          (accumulate [(result done) nil
+          (accumulate [(result _parent) nil
                        key value (pairs ast)
-                       &until done]
+                       &until result]
             (if (contains? key byte)
               (recurse key byte)
               (contains? value byte)
