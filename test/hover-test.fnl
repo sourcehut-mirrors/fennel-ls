@@ -61,4 +61,24 @@
           [hover-b] (client:hover :foo.fnl 0 10)]
       (is (hover-a.result.contents.value:find "```fnl\n1\n```"))
       (is (hover-b.result.contents.value:find "```fnl\n2\n```"))
+      nil))
+
+  (it "hovers over a multival destructure over (do (values))"
+    (let [client (doto (create-client)
+                       (: :open-file! :foo.fnl "(local (a b) (do (values 1 2)))"))
+          [hover-a] (client:hover :foo.fnl 0 8)
+          [hover-b] (client:hover :foo.fnl 0 10)]
+      (is (hover-a.result.contents.value:find "```fnl\n1\n```"))
+      (is (hover-b.result.contents.value:find "```fnl\n2\n```"))
+      nil))
+
+  (it "hovers over a multival destructure over a mean test (do (values))"
+    (let [client (doto (create-client)
+                       (: :open-file! :foo.fnl "(let [(x y z a) (do (do (values 1 (do (values (values 2 4) (do 3))))))]\n  (print x y z a))"))
+          [hover-x] (client:hover :foo.fnl 1 9)
+          [hover-y] (client:hover :foo.fnl 1 11)
+          [hover-z] (client:hover :foo.fnl 1 13)]
+      (is (hover-x.result.contents.value:find "```fnl\n1\n```"))
+      (is (hover-y.result.contents.value:find "```fnl\n2\n```"))
+      (is (hover-z.result.contents.value:find "```fnl\n3\n```"))
       nil)))

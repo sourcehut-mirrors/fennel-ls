@@ -55,8 +55,24 @@ As of now, there's no caching, but that could be a way to improve performance.
   (let [multival (or ?multival 1)]
     (if
       ;; we're looking at a (values), just solve it now
-      (and (list? ast) (sym? (. ast 1) :values))
-      (search-ast self file (. ast (+ 1 multival)) stack opts)
+      (list? ast)
+      (let [call (. ast 1)]
+        (if
+          (sym? call :do)
+          (search-multival self file (. ast (length ast)) stack multival opts)
+          (sym? call :values)
+          ;; (values x y z)
+          ;; len 3
+          ;; multival 2
+          (let [len (- (length ast) 1)]
+            (if (< multival len)
+              (search-multival self file (. ast (+ 1 multival)) stack nil opts)
+              (search-multival self file (. ast (+ len 1)) stack (+ multival (- len) 1) opts)))
+          ;; we're looking for value number 1 anyway
+          (= 1 multival)
+          (search-ast self file ast stack opts) ;; this goes to search-list but indirectly
+
+          (values nil file))) ;; GIVING UP !!
 
       ;; we're looking for value number 1 anyway
       (= 1 multival)
@@ -64,9 +80,9 @@ As of now, there's no caching, but that could be a way to improve performance.
 
       ;; other cases
       (sym? ast)               (values nil file) ;; BASE CASE !!
-      (list? ast)              (values nil file) ;; GIVING UP !!
       ;; (varg? ast)           something
-      (= :table (type ast))    (values nil file)))) ;; BASE CASE !!
+      (= :table (type ast))    (values nil file) ;; BASE CASE !!
+      (values nil file)))) ;; supposed to be unreachable !!
 
 (λ search-assignment [self file assignment stack opts]
   (let [{:target {:binding _
