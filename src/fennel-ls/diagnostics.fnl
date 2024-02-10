@@ -52,7 +52,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                  :code 303
                  :codeDescription "unnecessary-method"}))))
 
-(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1})
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1})
 (λ bad-unpack [self file]
   "an unpack call leading into an operator"
   (icollect [[op &as call] (pairs file.calls)
@@ -72,7 +72,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                               (if (fennel.sym? op "..")
                                 (let [unpackme (fennel.view (. call (length call) 2))]
                                   (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
-                                (.. " Use a loop when you have a dynamic number of arguments to " (tostring op))))
+                                (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
                  :severity message.severity.WARN
                  :code 304
                  :codeDescription "bad-unpack"}))))
