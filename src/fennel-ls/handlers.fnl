@@ -12,6 +12,8 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local formatter (require :fennel-ls.formatter))
 (local utils (require :fennel-ls.utils))
 
+(local fennel (require :fennel))
+
 (local requests [])
 (local notifications [])
 
@@ -140,7 +142,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                   file.scope)
         ?parent (. parents 1)
         result []
-        in-call-position? (and ?parent (= ?symbol (. ?parent 1)))]
+        in-call-position? (and (fennel.list? ?parent) (= ?symbol (. ?parent 1)))]
     (collect-scope scope :manglings #(doto (make-completion-item self file $ scope) (tset :kind kinds.Variable)) result)
 
     (when in-call-position?

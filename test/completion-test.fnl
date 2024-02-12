@@ -85,6 +85,11 @@
   (it "suggests function arguments at the top scope of the function"
     (check-completion "(fn foo [arg1 arg2 arg3]\n  (do (do (do ))))" 1 14 [:arg1 :arg2 :arg3] [] 1 14))
 
+  (it "suggests even in a macro"
+    (check-completion "(local item 10)\n(doto it)" 1 8 [:item] [] 1 6)
+    (check-completion "(local item 10)\n(case 1 1 it)" 1 12 [:item] [] 1 10)
+    nil)
+
   ;; ;; Scope Ordering Rules
   ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
   ;; (it "does not suggest locals past the suggestion location without a symbol")
@@ -97,9 +102,13 @@
     (check-completion "(do )"
       0 4 [] [:do :let :fn :-> :-?>> :?.]))
 
-  ;; (it "doesn't suggest specials at the very top level")
-  ;; (it "doesn't suggest macros in the middle of a list (open paren required)")
-  ;; (it "doesn't suggest macros at the very top level")
+  (it "doesn't suggest specials at the very top level, fresh"
+    (check-completion "\n"
+      0 0 [] [:do :let :fn :-> :-?>> :?.]))
+
+  (it "doesn't suggest specials at the very top level, with a symbol"
+    (check-completion "d\n"
+      0 1 [] [:do :let :fn :-> :-?>> :?.]))
 
   (it "suggests fields of tables"
     (check-completion
@@ -222,7 +231,6 @@
   ;; (it "suggests known keys when using the `.` special")
   ;; (it "suggests known module names in `require` and `include` and `import-macros` and `require-macros` and friends")
   ;; (it "knows the fields of the standard lua library.")
-  ;; (it "suggests special forms for the call position of a list, but not other positions")
   ;; (it "does not suggest special forms for the \"call\" position when a list isn't actually a call, ie destructuring assignment")
   ;; (it "suggests keys when typing out destructuring, as in `(local {: typinghere} (require :mod))`")
   ;; (it "only suggests tables for `ipairs` / begin work on type checking system")

@@ -133,10 +133,10 @@ local paths = {
     end
   },
   exist = {
-    test = function(v)
+    test = function(v, message)
       return v ~= nil,
-        'expected ' .. tostring(v) .. ' to exist',
-        'expected ' .. tostring(v) .. ' to not exist'
+        message or 'expected ' .. tostring(v) .. ' to exist',
+        message or 'expected ' .. tostring(v) .. ' to not exist'
     end
   },
   truthy = {
