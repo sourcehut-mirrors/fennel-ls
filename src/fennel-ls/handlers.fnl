@@ -207,7 +207,8 @@ Every time the client sends a message, it gets handled by a function in the corr
       (let [usages (icollect [_ {: symbol} (ipairs definition.referenced-by)
                               &into [{:range (message.multisym->range self def-file definition.binding 1)
                                       :newText new-name}]]
-                     (if (not (rawequal symbol definition.binding))
+                     (if (and (. file.lexical symbol)
+                              (not (rawequal symbol definition.binding)))
                        {:newText new-name
                         :range (message.multisym->range self def-file symbol 1)}))]
 

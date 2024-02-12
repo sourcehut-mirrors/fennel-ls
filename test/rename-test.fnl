@@ -31,7 +31,9 @@
     (check-rename "(let [old-name {:field 10}] old-name.field)" 0 9 :new-name
                   "(let [new-name {:field 10}] new-name.field)")
     (check-rename "(let [old-name {:field 10}] old-name.field)" 0 30 :new-name
-                  "(let [new-name {:field 10}] new-name.field)"))
+                  "(let [new-name {:field 10}] new-name.field)")
+    (check-rename "(let [[old-name] [{:field 10}]] (old-name:field 10))" 0 7 :new-name
+                  "(let [[new-name] [{:field 10}]] (new-name:field 10))"))
 
   (it "renames from destructure/args"
     (check-rename "(fn [{: x}] x)" 0 8 :foo "(fn [{: foo}] foo)")

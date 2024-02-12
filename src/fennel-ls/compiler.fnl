@@ -317,8 +317,9 @@ are declared / referenced in which places."
           ast (icollect [ok ast parser &until (not ok)] ast)]
 
       (λ collect-everything [ast result]
+        (when (or (table? ast) (list? ast) (sym? ast))
+          (tset result ast true))
         (when (or (table? ast) (list? ast))
-          (tset result ast true)
           (each [k v (iter ast)]
             (collect-everything k result)
             (collect-everything v result))))
