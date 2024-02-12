@@ -61,9 +61,6 @@ are declared / referenced in which places."
     {:start position :end position}))
 
 
-(λ is-values? [?ast]
-  (and (list? ?ast) (= (sym :values) (. ?ast 1))))
-
 (λ compile [{:configuration {: macro-path} : root-uri &as self} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
@@ -144,7 +141,8 @@ are declared / referenced in which places."
                          (fcollect [i 1 (length keys)]
                            (. keys i)))
                  :multival ?multival
-                 :var? (?. ?opts :isvar)}]
+                 :var? (?. ?opts :isvar)
+                 : file}]
             (tset (. definitions-by-scope scope) (tostring symbol) definition)
             (tset definitions symbol definition)))))
 
@@ -173,7 +171,8 @@ are declared / referenced in which places."
           (set target.fields (or target.fields {}))
           (tset target.fields field
             {:binding multisym
-             :definition ast}))))
+             :definition ast
+             :file file}))))
              ;; ;; referenced-by inherits from all other symbols
              ;; :referenced-by (or (?. definitions multisym :referenced-by) [])}))))
 

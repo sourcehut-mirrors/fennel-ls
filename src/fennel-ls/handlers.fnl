@@ -20,7 +20,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local capabilities
   {:textDocumentSync {:openClose true :change 2}
    ;; :notebookDocumentSync nil
-   :completionProvider {:workDoneProgress false} ;; TODO
+   :completionProvider {:workDoneProgress false}
    :hoverProvider {:workDoneProgress false
                    :resolveProvider false
                    :triggerCharacters ["(" "[" "{" "." ":" "\""]
@@ -79,8 +79,8 @@ Every time the client sends a message, it gets handled by a function in the corr
         (language.search-ast self file parent [] {:stop-early? true})
         ;; regular symbol
         (language.search-main self file symbol {:stop-early? true} byte))
-      (result result-file)
-      (message.range-and-uri self result-file (or result.binding result.definition))
+      result
+      (message.range-and-uri self result.file (or result.binding result.definition))
       (catch _ nil))))
 
 (λ requests.textDocument/references [self send {: position
@@ -91,12 +91,12 @@ Every time the client sends a message, it gets handled by a function in the corr
     (case-try (language.find-symbol file.ast byte)
       symbol
       (language.find-nearest-definition self file symbol byte)
-      (where (definition def-file) (not= definition.referenced-by nil))
+      (where definition (not= definition.referenced-by nil))
       (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
-                     (message.range-and-uri self def-file symbol))]
+                     (message.range-and-uri self definition.file symbol))]
         (if ?include-declaration?
           (table.insert result
-            (message.range-and-uri self def-file definition.binding)))
+            (message.range-and-uri self definition.file definition.binding)))
 
         ;; TODO don't include duplicates
         result)
@@ -157,7 +157,7 @@ Every time the client sends a message, it gets handled by a function in the corr
     (let [stack (fcollect [i (- (length split) 1) 2 -1]
                   (. split i))]
       (case (language.search-assignment self file ref stack {})
-        ({: definition} file)
+        {: definition : file}
         (case (values definition (type definition))
           ;; fields of a string are hardcoded to "string"
           (_str :string) (icollect [label _ (pairs string)]
@@ -203,20 +203,20 @@ Every time the client sends a message, it gets handled by a function in the corr
       symbol
       (language.find-nearest-definition self file symbol symbol.bytestart)
       ;; TODO we are assuming that every reference is in the same file
-      (where (definition def-file) (not= definition.referenced-by nil))
+      (where definition (not= definition.referenced-by nil))
       (let [usages (icollect [_ {: symbol} (ipairs definition.referenced-by)
-                              &into [{:range (message.multisym->range self def-file definition.binding 1)
+                              &into [{:range (message.multisym->range self definition.file definition.binding 1)
                                       :newText new-name}]]
                      (if (and (. file.lexical symbol)
                               (not (rawequal symbol definition.binding)))
                        {:newText new-name
-                        :range (message.multisym->range self def-file symbol 1)}))]
+                        :range (message.multisym->range self definition.file symbol 1)}))]
 
         ;; NOTE: I don't care about encoding here because we just need the relative positions
         (table.sort usages
-          #(> (utils.position->byte def-file.text $1.range.start :utf-8)
-              (utils.position->byte def-file.text $2.range.start :utf-8)))
-        {:changes {def-file.uri usages}})
+          #(> (utils.position->byte definition.file.text $1.range.start :utf-8)
+              (utils.position->byte definition.file.text $2.range.start :utf-8)))
+        {:changes {definition.file.uri usages}})
       (catch _ nil))))
 
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]

@@ -18,22 +18,13 @@ definitions backward.
 As of now, there's no caching, but that could be a way to improve performance.
 "
 
-(local {: sym? : list? : sequence? : varg? : sym : view} (require :fennel))
+(local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 
 (local get-ast-info utils.get-ast-info)
 
-(local -require- (sym :require))
-(local -dot- (sym :.))
-(local -do- (sym :do))
-(local -let- (sym :let))
-(local -fn- (sym :fn))
-(local -nil- (sym :nil))
-(local -values- (sym :nil))
-(local -setmetatable- (sym :setmetatable))
-
-(var search-ast nil) ;; all of the search functions are mutually recursive
+(var search-multival nil) ;; all of the search functions are mutually recursive
 
 (λ stack-add-keys! [stack ?keys]
   "add the keys to the end of the stack in reverse order"
@@ -51,38 +42,9 @@ As of now, there's no caching, but that could be a way to improve performance.
 (λ stack-add-multisym! [stack symbol]
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
-(λ search-multival [self file ast stack ?multival opts]
-  (let [multival (or ?multival 1)]
-    (if
-      ;; we're looking at a (values), just solve it now
-      (list? ast)
-      (let [call (. ast 1)]
-        (if
-          (sym? call :do)
-          (search-multival self file (. ast (length ast)) stack multival opts)
-          (sym? call :values)
-          ;; (values x y z)
-          ;; len 3
-          ;; multival 2
-          (let [len (- (length ast) 1)]
-            (if (< multival len)
-              (search-multival self file (. ast (+ 1 multival)) stack nil opts)
-              (search-multival self file (. ast (+ len 1)) stack (+ multival (- len) 1) opts)))
-          ;; we're looking for value number 1 anyway
-          (= 1 multival)
-          (search-ast self file ast stack opts) ;; this goes to search-list but indirectly
-
-          (values nil file))) ;; GIVING UP !!
-
-      ;; we're looking for value number 1 anyway
-      (= 1 multival)
-      (search-ast self file ast stack opts)
-
-      ;; other cases
-      (sym? ast)               (values nil file) ;; BASE CASE !!
-      ;; (varg? ast)           something
-      (= :table (type ast))    (values nil file) ;; BASE CASE !!
-      (values nil file)))) ;; supposed to be unreachable !!
+(λ search-val [self file ast stack opts]
+  "searches for the definition of the ast, adjusted to 1 value"
+  (search-multival self file ast stack 1 opts))
 
 (λ search-assignment [self file assignment stack opts]
   (let [{:target {:binding _
@@ -91,69 +53,71 @@ As of now, there's no caching, but that could be a way to improve performance.
                   :multival ?multival
                   :fields ?fields}} assignment]
     (if (and (= 0 (length stack)) opts.stop-early?)
-        (values assignment.target file) ;; BASE CASE!!
+        assignment.target ;; BASE CASE!!
         ;; search a virtual field from :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
         (search-assignment self file {:target (. ?fields (table.remove stack))} stack opts)
-        (search-multival self file ?definition (stack-add-keys! stack ?keys) ?multival opts))))
+        (search-multival self file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))
 
 (λ search-symbol [self file symbol stack opts]
-  (if (= symbol -nil-)
-    (values {:definition symbol} file) ;; BASE CASE !!
+  (if (= (tostring symbol) :nil)
+    {:definition symbol : file}
+    ;; TODO globals
     (case (. file.references symbol)
       to (search-assignment self file to (stack-add-multisym! stack symbol) opts))))
 
 (λ search-table [self file tbl stack opts]
   (if (. tbl (. stack (length stack)))
-      (search-ast self file (. tbl (table.remove stack)) stack opts)
+      (search-val self file (. tbl (table.remove stack)) stack opts)
       (= 0 (length stack))
-      (values {:definition tbl} file) ;; BASE CASE !!
+      {:definition tbl : file} ;; BASE CASE !!
       nil)) ;; BASE CASE Give up
 
-(λ search-list [self file call stack opts]
-  (match call
-    [-require- mod]
-    (when (= :string (type mod))
-      (let [newfile (state.get-by-module self mod)]
-        (when newfile
-          (let [newitem (. newfile.ast (length newfile.ast))]
-            (search-ast self newfile newitem stack (doto opts (tset :searched-through-require true)))))))
+(λ search-list [self file call stack multival opts]
+  (let [head (. call 1)]
+    (if (sym? head)
+      (case (tostring head)
+        (where (or :do :let))
+        (search-multival self file (. call (length call)) stack multival opts)
+        :values
+        (let [len (- (length call) 1)]
+          (if (< multival len)
+            (search-val self file (. call (+ 1 multival)) stack opts)
+            (search-multival self file (. call (+ len 1)) stack (+ multival (- len) 1) opts)))
+        :require
+        (let [mod (. call 2)]
+          (if (= multival 1)
+            (when (= :string (type mod))
+              (let [newfile (state.get-by-module self mod)]
+                (when newfile
+                  (let [newitem (. newfile.ast (length newfile.ast))]
+                    (search-val self newfile newitem stack (doto opts (tset :searched-through-require true)))))))))
+        "."
+        (if (= multival 1)
+          (let [[_ & rest] call]
+            (search-val self file (. call 2) (stack-add-split! stack rest) opts)))
+        ;; TODO assume-function-name analyze-metatable
+        :setmetatable
+        (search-val self file (. call 2) stack opts)
 
-    ;; A . form  indexes into item 1 with the other items
-    (where [-dot- & split] (. split 1))
-    (search-ast self file (. split 1) (stack-add-split! stack split) opts)
+        (where (or :fn :lambda :λ))
+        (if (= multival 1)
+          {:definition call : file}) ;; BASE CASE !!
+        ;; TODO expand-macros
 
-    ;; A do block returns the last form
-    (where [-do- & body] (. body 1))
-    (search-ast self file (. body (length body)) stack opts)
+        _
+        (if (and (= multival 1) (= 0 (length stack)))
+          {:definition call : file}))))) ;; BASE CASE!!
 
-    (where [-let- _binding & body] (. body 1))
-    (search-ast self file (. body (length body)) stack opts)
-
-    (where [-values- first])
-    (search-ast self file first stack opts)
-
-    ;; TODO care about the setmetatable call
-    (where [-setmetatable- tbl _mt])
-    (search-ast self file tbl stack opts)
-
-    ;; fn marks a function literal
-    (where [fn*] (or (sym? fn* :fn) (sym? fn* :lambda) (sym? fn* :λ)))
-    (values {:definition call} file) ;; BASE CASE !!
-
-    ;; if we don't know, give up
-    _
-    (if (= 0 (length stack))
-        (values {:definition call} file)))) ;; BASE CASE!!
-
-(set search-ast
-  (λ [self file item stack opts]
-    (if
-        (sym? item)               (search-symbol self file item stack opts)
-        (list? item)              (search-list self file item stack opts)
-        (= :table (type item))    (search-table self file item stack opts)
-        (= 0 (length stack))      (values {:definition item} file)))) ;; BASE CASE !!
-        ;; (error (.. "I don't know what to do with " (view item))))))
+(set search-multival
+  (λ [self file ast stack multival opts]
+    (if (list? ast)     (search-list self file ast stack multival opts)
+        (varg? ast)     nil ;; TODO function-args
+        (= 1 multival)
+        (if (sym? ast)            (search-symbol self file ast stack opts)
+            (= :table (type ast)) (search-table self file ast stack opts)
+            (= 0 (length stack))  {:definition ast : file}) ;; BASE CASE !!
+        nil)))
 
 (local {:metadata METADATA
         :scopes {:global {:specials SPECIALS
@@ -181,12 +145,11 @@ If stop-early?, search-main will find the definition of `b` in (local b a).
 Otherwise, it would continue and find the value 1.
 
 Returns:
-(values
   {:binding <where the symbol is bound. this would be the name of the function or variable>
    :definition <the best known definition>
    :keys <which part of the definition to look into. this can only possibly be present if stop-early?>
-   :fields <other known fields which aren't part of the definition>}
-  file)
+   :fields <other known fields which aren't lexically part of the definition>
+   : file}
 "
 
   ;; The stack is the multi-sym parts still to search
@@ -200,7 +163,7 @@ Returns:
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)
             _ (case (. file.definitions symbol)
-                def (search-multival self file def.definition (stack-add-keys! stack def.keys) def.multival opts)))))))
+                def (search-multival self file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)))))))
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
@@ -221,7 +184,7 @@ Returns:
       _ (case (global-info self name)
          global-item global-item
          _ (case (find-local-definition file name scope)
-             def (search-ast self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
+             def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
 
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object
@@ -281,7 +244,7 @@ Returns:
 
 (λ find-nearest-definition [self file symbol ?byte]
   (if (. file.definitions symbol)
-    (values (. file.definitions symbol) file)
+    (. file.definitions symbol)
     (search-main self file symbol {:stop-early? true} ?byte)))
 
 {: find-symbol
@@ -289,4 +252,4 @@ Returns:
  : search-main
  : search-assignment
  : search-name-and-scope
- : search-ast}
+ :search-ast search-val}
