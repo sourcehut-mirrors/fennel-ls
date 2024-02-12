@@ -304,8 +304,6 @@ are declared / referenced in which places."
                             (true ?item1 ?item2) (values ?item1 ?item2)
                             (where (or (nil err) (false err)) (not (err:find "^[^\n]-__NOT_AN_ERROR\n")))
                             (if (os.getenv :TESTING)
-                              (print (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
-                                         "\n\n^^^ the error message above here is the root problem\n\n"))
                               (error (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
                                          "\n\n^^^ the error message above here is the root problem\n\n"))
                               (table.insert diagnostics
