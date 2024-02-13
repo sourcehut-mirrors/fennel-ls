@@ -31,10 +31,10 @@ In the code example above, a search on the final symbol `z` would normally
 find the definition `10`, but if `opts.stop-early?` is set, it would find
 {:binding z :definition y}, referring to the `(local z y)` binding.
 
-# A document: `{? ?*}`
+# A document: `{:metadata {:fnl/docstring _ :fnl/arglist ?_ :fnl-ls/fields ?_}}`
 A document is a definition that doesn't come from user code. For example,
-searching `table.insert` will find a document, because we have info about it,
-but that info does 
+searching `table.insert` will find a document, but that info does not come from
+a user-written file.
 "
 
 (local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
@@ -59,6 +59,7 @@ but that info does
   stack)
 
 (λ stack-add-multisym! [stack symbol]
+  "add the multisy values to the end of the stack in reverse order"
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-val [self file ast stack opts]
@@ -208,6 +209,7 @@ but that info does
              (+ 1 (get-ast-info ?ast :byteend))))))
 
 (λ find-symbol [ast byte]
+  "tries to find a sym, and a list of all of its parents/grandparents"
   (local parents [ast])
   (λ recurse [ast]
     (if

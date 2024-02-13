@@ -95,7 +95,7 @@ fntype is one of fn or λ or lambda"
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
 (λ completion-item-format [label def]
-  "make a completion item"
+  "Makes a completion item"
   (doto
     (case (analyze-fn def.definition)
       {:fntype _} {: label

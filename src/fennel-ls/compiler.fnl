@@ -283,6 +283,7 @@ identifiers are declared / referenced in which places."
            : symbol-to-expression
            : call
            : destructure
+           ;; : macroexpand
            ;; :fn    fn-hook
            ;; :do    there's a do hook
            ;; :chunk I don't know what this one is
