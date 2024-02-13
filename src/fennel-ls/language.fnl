@@ -2,8 +2,6 @@
 This module is for searching through the data provided by compiler.fnl. It
 provides functions to search through a file.
 
-To find the defintion of something, we recursively search backward until we find
-where something is defined. Yes it does a full search each time.
 Imagine you have the following code.
 ```fnl
 (local x 10)
@@ -11,11 +9,32 @@ Imagine you have the following code.
 (local z y)
 z
 ```
-It doesn't forward propagate the \"type\" of x and y and z on compile. Instead,
-any time information about x or y or z is needed, it recursively traverses the
-definitions backward.
+Fennel-ls needs to know that x and y and z are 10. To do this, fennel-ls
+doesn't forward propagate the \"type\" of x and y and z on compile, as you
+might expect. Instead, any time information about x or y or z is needed, it
+recursively traverses the definitions backward, until it finds the definition.
 
 As of now, there's no caching, but that could be a way to improve performance.
+
+The type of the result of search will be:
+# A failure: `nil`
+The search failed, and encountered something that isn't implemented.
+
+# A definition: `{:definition _ :file _}`
+The search succeeded and found a file with a user definition of a value.
+
+# A binding: `{:definition _ :file _ :binding _ :multival ?_ :keys ?_ :referenced-by ?_ :var? ?true}`
+If you set the option `opts.stop-early?`, search may stop at a binding instead
+of a true definition. A binding is a place where an identifier gets introduced.
+
+In the code example above, a search on the final symbol `z` would normally
+find the definition `10`, but if `opts.stop-early?` is set, it would find
+{:binding z :definition y}, referring to the `(local z y)` binding.
+
+# A document: `{? ?*}`
+A document is a definition that doesn't come from user code. For example,
+searching `table.insert` will find a document, because we have info about it,
+but that info does 
 "
 
 (local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
@@ -125,33 +144,7 @@ As of now, there's no caching, but that could be a way to improve performance.
   (require :fennel.compiler))
 
 (λ search-main [self file symbol opts ?byte]
-  "Find the definition of a symbol
-
-It searches backward for the definition, and then the definition of that definition, recursively.
-Over time, I will be adding more and more things that it can search through.
-
-If a ?byte is provided, it will be used to determine what part of a multisym to search.
-
-opts:
-{:stop-early? boolean}
-
-Imagine you have the following code:
-```fnl
-(local a 1)
-(local b a)
-b
-```
-If stop-early?, search-main will find the definition of `b` in (local b a).
-Otherwise, it would continue and find the value 1.
-
-Returns:
-  {:binding <where the symbol is bound. this would be the name of the function or variable>
-   :definition <the best known definition>
-   :keys <which part of the definition to look into. this can only possibly be present if stop-early?>
-   :fields <other known fields which aren't lexically part of the definition>
-   : file}
-"
-
+  "Find the definition of a symbol"
   ;; The stack is the multi-sym parts still to search
   ;; for example, if I'm searching for "foo.bar.baz", my immediate priority is to find foo,
   ;; and the stack has ["baz" "bar"]. "bar" is at the "top"/"end" of the stack as the next key to search.

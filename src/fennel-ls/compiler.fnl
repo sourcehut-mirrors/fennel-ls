@@ -1,9 +1,9 @@
 "Compiler
 This module is responsible for calling the actual fennel parser and compiler,
 and turning it into a \"fennel-ls file object\". It creates a plugin to the
-fennel compiler, and then tries to store into it gets from the fennel compiler's
-plugin hooks (aka callbacks). It stores lexical info about which identifiers
-are declared / referenced in which places."
+fennel compiler, and then tries to store into it gets from the fennel
+compiler's plugin hook callbacks. It stores lexical info about which
+identifiers are declared / referenced in which places."
 
 (local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
 (local message (require :fennel-ls.message))
