@@ -104,6 +104,12 @@
           _response (c:definition :foo.fnl 1 8)]
       nil))
 
+  (it "doesn't crash when going to hashfn"
+    (let [c (create-client)
+          _ (c:open-file! :foo.fnl "#$...")
+          _response (c:definition :foo.fnl 0 0)]
+      nil))
+
   (it "can go through multival destructures"
     (let [c (doto (create-client)
                   (: :open-file! :foo.fnl "(local [x y] (values [1 2] [3 4]))\n(local (a b) (values {:x y : y} {: x : y}))\n(print b.x a)"))

@@ -80,7 +80,8 @@ Every time the client sends a message, it gets handled by a function in the corr
         ;; regular symbol
         (language.search-main self file symbol {:stop-early? true} byte))
       result
-      (message.range-and-uri self result.file (or result.binding result.definition))
+      (if result.file
+        (message.range-and-uri self result.file (or result.binding result.definition)))
       (catch _ nil))))
 
 (λ requests.textDocument/references [self send {: position

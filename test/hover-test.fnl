@@ -81,4 +81,18 @@
       (is (hover-x.result.contents.value:find "```fnl\n1\n```"))
       (is (hover-y.result.contents.value:find "```fnl\n2\n```"))
       (is (hover-z.result.contents.value:find "```fnl\n3\n```"))
-      nil)))
+      nil))
+
+  (it "hovers over a special"
+    (let [client (doto (create-client)
+                       (: :open-file! :foo.fnl "(do nil)"))
+          [hover-do] (client:hover :foo.fnl 0 2)]
+      (is.equal hover-do.result.contents.value
+                "```fnl\n(do ...)\n```\nEvaluate multiple forms; return last value.")))
+
+  (it "hovers over a builtin macro"
+    (let [client (doto (create-client)
+                       (: :open-file! :foo.fnl "(doto nil (print))"))
+          [hover-do] (client:hover :foo.fnl 0 2)]
+      (is.equal hover-do.result.contents.value
+                "```fnl\n(doto val ...)\n```\nEvaluate val and splice it into the first argument of subsequent forms."))))

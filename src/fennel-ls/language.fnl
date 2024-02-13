@@ -80,7 +80,9 @@ but that info does
 
 (λ search-symbol [self file symbol stack opts]
   (if (= (tostring symbol) :nil)
-    {:definition symbol : file}
+    (if (= 0 (length stack))
+      {:definition symbol : file}
+      nil)
     ;; TODO globals
     (case (. file.references symbol)
       to (search-assignment self file to (stack-add-multisym! stack symbol) opts))))
@@ -120,7 +122,7 @@ but that info does
         (search-val self file (. call 2) stack opts)
 
         (where (or :fn :lambda :λ))
-        (if (= multival 1)
+        (if (and (= multival 1) (= 0 (length stack)))
           {:definition call : file}) ;; BASE CASE !!
         ;; TODO expand-macros
 
@@ -151,7 +153,7 @@ but that info does
   (if (sym? symbol)
     (let [split (utils.multi-sym-split symbol (if ?byte (+ 1 (- ?byte symbol.bytestart))))
           stack (stack-add-split! [] split)]
-      (case (. METADATA (. SPECIALS (tostring symbol)))
+      (case (. METADATA (or (. MACROS (tostring symbol)) (. SPECIALS (tostring symbol))))
         metadata {:binding symbol : metadata}
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)

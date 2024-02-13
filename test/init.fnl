@@ -23,4 +23,5 @@
 
 (let [{: passes : errors} (require :test.lust)]
   (print (.. passes " passes. " errors " errors."))
-  (os.exit errors))
+  (if (not= errors 0)
+    (os.exit errors)))
