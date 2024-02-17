@@ -110,7 +110,7 @@ However, fennel-ls can fall back to positionEncoding=utf-16 (with a performance 
   (let [?position-encodings (?. init-params :capabilities :general :positionEncodings)
         utf8?
         (if (= (type ?position-encodings) :table)
-          (accumulate [utf-8? false
+          (accumulate [_utf-8? false
                        _ encoding (ipairs ?position-encodings)]
             (or (= encoding :utf-8)
                 (= encoding :utf8)))

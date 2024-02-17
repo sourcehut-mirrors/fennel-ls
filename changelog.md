@@ -2,6 +2,7 @@
 
 * Fix bug with renaming vars
 * Improve multival tracking
+* `textEdit` field is present in completions
 
 ## 0.1.0
 
