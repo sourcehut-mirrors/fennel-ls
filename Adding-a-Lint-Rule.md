@@ -26,12 +26,13 @@ functions.
 * `self` is the table that represents the language server. It carries metadata
   and stuff around. You probably don't need to use it directly.
 * `file` is an object that represents a .fnl file. It has some useful fields.
-  Check out what fields it has by looking at the end of `compiler.fnl`. The
-  most important one for lints is probably `lexical`. `file.lexical` stores the
-  value `true` for every single list, table, or symbol that appears in the
-  original file AST. If your lint is supposed to apply to hand written code,
-  but doesn't really apply to generated code, you should make sure that the AST
-  you're checking is inside of file.lexical.
+  Check out what fields it has by looking at the end of `compiler.fnl`.
+
+`file.lexical` stores the value `true` for every single list, table, or symbo
+that appears in the original file AST, and `nil` for things generated via
+macroexpansion. Make sure that the AST you're checking is inside of
+`file.lexical`; otherwise, your lint may not be actionable or relevant, because
+the user won't be able to see or edit the code your lint is warning about.
 
 The next arguments depend on which loop the lint is in:
 ### If your lint is linting definitions:
@@ -60,18 +61,20 @@ the definitions will be:
 {:definition `(my-expression)
  :binding `x
  :multival 1
- :referenced-by {:symbol `x.field :target @1 :ref-type "read"}}
+ :referenced-by {:symbol `x.myfield :target @1 :ref-type "read"}}
 ;; for y
 {:definition `(my-expression) :binding `y :multival 2 :keys [:foo :bar]}
 ```
 
 ### If your lint is linting calls (to functions or specials, not macros)
-`head` is the symbol that is being called. It is the same as `(. call 1)`.
-`call` is the list that represents the call.
+* `head` is the symbol that is being called. It is the same as `(. call 1)`.
+* `call` is the list that represents the call.
 
 ## Output:
-Return `nil` if there's nothing to report, return a diagnostic object with your
-lint. The return value should have these fields:
+Your lint function should return `nil` if there's nothing to report, or
+return a diagnostic object representing your lint message.
+
+The return value should have these fields:
 
 * `range`: make these with `message.ast->range` to get the range for a list or
   symbol or table, or with `message.multisym->range` to get the range of a
