@@ -98,7 +98,8 @@ entire fennel-ls project is referring to the same object."
             :unknown-module-field (option true)
             :unnecessary-method (option true)
             :bad-unpack (option true)
-            :var-never-set (option true)}
+            :var-never-set (option true)
+            :op-with-no-arguments (option true)}
    :extra-globals (option "")})
 
 (λ make-configuration [?c]

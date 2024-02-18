@@ -50,28 +50,43 @@ the `file.diagnostics` field, filling it with diagnostics."
                    :code 303
                    :codeDescription "unnecessary-method"})))))
 
-(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1})
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1})
 (λ bad-unpack [self file op call]
   "an unpack call leading into an operator"
+  (let [last-item (. call (length call))]
+    (if (and (sym? op)
+             (. ops (tostring op))
+             ;; last item is an unpack call
+             (list? last-item)
+             (or (sym? (. last-item 1) :unpack)
+                 (sym? (. last-item 1) :_G.unpack)
+                 (sym? (. last-item 1) :table.unpack))
+             (. file.lexical last-item)
+             (. file.lexical call))
+        (case (message.ast->range self file last-item)
+          range {: range
+                 :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
+                              (if (sym? op "..")
+                                (let [unpackme (view (. last-item 2))]
+                                  (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
+                                (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
+                 :severity message.severity.WARN
+                 :code 304
+                 :codeDescription "bad-unpack"}))))
+
+(local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
+(λ op-with-no-arguments [self file op call]
   (if (and (sym? op)
            (. ops (tostring op))
-           ;; last item is an unpack call
-           (list? (. call (length call)))
-           (or (sym? (. call (length call) 1) :unpack)
-               (sym? (. call (length call) 1) :_G.unpack)
-               (sym? (. call (length call) 1) :table.unpack))
-           ;; Only the unpack call needs to be present in the original file.
-           (. file.lexical (. call (length call))))
-      (case (message.ast->range self file (. call (length call)))
-        range {: range
-               :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
-                            (if (sym? op "..")
-                              (let [unpackme (view (. call (length call) 2))]
-                                (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
-                              (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
-               :severity message.severity.WARN
-               :code 304
-               :codeDescription "bad-unpack"})))
+           (not (. call 2))
+           (. file.lexical call)
+           (not= nil (. op-identity-value (tostring op))))
+    (case (message.ast->range self file call)
+      range {: range
+             :message (.. "write " (view (. op-identity-value (tostring op))) " instead of (" (tostring op) ")")
+             :severity message.severity.WARN
+             :case 306
+             :codeDescription "op-with-no-arguments"})))
 
 (λ var-never-set [self file symbol definition]
   (if (and definition.var? (not definition.var-set))
@@ -88,17 +103,19 @@ the `file.diagnostics` field, filling it with diagnostics."
     ;; definition diagnostics
     (each [symbol definition (pairs file.definitions)]
       (if checks.unused-definition
-        (tset d (+ 1 (length d)) (unused-definition self file symbol definition)))
+        (table.insert d (unused-definition self file symbol definition)))
       (if checks.var-never-set
-        (tset d (+ 1 (length d)) (var-never-set self file symbol definition))))
+        (table.insert d (var-never-set self file symbol definition))))
 
     ;; call diagnostics
     (each [[head &as call] (pairs file.calls)]
       (when head
         (if checks.bad-unpack
-          (tset d (+ 1 (length d)) (bad-unpack self file head call)))
+          (table.insert d (bad-unpack self file head call)))
         (if checks.unnecessary-method
-          (tset d (+ 1 (length d)) (unnecessary-method self file head call)))))
+          (table.insert d (unnecessary-method self file head call)))
+        (if checks.op-with-no-arguments
+          (table.insert d (op-with-no-arguments self file head call)))))
 
     (if checks.unknown-module-field
       (unknown-module-field self file))))
