@@ -70,7 +70,7 @@ identifiers are declared / referenced in which places."
         references    {} ; symbol -> references
         scopes        {} ; ast -> scope
         calls         {} ; all calls in the macro-expanded code -> true
-        lexical       {} ; all lists and tables in the original source
+        lexical       {} ; all lists, tables, and symbols in the original source
         require-calls {}] ; the keys are all the calls that start with `require
 
     (λ find-definition [name ?scope]

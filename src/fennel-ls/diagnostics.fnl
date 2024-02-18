@@ -49,7 +49,7 @@ the `file.diagnostics` field, filling it with diagnostics."
          :code 303
          :codeDescription "unnecessary-method"}))))
 
-(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1})
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1})
 (λ bad-unpack [self file op call]
   "an unpack call leading into an operator"
   (let [last-item (. call (length call))]
@@ -90,29 +90,25 @@ the `file.diagnostics` field, filling it with diagnostics."
     {:range  (message.ast->range self file call)
      :message (.. "write " (view (. op-identity-value (tostring op))) " instead of (" (tostring op) ")")
      :severity message.severity.WARN
-     :case 306
+     :code 306
      :codeDescription "op-with-no-arguments"}))
 
 (λ check [self file]
   "fill up the file.diagnostics table with linting things"
   (let [checks self.configuration.checks
-        d file.diagnostics]
+        diagnostics file.diagnostics]
     ;; definition diagnostics
     (each [symbol definition (pairs file.definitions)]
-      (if checks.unused-definition
-        (table.insert d (unused-definition self file symbol definition)))
-      (if checks.var-never-set
-        (table.insert d (var-never-set self file symbol definition))))
+      (if checks.unused-definition (table.insert diagnostics (unused-definition self file symbol definition)))
+      (if checks.var-never-set     (table.insert diagnostics (var-never-set     self file symbol definition))))
 
     ;; call diagnostics
+    ;; all non-macro calls. This only covers the macroexpanded world
     (each [[head &as call] (pairs file.calls)]
       (when head
-        (if checks.bad-unpack
-          (table.insert d (bad-unpack self file head call)))
-        (if checks.unnecessary-method
-          (table.insert d (unnecessary-method self file head call)))
-        (if checks.op-with-no-arguments
-          (table.insert d (op-with-no-arguments self file head call)))))
+        (if checks.bad-unpack           (table.insert diagnostics (bad-unpack           self file head call)))
+        (if checks.unnecessary-method   (table.insert diagnostics (unnecessary-method   self file head call)))
+        (if checks.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments self file head call)))))
 
     (if checks.unknown-module-field
       (unknown-module-field self file))))
