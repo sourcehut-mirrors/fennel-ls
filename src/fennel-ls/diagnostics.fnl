@@ -9,12 +9,12 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (λ unused-definition [self file symbol definition]
   "local variable that is defined but not used"
-  (if (and (not= "_" (: (tostring symbol) :sub 1 1))
-           (not (accumulate [reference false
-                             _ ref (ipairs definition.referenced-by)
-                             &until reference]
-                  (or (= ref.ref-type :read)
-                      (= ref.ref-type :mutate)))))
+  (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
+               (accumulate [reference false
+                            _ ref (ipairs definition.referenced-by)
+                            &until reference]
+                 (or (= ref.ref-type :read)
+                     (= ref.ref-type :mutate)))))
     {:range (message.ast->range self file symbol)
      :message (.. "unused definition: " (tostring symbol))
      :severity message.severity.WARN
@@ -43,12 +43,11 @@ the `file.diagnostics` field, filling it with diagnostics."
       (if (and (= :string (type method))
                (not (method:find "^[0-9]"))
                (not (method:find "[^!$%*+-/0-9<=>?A-Z\\^_a-z|\128-\255]")))
-          (case (message.ast->range self file call)
-            range {: range
-                   :message (.. "unnecessary : call: use (" (tostring (. call 2)) ":" method ")")
-                   :severity message.severity.WARN
-                   :code 303
-                   :codeDescription "unnecessary-method"})))))
+        {:range (message.ast->range self file call)
+         :message (.. "unnecessary : call: use (" (tostring (. call 2)) ":" method ")")
+         :severity message.severity.WARN
+         :code 303
+         :codeDescription "unnecessary-method"}))))
 
 (local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1})
 (λ bad-unpack [self file op call]
@@ -63,16 +62,23 @@ the `file.diagnostics` field, filling it with diagnostics."
                  (sym? (. last-item 1) :table.unpack))
              (. file.lexical last-item)
              (. file.lexical call))
-        (case (message.ast->range self file last-item)
-          range {: range
-                 :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
-                              (if (sym? op "..")
-                                (let [unpackme (view (. last-item 2))]
-                                  (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
-                                (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
-                 :severity message.severity.WARN
-                 :code 304
-                 :codeDescription "bad-unpack"}))))
+     {:range (message.ast->range self file last-item)
+      :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
+                   (if (sym? op "..")
+                     (let [unpackme (view (. last-item 2))]
+                       (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
+                     (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
+      :severity message.severity.WARN
+      :code 304
+      :codeDescription "bad-unpack"})))
+
+(λ var-never-set [self file symbol definition]
+  (if (and definition.var? (not definition.var-set))
+    {:range (message.ast->range self file symbol)
+     :message (.. "var is never set: " (tostring symbol) " Consider using (local) instead of (var)")
+     :severity message.severity.WARN
+     :code 305
+     :codeDescription "var-never-set"}))
 
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 (λ op-with-no-arguments [self file op call]
@@ -81,20 +87,11 @@ the `file.diagnostics` field, filling it with diagnostics."
            (not (. call 2))
            (. file.lexical call)
            (not= nil (. op-identity-value (tostring op))))
-    (case (message.ast->range self file call)
-      range {: range
-             :message (.. "write " (view (. op-identity-value (tostring op))) " instead of (" (tostring op) ")")
-             :severity message.severity.WARN
-             :case 306
-             :codeDescription "op-with-no-arguments"})))
-
-(λ var-never-set [self file symbol definition]
-  (if (and definition.var? (not definition.var-set))
-      {:range (message.ast->range self file symbol)
-       :message (.. "var is never set: " (tostring symbol) " Consider using (local) instead of (var)")
-       :severity message.severity.WARN
-       :code 305
-       :codeDescription "var-never-set"}))
+    {:range  (message.ast->range self file call)
+     :message (.. "write " (view (. op-identity-value (tostring op))) " instead of (" (tostring op) ")")
+     :severity message.severity.WARN
+     :case 306
+     :codeDescription "op-with-no-arguments"}))
 
 (λ check [self file]
   "fill up the file.diagnostics table with linting things"
