@@ -73,6 +73,10 @@ Your editor can send these settings using one of these two methods:
 * The client sends an `initialize` request with the structure `{initializationOptions: {"fennel-ls": {...}}, ...}`
 * The client sends a `workspace/didChangeConfiguration` notfication containing the field `{settings: {"fennel-ls": {YOUR_SETTINGS}}}`
 
+## Adding a lint
+You can't load external lint rules with fennel-ls, but I would love to receive patches that add new lint rules!
+[Instructions to add a lint.](Adding-a-Lint-Rule.md)
+
 ## License
 fennel-ls is licensed under the MIT license. See LICENSE for more info.
 This project also contains files from other projects:
