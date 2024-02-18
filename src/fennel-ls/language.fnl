@@ -175,12 +175,13 @@ a user-written file.
   "find a definition just from the name of the item, and the scope it is in"
   (assert (= (type name) :string))
   (let [stack (stack-add-multisym! [] name)]
-    (case (. METADATA (or (. MACROS name) (. SPECIALS name)))
-      metadata {:binding (sym name) : metadata}
-      _ (case (global-info self name)
-         global-item global-item
-         _ (case (find-local-definition file name scope)
-             def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {})))))))
+    (or
+      (case (. METADATA (or (. MACROS name) (. SPECIALS name)))
+        metadata {:binding (sym name) : metadata})
+      (case (global-info self name)
+       global-item global-item)
+      (case (find-local-definition file name scope)
+        def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))
 
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object

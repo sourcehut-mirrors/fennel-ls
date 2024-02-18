@@ -137,9 +137,8 @@ identifiers are declared / referenced in which places."
                 {:binding symbol
                  :definition ?definition
                  :referenced-by (or (?. definitions symbol :referenced-by) [])
-                 :keys (if (< 0 (length keys))
-                         (fcollect [i 1 (length keys)]
-                           (. keys i)))
+                 :keys (if (. keys 1)
+                         (icollect [_ v (ipairs keys)] v))
                  :multival ?multival
                  :var? (?. ?opts :isvar)
                  : file}]

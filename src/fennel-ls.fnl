@@ -20,7 +20,7 @@
                     ;; LSP line numbers are zero-indexed, but Emacs and Vim both use
                     ;; 1-indexing for this.
                     (+ (or start.line 0) 1) (or start.character "?") message)))
-        (if (not= 0 (length file.diagnostics))
+        (if (. file.diagnostics 1)
           (set should-err? true))))
     (if should-err?
       (os.exit 1))))
