@@ -8,7 +8,7 @@ There are only two functions exposed here:
 It's probably not compliant yet, because serialization of [] and {} is the same.
 Luckily, I'm testing with Neovim, so I can pretend these problems don't exist for now."
 
-(local {: encode : decode} (require :json.json))
+(local {: encode : decode} (require :fennel-ls.json.json))
 
 (λ read-header [in ?header]
   "Reads the header of a JSON-RPC message"

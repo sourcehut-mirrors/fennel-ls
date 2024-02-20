@@ -1,6 +1,6 @@
 (import-macros {: is-matching : describe : it : before-each} :test)
 (local is (require :test.is))
-(local {: null} (require :json.json))
+(local {: null} (require :fennel-ls.json.json))
 
 
 (local {: view} (require :fennel))

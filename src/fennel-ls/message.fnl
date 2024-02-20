@@ -7,7 +7,7 @@ LSP json objects."
 
 (local fennel (require :fennel))
 (local utils (require :fennel-ls.utils))
-(local json (require :json.json))
+(local json (require :fennel-ls.json.json))
 
 (λ nullify [?value]
    (case ?value
