@@ -33,11 +33,9 @@ For Emacs, (eglot, built-in to 29+):
 ```
 
 It should be possible to set up for other text editors, but the instructions depend on which editor you use.
-Generally this involves somehow configuring this information:
-* "fennel-ls" is a language server program on the path
+Generally you need to give this information to your editor:
+* "fennel-ls" is a language server program on the $PATH
 * it should be run for .fnl files.
-
-If you get it working in any other environments, I'd love to know! It would be great to have instructions on how to set up other editors!
 
 ## Batch mode
 
@@ -46,6 +44,8 @@ You can gather diagnostics without connecting your editor:
 ```sh
 fennel-ls --check my-file.fnl f2.fnl # prints diagnostics for the files given
 ```
+
+This will analyze the given files, and print out all compiler errors and lints.
 
 # Default Settings
 
