@@ -1,9 +1,18 @@
 # Changelog
 
+## 0.1.1
+
+### Features
 * Add [Nix(OS)](https://nixos.org) support
-* Fix bug with renaming vars
-* Improve multival tracking
+* Add LuaRocks build support
+* Upgrade to Fennel 1.4.1, the first release of fennel that is compatible with fennel-ls without patches.
+* Added a lint for operators with no arguments, such as (+)
 * `textEdit` field is present in completions
+
+### Bug Fixes
+* Fix bug with renaming variables in method calls
+* Lots of work to improve multival tracking
+* --check gives a nonzero exit code when lints are found
 
 ## 0.1.0
 

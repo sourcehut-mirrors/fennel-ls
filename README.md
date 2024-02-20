@@ -22,6 +22,14 @@ For now, the only way to install is to build from source, but I plan on adding f
 If you are using NixOS, you may use the included `/flake.nix` or `/default.nix`
 to to build the language server configure a development environment.
 
+### LuaRocks
+
+If you are specifically the Neovim plugin `mason.nvim`, or have some other
+reason to support building on Windows, you may want to use the command:
+```sh
+luarocks install fennel-ls --tree /path/to/your/new/luarocks/tree
+```
+
 ## Set Up Your Editor
 
 Once you've installed the binary somewhere on your computer, the next step is to set up your text editor! Each editor has a different way of doing it.
