@@ -17,6 +17,11 @@ make && make install PREFIX=$HOME # if you have ~/bin on your $PATH
 
 For now, the only way to install is to build from source, but I plan on adding fennel-ls to luarocks soon.
 
+### NixOS
+
+If you are using NixOS, you may use the included `/flake.nix` or `/default.nix`
+to to build the language server configure a development environment.
+
 ## Set Up Your Editor
 
 Once you've installed the binary somewhere on your computer, the next step is to set up your text editor! Each editor has a different way of doing it.

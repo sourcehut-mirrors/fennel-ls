@@ -1,5 +1,6 @@
 # Changelog
 
+* Add [Nix(OS)](https://nixos.org) support
 * Fix bug with renaming vars
 * Improve multival tracking
 * `textEdit` field is present in completions
