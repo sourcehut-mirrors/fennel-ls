@@ -49,7 +49,7 @@ the `file.diagnostics` field, filling it with diagnostics."
          :code 303
          :codeDescription "unnecessary-method"}))))
 
-(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 ".." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1})
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1 "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
 (λ bad-unpack [self file op call]
   "an unpack call leading into an operator"
   (let [last-item (. call (length call))]
@@ -82,6 +82,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 (λ op-with-no-arguments [self file op call]
+  "A call like (+) that could be replaced with a literal"
   (if (and (sym? op)
            (. ops (tostring op))
            (not (. call 2))
