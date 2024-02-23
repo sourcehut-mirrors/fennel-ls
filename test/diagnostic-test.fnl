@@ -264,7 +264,34 @@
                    (match v
                      {:code 304}
                      v)
-                   (v.message:find "table.concat"))))))))
+                   (v.message:find "table.concat")))))))
+
+  (it "tells me not to use values in the middle"
+    (let [self (create-client)
+          responses (self:open-file! filename "(+ 1 2 3 (values 4 5) 6)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is (find [_ v (ipairs diagnostics)]
+             (and
+               (match v
+                 {:code 307}
+                 v)
+               (v.message:find "values")))))))
+
+  (it "doesn't trigger the values warning (code 307) in a statement context"
+    (let [self (create-client)
+          responses (self:open-file! filename "(let [x 10] (values 4 5) x)")]
+      (match responses
+        [{:params {: diagnostics}}]
+        (is
+          (not
+            (find [_ v (ipairs diagnostics)]
+              (and
+                (match v
+                  {:code 307}
+                  v)
+                (v.message:find "values")))))))))
+
 
 ;; TODO lints:
 ;; unnecessary (do) in body position

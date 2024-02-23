@@ -15,8 +15,6 @@ make && sudo make install # to install into /usr/local/bin
 make && make install PREFIX=$HOME # if you have ~/bin on your $PATH
 ```
 
-For now, the only way to install is to build from source, but I plan on adding fennel-ls to luarocks soon.
-
 ### NixOS
 
 If you are using NixOS, you may use the included `/flake.nix` or `/default.nix`

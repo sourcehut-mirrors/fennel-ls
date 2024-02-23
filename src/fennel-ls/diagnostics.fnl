@@ -6,6 +6,19 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local language (require :fennel-ls.language))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
+(local {:scopes {:global {: specials}}}
+  (require :fennel.compiler))
+
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1 "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
+(fn special? [item]
+  (and (sym? item)
+       (. specials (tostring item))
+       item))
+
+(fn op? [item]
+  (and (sym? item)
+       (. ops (tostring item))
+       item))
 
 (λ unused-definition [self file symbol definition]
   "local variable that is defined but not used"
@@ -49,12 +62,10 @@ the `file.diagnostics` field, filling it with diagnostics."
          :code 303
          :codeDescription "unnecessary-method"}))))
 
-(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1 "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
 (λ bad-unpack [self file op call]
   "an unpack call leading into an operator"
   (let [last-item (. call (length call))]
-    (if (and (sym? op)
-             (. ops (tostring op))
+    (if (and (op? op)
              ;; last item is an unpack call
              (list? last-item)
              (or (sym? (. last-item 1) :unpack)
@@ -83,8 +94,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 (λ op-with-no-arguments [self file op call]
   "A call like (+) that could be replaced with a literal"
-  (if (and (sym? op)
-           (. ops (tostring op))
+  (if (and (op? op)
            (not (. call 2))
            (. file.lexical call)
            (not= nil (. op-identity-value (tostring op))))
@@ -94,22 +104,48 @@ the `file.diagnostics` field, filling it with diagnostics."
      :code 306
      :codeDescription "op-with-no-arguments"}))
 
+(λ multival-in-middle-of-call [self file fun call arg index]
+  "generally, values and unpack are signs that the user is trying to do
+  something with multiple values. However, multiple values will get
+  \"adjusted\" to one value if they don't come at the end of the call."
+  (if (and (not (and (special? fun) (not (op? fun))))
+           (not= index (length call))
+           (list? arg)
+           (or (sym? (. arg 1) :values)
+               (sym? (. arg 1) :unpack)
+               (sym? (. arg 1) :_G.unpack)
+               (sym? (. arg 1) :table.unpack)))
+    {:range (message.ast->range self file arg)
+     :message (.. "bad " (tostring (. arg 1)) " call: only the first value of the multival will be used")
+     :severity message.severity.WARN
+     :code 307
+     :codeDescription "bad-unpack"}))
+
 (λ check [self file]
   "fill up the file.diagnostics table with linting things"
   (let [checks self.configuration.checks
         diagnostics file.diagnostics]
-    ;; definition diagnostics
+
+    ;; definition lints
     (each [symbol definition (pairs file.definitions)]
       (if checks.unused-definition (table.insert diagnostics (unused-definition self file symbol definition)))
       (if checks.var-never-set     (table.insert diagnostics (var-never-set     self file symbol definition))))
 
-    ;; call diagnostics
-    ;; all non-macro calls. This only covers the macroexpanded world
+    ;; call lints
+    ;; all non-macro calls. This only covers specials and function calls.
     (each [[head &as call] (pairs file.calls)]
       (when head
         (if checks.bad-unpack           (table.insert diagnostics (bad-unpack           self file head call)))
         (if checks.unnecessary-method   (table.insert diagnostics (unnecessary-method   self file head call)))
-        (if checks.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments self file head call)))))
+        (if checks.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments self file head call)))
+
+        ;; argument lints
+        ;; every argument to a special or a function call
+        ;; TODO: This may be changed to run for function calls, but not special calls.
+        ;; I'll wait till we have more lints in here to see if it needs to change.
+        (for [index 2 (length call)]
+          (let [arg (. call index)]
+            (if checks.multival-in-middle-of-call (table.insert diagnostics (multival-in-middle-of-call self file head call arg index)))))))
 
     (if checks.unknown-module-field
       (unknown-module-field self file))))

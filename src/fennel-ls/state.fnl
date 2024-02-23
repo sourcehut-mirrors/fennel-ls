@@ -99,7 +99,8 @@ entire fennel-ls project is referring to the same object."
             :unnecessary-method (option true)
             :bad-unpack (option true)
             :var-never-set (option true)
-            :op-with-no-arguments (option true)}
+            :op-with-no-arguments (option true)
+            :multival-in-middle-of-call (option true)}
    :extra-globals (option "")})
 
 (λ make-configuration [?c]
