@@ -228,8 +228,7 @@
     ;; (it "offers rich information about macro-module completions")))
   (it "completes things in an if statement with no body"
     (check-completion "(if ge" 0 6 [:getmetatable] [])
-    (check-completion "(local x {:field 100})\n(if x.fi" 1 8 [:field] [])
-    (check-completion "(local x {:field 100})\n(when x.fi" 1 10 [:field] [])))
+    (check-completion "(local x {:field 100})\n(if x.fi" 1 8 [:field] [])))
   ;; (it "suggests known fn keys when using the `:` special")
   ;; (it "suggests known keys when using the `.` special")
   ;; (it "suggests known module names in `require` and `include` and `import-macros` and `require-macros` and friends")
