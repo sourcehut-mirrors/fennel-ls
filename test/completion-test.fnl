@@ -219,14 +219,17 @@
             (is.same (type completion.label) :string "unlabeled completion")
             (is.same (type completion.kind) :number (.. completion.label " needs a kind"))
             (is.same (type completion.documentation) :table (.. completion.label " needs documentation"))
-            (is.not.same completion.documentation :nil (.. completion.label " needs documentation"))))))))
+            (is.not.same completion.documentation :nil (.. completion.label " needs documentation")))))))
 
     ;; (it "offers rich information about variable completions")
     ;; (it "offers rich information about field completions")
     ;; (it "offers rich information about method completions")
     ;; (it "offers rich information about module completions")
     ;; (it "offers rich information about macro-module completions")))
-
+  (it "completes things in an if statement with no body"
+    (check-completion "(if ge" 0 6 [:getmetatable] [])
+    (check-completion "(local x {:field 100})\n(if x.fi" 1 8 [:field] [])
+    (check-completion "(local x {:field 100})\n(when x.fi" 1 10 [:field] [])))
   ;; (it "suggests known fn keys when using the `:` special")
   ;; (it "suggests known keys when using the `.` special")
   ;; (it "suggests known module names in `require` and `include` and `import-macros` and `require-macros` and friends")

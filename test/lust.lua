@@ -126,10 +126,10 @@ local paths = {
   a = { test = isa },
   an = { test = isa },
   be = { 'a', 'an', 'truthy',
-    test = function(v, x)
+    test = function(v, x, message)
       return v == x,
-        'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to be equal',
-        'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to not be equal'
+        message or 'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to be equal',
+        message or 'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to not be equal'
     end
   },
   exist = {
@@ -140,10 +140,10 @@ local paths = {
     end
   },
   truthy = {
-    test = function(v)
+    test = function(v, message)
       return v,
-        'expected ' .. tostring(v) .. ' to be truthy',
-        'expected ' .. tostring(v) .. ' to not be truthy'
+        message or 'expected ' .. tostring(v) .. ' to be truthy',
+        message or 'expected ' .. tostring(v) .. ' to not be truthy'
     end
   },
   equal = {
@@ -154,14 +154,14 @@ local paths = {
     end
   },
   have = {
-    test = function(v, x)
+    test = function(v, x, message)
       if type(v) ~= 'table' then
         error('expected ' .. tostring(v) .. ' to be a table')
       end
 
       return has(v, x),
-        'expected ' .. tostring(v) .. ' to contain ' .. tostring(x),
-        'expected ' .. tostring(v) .. ' to not contain ' .. tostring(x)
+        message or 'expected ' .. tostring(v) .. ' to contain ' .. tostring(x),
+        message or 'expected ' .. tostring(v) .. ' to not contain ' .. tostring(x)
     end
   },
   fail = {

@@ -8,4 +8,4 @@
                :not {:nil #(do ((. (expect $1) :to :exist) $2) true)
                      :same #(do ((. (expect $1) :to_not :equal) $2))}
                :truthy #(do ((. (expect $1) :to :be :truthy)) true)}
-              {:__call #(do ((. (expect $2) :to :be :truthy)) true)})
+              {:__call #(do ((. (expect $2) :to :be :truthy) $3) true)})

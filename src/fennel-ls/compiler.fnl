@@ -234,6 +234,7 @@ identifiers are declared / referenced in which places."
       (or (= 1 (msg:find "unknown identifier"))
           (= 1 (msg:find "expected closing delimiter"))
           (= 1 (msg:find "expected body expression"))
+          (= 1 (msg:find "expected condition and body"))
           (= 1 (msg:find "expected whitespace before opening delimiter"))
           (= 1 (msg:find "malformed multisym"))
           (= 1 (msg:find "expected at least one pattern/body pair"))))
