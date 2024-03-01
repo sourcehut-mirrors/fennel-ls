@@ -230,14 +230,20 @@ identifiers are declared / referenced in which places."
         (where [sym] (multisym? sym) (: (tostring sym) :find ":"))
         (reference sym scope :read)))
 
-    (λ recoverable? [msg]
+    (λ attempt-to-recover! [msg ?ast]
       (or (= 1 (msg:find "unknown identifier"))
           (= 1 (msg:find "expected closing delimiter"))
           (= 1 (msg:find "expected body expression"))
           (= 1 (msg:find "expected condition and body"))
           (= 1 (msg:find "expected whitespace before opening delimiter"))
           (= 1 (msg:find "malformed multisym"))
-          (= 1 (msg:find "expected at least one pattern/body pair"))))
+          (= 1 (msg:find "expected at least one pattern/body pair"))
+          (when (and (sequence? ?ast)
+                     (= 1 (% (length ?ast ) 2))
+                     (= 1 (msg:find "expected even number of name/value bindings")))
+            (table.insert ?ast (sym :nil))
+            true)))
+
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range self file ast)
@@ -248,7 +254,7 @@ identifiers are declared / referenced in which places."
            :severity message.severity.ERROR
            :code 201
            :codeDescription "compiler error"}))
-      (if (recoverable? msg)
+      (if (attempt-to-recover! msg ast)
         true
         (do
           (call-me-to-reset-the-compiler)
@@ -263,7 +269,7 @@ identifiers are declared / referenced in which places."
            :severity message.severity.ERROR
            :code 101
            :codeDescription "parse error"}))
-      (if (recoverable? msg)
+      (if (attempt-to-recover! msg)
         true
         (do
           (call-me-to-reset-the-compiler)

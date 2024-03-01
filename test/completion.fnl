@@ -88,10 +88,9 @@
               fo|" [:foo :bar] [])
   (check "(local foo 10)
           (local bar (let [y foo] |" [:foo :y] [])
-  ;; TODO add compile check for incomplete let
-  ; (check "(let [foo 10
-  ;               bar 20
-  ;               _ |" [:foo :bar] [])
+  (check "(let [foo 10
+                bar 20
+                _ |" [:foo :bar] [])
   (check "(let [foo 10
                 bar 20
                 _ fo|" [:foo :bar] [])
