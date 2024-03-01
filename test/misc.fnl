@@ -1,13 +1,10 @@
 (local faith (require :faith))
 (local fennel (require :fennel))
-(local {: create-client
-        : ROOT-URI}
-  (require :test.utils.client))
+(local {: create-client-with-files} (require :test.utils))
 
 (local language (require :fennel-ls.language))
 (local utils    (require :fennel-ls.utils))
 
-(local filename (.. ROOT-URI "imaginary.fnl"))
 
 (fn test-multi-sym-split []
   (faith.= ["foo"] (utils.multi-sym-split "foo" 2))
@@ -19,9 +16,8 @@
   nil)
 
 (fn test-find-symbol []
-  (let [state (doto (create-client)
-                (: :open-file! filename "(match [1 2 4] [1 2 sym-one] sym-one)"))
-        file (. state.server.files filename)
+  (let [{: self : uri} (create-client-with-files "(match [1 2 4] [1 2 sym-one] sym-one)")
+        file (. self.server.files uri)
         (symbol parents) (language.find-symbol file.ast 23)]
     (faith.= symbol (fennel.sym :sym-one))
     (faith.=
@@ -29,9 +25,8 @@
       (fennel.view parents {:one-line? true})
       "bad parents"))
 
-  (let [state (doto (create-client)
-                (: :open-file! filename "(match [1 2 4] [1 2 sym-one] sym-one)"))
-        file (. state.server.files filename)
+  (let [{: self : uri} (create-client-with-files "(match [1 2 4] [1 2 sym-one] sym-one)")
+        file (. self.server.files uri)
         (symbol parents) (language.find-symbol file.ast 18)]
     (faith.= symbol nil)
     (faith.=
@@ -41,14 +36,9 @@
   nil)
 
 (fn test-failure []
-  (let [self (create-client)
-        state (require :fennel-ls.state)
-        searcher (require :fennel-ls.searcher)]
-   (faith.not= nil (searcher.lookup self.server :crash-files.test1))
-   (faith.not= nil (state.get-by-module self.server :crash-files.test1)))
-  ;; TODO turn off TESTING=1 in makefile
-   ; (faith.not= nil (searcher.lookup self.server :crash-files.test2))
-   ; (faith.not= nil (state.get-by-module self.server :crash-files.test2)))
+  (create-client-with-files "(macro foo {} nil)
+                             (λ test {} nil)
+                             (λ {} nil")
   nil)
 
 (fn test-split-spaces []
