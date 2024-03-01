@@ -197,6 +197,8 @@
 ;; steal as many lints as possible from cargo
 ;; unnecessary parens around single multival destructure
 
+;; unused variable, when a function binding is only used in its body, and the function value is discarded
+
 {: test-compile-error
  : test-parse-error
  : test-macro-error
@@ -204,6 +206,7 @@
  : test-unused
  : test-ampersand
  : test-no-warnings
+ : test-unknown-module-field
  : test-unnecessary-colon
  : test-unset-var
  : test-unpack-into-op

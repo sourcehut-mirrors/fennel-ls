@@ -23,6 +23,7 @@ identifiers are declared / referenced in which places."
 ;; words surrounded by - are symbols,
 ;; because fennel doesn't allow 'require in a runtime file
 (local -require- (sym :require))
+(local -include- (sym :include))
 (local -fn- (sym :fn))
 (local -lambda- (sym :lambda))
 (local -λ- (sym :λ))
@@ -224,7 +225,8 @@ identifiers are declared / referenced in which places."
         ;; TODO check if hashfn needs to be here
         (where (or [(= -fn-)] [(= -lambda-)] [(= -λ-)]))
         (define-function ast scope)
-        (where [(= -require-) _modname])
+        (where (or [(= -require-) _modname]
+                   [(= -include-) _modname]))
         (tset require-calls ast true)
         ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
         (where [sym] (multisym? sym) (: (tostring sym) :find ":"))

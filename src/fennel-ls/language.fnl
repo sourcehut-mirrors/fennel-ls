@@ -119,7 +119,7 @@ a user-written file.
           (if (< multival len)
             (search-val self file (. call (+ 1 multival)) stack opts)
             (search-multival self file (. call (+ len 1)) stack (+ multival (- len) 1) opts)))
-        :require
+        (where (or :require :include))
         (let [mod (. call 2)]
           (if (= multival 1)
             (when (= :string (type mod))

@@ -160,13 +160,12 @@
      :main.fnl "(local {: target} (require| :foo))
                 (target)"})
 
-  ;; TODO make it work on include
-  ; (check
-  ;   {:foo.fnl "(fn target []
-  ;                nil)
-  ;              =={: target}=="
-  ;    :main.fnl "(local {: target} (include| :foo))
-  ;               (target)"}))
+  (check
+    {:foo.fnl "(fn target []
+                 nil)
+               =={: target}=="
+     :main.fnl "(local {: target} (includ|e :foo))
+                (target)"})
 
   ;; TODO fix goto-definition on the module name string itself
   ; (check
@@ -189,15 +188,13 @@
 
 
 (fn test-no-crash []
-;; TODO convert the rest of goto
-
-; ;; (it "can go to a destructured function argument")
 
   (check "(macro cool [a b] `(let [,b 10] ,a))\n(cool |x ==x==)")
   (check "(macro cool [a b] `(let [,b 10] ,a))\n(cool x x|)")
 
   (check "|#$..."))
 
+; ;; (it "can go to a destructured function argument")
 ; ;; (it "can go through more than one file")
 ; ;; (it "will give up instead of freezing on recursive requires")
 ; ;; (it "will give up instead of freezing on recursive tables constructed with (set)")
