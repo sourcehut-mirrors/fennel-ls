@@ -148,6 +148,7 @@ WARNING: this is only used in the test code, not in the real language server"
   (if (or (= symbol ".")
           (= symbol "..")
           (= symbol "...")
+          (= symbol ":")
           (= symbol "?."))
     [symbol]
     (let [offset (or ?offset (length symbol))

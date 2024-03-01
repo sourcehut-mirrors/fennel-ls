@@ -40,6 +40,7 @@ a user-written file.
 (local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
+(local docs (require :fennel-ls.docs))
 
 (local get-ast-info utils.get-ast-info)
 
@@ -61,6 +62,12 @@ a user-written file.
 (λ stack-add-multisym! [stack symbol]
   "add the multisy values to the end of the stack in reverse order"
   (stack-add-split! stack (utils.multi-sym-split symbol)))
+
+(λ search-document [self document stack opts]
+  (if (= 0 (length stack))
+    document
+    (. document.fields (. stack (length stack)))
+    (search-document self (. document.fields (table.remove stack)) stack opts)))
 
 (λ search-val [self file ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"
@@ -87,9 +94,12 @@ a user-written file.
     (if (= 0 (length stack))
       {:definition symbol : file}
       nil)
-    ;; TODO globals
-    (case (. file.references symbol)
-      to (search-assignment self file to (stack-add-multisym! stack symbol) opts))))
+    (if (. file.references symbol)
+      (search-assignment self file (. file.references symbol) (stack-add-multisym! stack symbol) opts)
+      (let [parts (utils.multi-sym-split symbol)]
+        (case (docs.get-global-metadata (. parts 1))
+          document (search-document self document (stack-add-split! stack parts) opts)
+          _ nil)))))
 
 (λ search-table [self file tbl stack opts]
   (if (. tbl (. stack (length stack)))
@@ -144,10 +154,6 @@ a user-written file.
             (= 0 (length stack))  {:definition ast : file}) ;; BASE CASE !!
         nil)))
 
-(local {:metadata METADATA
-        :scopes {:global {:specials SPECIALS
-                          :macros MACROS}}}
-  (require :fennel.compiler))
 
 (λ search-main [self file symbol opts ?byte]
   "Find the definition of a symbol"
@@ -157,8 +163,9 @@ a user-written file.
   (if (sym? symbol)
     (let [split (utils.multi-sym-split symbol (if ?byte (+ 1 (- ?byte symbol.bytestart))))
           stack (stack-add-split! [] split)]
-      (case (. METADATA (or (. MACROS (tostring symbol)) (. SPECIALS (tostring symbol))))
-        metadata {:binding symbol : metadata}
+
+      (case (docs.get-global-metadata (. split 1))
+        document (search-document self document (stack-add-split! stack split) opts)
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)
             _ (case (. file.definitions symbol)
@@ -166,25 +173,19 @@ a user-written file.
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
-    (or (. file.definitions-by-scope ?scope name)
-        (find-local-definition file name ?scope.parent))))
-
-(λ global-info [self name]
-  (. (require :fennel-ls.docs)
-     self.configuration.version
-     name))
+    (case (. file.definitions-by-scope ?scope name)
+      definition definition
+      _ (find-local-definition file name ?scope.parent))))
 
 (λ search-name-and-scope [self file name scope ?opts]
   "find a definition just from the name of the item, and the scope it is in"
   (assert (= (type name) :string))
-  (let [stack (stack-add-multisym! [] name)]
-    (or
-      (case (. METADATA (or (. MACROS name) (. SPECIALS name)))
-        metadata {:binding (sym name) : metadata})
-      (case (global-info self name)
-       global-item global-item)
-      (case (find-local-definition file name scope)
-        def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))
+  (let [split (utils.multi-sym-split name)
+        stack (stack-add-split! [] split)]
+    (case (docs.get-global-metadata (. split 1))
+      metadata (search-document self metadata stack (or ?opts {}))
+      _ (case (find-local-definition file name scope)
+          def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))
 
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object
