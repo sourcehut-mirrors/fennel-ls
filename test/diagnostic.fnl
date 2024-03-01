@@ -168,9 +168,8 @@
 
   (check "(var x 1) (set x 2) (print x)"
          [] [{}])
-  ;; TODO fix diagnostic
-  ; (check "(local x 10) (?. x)"
-  ;        [] [{:code 305}])
+  (check "(local x 10) (?. x)"
+         [] [{:code 305}])
   nil)
 
 ;; missing test for 306

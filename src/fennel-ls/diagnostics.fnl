@@ -84,7 +84,7 @@ the `file.diagnostics` field, filling it with diagnostics."
       :codeDescription "bad-unpack"})))
 
 (λ var-never-set [self file symbol definition]
-  (if (and definition.var? (not definition.var-set))
+  (if (and definition.var? (not definition.var-set) (. file.lexical symbol))
     {:range (message.ast->range self file symbol)
      :message (.. "var is never set: " (tostring symbol) " Consider using (local) instead of (var)")
      :severity message.severity.WARN
