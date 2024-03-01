@@ -23,7 +23,7 @@ The search failed, and encountered something that isn't implemented.
 # A definition: `{:definition _ :file _}`
 The search succeeded and found a file with a user definition of a value.
 
-# A binding: `{:definition _ :file _ :binding _ :multival ?_ :keys ?_ :referenced-by ?_ :var? ?true}`
+# A binding: `{:definition _ :file _ :binding _ :multival ?_ :keys ?_ :referenced-by ?_ :var? ?true :fields ?extra_fields}`
 If you set the option `opts.stop-early?`, search may stop at a binding instead
 of a true definition. A binding is a place where an identifier gets introduced.
 
@@ -72,6 +72,9 @@ a user-written file.
                   :keys ?keys
                   :multival ?multival
                   :fields ?fields}} assignment]
+    (when (and (= 0 (length stack))
+               opts.save-last-binding)
+      (tset opts.save-last-binding 1 assignment.target))
     (if (and (= 0 (length stack)) opts.stop-early?)
         assignment.target ;; BASE CASE!!
         ;; search a virtual field from :fields

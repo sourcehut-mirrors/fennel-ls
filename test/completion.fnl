@@ -143,14 +143,13 @@
      :fooo.fnl "(fn my-export [x] (print x))
                 {: my-export :constant 10}"}
     [:my-export :constant]
-    [:_G :local :doto :+]
-    ;; TODO fix completions of virtual fields
-    ; (check
-    ;   {:main.fnl "(let [foo (require :fooo)]
-    ;                   foo.|)))"
-    ;    :fooo.fnl "(local M {:constant 10})
-    ;               (fn M.my-export [x] (print x))
-    ;               M"}
+    [:_G :local :doto :+])
+  (check
+    {:main.fnl "(let [foo (require :fooo)]
+                    foo.|)))"
+     :fooo.fnl "(local M {:constant 10})
+                (fn M.my-export [x] (print x))
+                M"}
     [:my-export :constant]
     [:_G :local :doto :+]) ;; no globals, specials, macros, or others
   (check "(local x {:field (fn [])})\n(x:fi|" [:field] [:table])
