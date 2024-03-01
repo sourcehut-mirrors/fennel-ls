@@ -1,9 +1,6 @@
 (local faith (require :faith))
 (local {: view} (require :fennel))
-(local {: ROOT-URI
-        : create-client} (require :test.utils.client))
-
-(local filename (.. ROOT-URI "/imaginary.fnl"))
+(local {: create-client-with-files} (require :test.utils))
 
 (fn find [diagnostics e]
   "returns the index of the diagnostic "
@@ -24,9 +21,7 @@
        i)))
 
 (fn check [file-contents expected unexpected]
-  (let [self (create-client)
-        [{:params {: diagnostics}}] (self:open-file! filename file-contents)]
-
+  (let [{: diagnostics} (create-client-with-files file-contents)]
     (each [_ e (ipairs unexpected)]
       (let [i (find diagnostics e)]
         (faith.= nil i (.. "Lint matching " (view e) "\n"
@@ -116,15 +111,16 @@
   (check "(fn [a b] (set a.x 10) (fn b.f []))" [] [{}])
   nil)
 
-; (fn test-unknown-module-field []
-;   (check {:the-guy-they-tell-you-not-to-worry-about.fnl
-;           "(local M {:a 1})
-;            (fn M.b [] 2)
-;            M"
-;           :main.fnl
-;           "(local {: a : c &as guy} (require :the-guy-they-tell-you-not-to-worry-about))
-;            (print guy.b guy.d)"}
-;          [{:code 302}] [{:code 302 :message "unknown module field: a"}]))
+(fn test-unknown-module-field []
+  (check {:the-guy-they-tell-you-not-to-worry-about.fnl
+          "(local M {:a 1})
+           (fn M.b [] 2)
+           M"
+          :main.fnl
+          "(local {: a : c &as guy} (require :the-guy-they-tell-you-not-to-worry-about))
+           (print guy.b guy.d)"}
+         [{:code 302}] [{:code 302 :message "unknown module field: a"}
+                        {:code 302 :message "unknown module field: b"}]))
 
 (fn test-unnecessary-colon []
   (check "(let [x :haha] (: x :find :a))"
