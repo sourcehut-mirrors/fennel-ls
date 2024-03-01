@@ -70,7 +70,12 @@ fennel-ls default settings:
     "macro-path": "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl",
     "checks": {
       "unused-definition": true,
-      "unknown-module-field": true
+      "unknown-module-field": true,
+      "unnecessary-method": true,
+      "bad-unpack": true,
+      "var-never-set": true,
+      "op-with-no-arguments": true,
+      "multival-in-middle-of-call": true
     },
     "extra-globals": ""
   }
@@ -96,5 +101,5 @@ This project also contains files from other projects:
 * src/fennel-ls/json/* is modified, but is originally from [json.lua](https://github.com/rxi/json.lua) [MIT license]
   * (LICENSE)[src/fennel-ls/json/LICENSE]
 * src/fennel-ls/docs/* contains information from the [lua](https://lua.org) reference [MIT license]
-* test/lust.lua is modified, but originially comes from from [lust](https://github.com/bjornbytes/lust) [MIT license]
+* test/faith/faith.lua is from [faith](https://git.sr.ht/~technomancy/faith) [MIT license]
 * fennel and src/fennel.lua are compiled from [fennel](https://git.sr.ht/~technomancy/fennel) [MIT license]
