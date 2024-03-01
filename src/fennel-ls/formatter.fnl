@@ -14,9 +14,14 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
   (.. (code-block (.. "("
                       (tostring special)
                       (if name (.. " " (tostring name)) "")
-                      (.. " " (view args
-                                {:one-line? true
-                                 :prefer-colon? true}))
+                      (.. " "
+                          (: (view args
+                               {:empty-as-sequence? true
+                                :one-line? true
+                                :prefer-colon? true})
+                             :gsub ":([%w?_-]+) ([%w?]+)([ }])"
+                             #(if (= $1 $2)
+                                (.. ": " $2 $3))))
                       " ...)"))
       (if docstring (.. "\n" docstring) "")))
 

@@ -80,10 +80,12 @@ new message handler `msgh`.")
   (check "(λ foo| [x ...]
             \"not a docstring, this gets returned\")"
          "```fnl\n(fn foo [x ...] ...)\n```")
-  ;; TODO cleanup signatures
-  ; (check "(λ foo| [{: start : end} ...]
-  ;           :body)"
-  ;        "```fnl\n(fn foo [{: start : end} ...] ...)\n```")
+  (check "(λ foo| [{: start : end}]
+            :body)"
+         "```fnl\n(fn foo [{: end : start}] ...)\n```")
+  (check "(λ foo| [{:list [a b c] :table {: d : e : f}}]
+            :body)"
+         "```fnl\n(fn foo [{:list [a b c] :table {: d : e : f}}] ...)\n```")
   nil)
 
 (fn test-multisym []
