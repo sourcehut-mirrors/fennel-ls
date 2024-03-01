@@ -3,12 +3,11 @@ This module is responsible for resolving (require) calls. It has all the logic
 for using the name of a module and find the corresponding URI.
 I suspect this file may be gone after a bit of refactoring."
 
-(local fennel (require :fennel))
 (local utils (require :fennel-ls.utils))
 
 (local sep (package.config:sub 1 1))
 
-(λ is_absolute [path]
+(λ absolute? [path]
   (or
     ;; windows
     (-> path
@@ -32,17 +31,30 @@ I suspect this file may be gone after a bit of refactoring."
   "Make every relative path be relative to every workspace."
   (let [result []]
     (each [path (path:gmatch "[^;]+")]
-      (if (is_absolute path)
+      (if (absolute? path)
         (table.insert result path)
         (each [_ workspace (ipairs (or ?workspaces []))]
           (table.insert result (join (utils.uri->path workspace) path)))))
     (table.concat result ";")))
 
-(λ lookup [{:configuration {: fennel-path} : root-uri} mod]
-  (case (or ;; TODO support lua ;; (fennel.searchModule mod (add-workspaces-to-path luapath [root-uri]))
-            (fennel.searchModule mod (add-workspaces-to-path fennel-path [root-uri])))
-    modname (utils.path->uri modname)
-    nil nil))
+(fn file-exists? [self uri]
+   (or (. self.preload uri)
+       (case (io.open (utils.uri->path uri))
+         f (do (f:close) true))))
+
+(λ lookup [{:configuration {: fennel-path} : root-uri &as self} mod]
+  (let [mod (mod:gsub "%." sep)
+        root-path (utils.uri->path root-uri)]
+    (accumulate [uri nil
+                 segment (fennel-path:gmatch "[^;]+")
+                 &until uri]
+      (let [segment (segment:gsub "%?" mod)
+            segment (if (absolute? segment)
+                      segment
+                      (join root-path segment))
+            segment (utils.path->uri segment)]
+        (if (file-exists? self segment)
+          segment)))))
 
 {: lookup
  : add-workspaces-to-path}

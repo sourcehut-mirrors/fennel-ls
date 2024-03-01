@@ -10,20 +10,23 @@ entire fennel-ls project is referring to the same object."
 (local utils (require :fennel-ls.utils))
 (local {: compile} (require :fennel-ls.compiler))
 
-(λ read-file [uri]
-  (with-open [fd (io.open (utils.uri->path uri))]
-    {:uri uri
-     :text (fd:read :*a)}))
+(λ read-file [self uri]
+  (let [text (case (. self.preload uri)
+               preload preload
+               _ (let [file (io.open (utils.uri->path uri))]
+                    (if file
+                      (let [body (file:read :*a)]
+                        (file:close)
+                        body)
+                      (error (.. "failed to open file" uri)))))]
+    {: uri : text}))
 
 (λ get-by-uri [self uri]
   (or (. self.files uri)
-      (let [file (read-file uri)]
+      (let [file (read-file self uri)]
         (compile self file)
         (tset self.files uri file)
         file)))
-
-(λ _get-by-path [self path]
-  (get-by-uri self (utils.path->uri path)))
 
 (λ get-by-module [self module]
   ;; check the cache
@@ -123,6 +126,7 @@ However, fennel-ls can fall back to positionEncoding=utf-16 (with a performance 
 
 (λ init-state [self params]
   (set self.files {})
+  (set self.preload {})
   (set self.modules {})
   (set self.root-uri params.rootUri)
   (set self.position-encoding (choose-position-encoding params))

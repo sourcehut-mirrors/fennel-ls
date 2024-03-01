@@ -9,19 +9,17 @@
       (set info.linedefined (or (?. sourcemap info.source info.linedefined 2) info.linedefined)))
     info))
 
-(require :test.capabilities-test)
-(require :test.completion-test)
-(require :test.diagnostic-test)
-(require :test.goto-definition-test)
-(require :test.hover-test)
-(require :test.json-rpc-test)
-(require :test.misc-test)
-(require :test.references-test)
-(require :test.rename-test)
-(require :test.settings-test)
-(require :test.string-processing-test)
+(local faith (require :faith))
 
-(let [{: passes : errors} (require :test.lust)]
-  (print (.. passes " passes. " errors " errors."))
-  (if (not= errors 0)
-    (os.exit errors)))
+(faith.run
+  [:test.json-rpc
+   :test.string-processing
+   :test.capabilities
+   :test.settings
+   :test.goto-definition
+   :test.hover
+   :test.completion
+   :test.references
+   :test.diagnostic
+   :test.rename
+   :test.misc])

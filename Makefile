@@ -25,7 +25,7 @@ clean:
 	rm -f $(EXE)
 
 test:
-	TESTING=1 $(FENNEL) $(OPTS) test/init.fnl
+	TESTING=1 $(FENNEL) $(OPTS) --add-fennel-path "./test/faith/?.fnl" test/init.fnl
 
 testall:
 	$(MAKE) test LUA=lua5.1

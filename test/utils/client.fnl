@@ -10,8 +10,9 @@
 (local ROOT-URI
   (.. "file://" ROOT-PATH))
 
+(local default-encoding :utf-8)
 (local default-params
-   {:capabilities {:general {:positionEncodings [:utf-8]}}
+   {:capabilities {:general {:positionEncodings [default-encoding]}}
     :clientInfo {:name "Neovim" :version "0.7.2"}
     :initializationOptions {}
     :processId 16245
@@ -50,40 +51,44 @@
         :version 1
         : text}})))
 
-(fn completion [self file line character]
+(fn pretend-this-file-exists! [self name text]
+  (tset self.server.preload name text))
+
+(fn completion [self file position]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/completion
-     {:position {: line : character}
+     {: position
       :textDocument {:uri file}})))
 
-(fn definition [self file line character]
+(fn definition [self file position]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/definition
-      {:position {: line : character}
+      {: position
        :textDocument {:uri file}})))
 
-(fn hover [self file line character]
+(fn hover [self file position]
   (dispatch.handle* self.server
      (message.create-request (next-id! self) :textDocument/hover
-       {:position {: line : character}
+       {: position
         :textDocument {:uri file}})))
 
-(fn references [self file line character ?includeDeclaration]
+(fn references [self file position ?includeDeclaration]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/references
-     {:position {: line : character}
+     {: position
       :textDocument {:uri file}
       :context {:includeDeclaration (not (not ?includeDeclaration))}})))
 
-(fn rename [self file line character newName]
+(fn rename [self file position newName]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/rename
-     {:position {: line : character}
+     {: position
       :textDocument {:uri file}
       : newName})))
 
 (set mt.__index
      {: open-file!
+      : pretend-this-file-exists!
       : completion
       : definition
       : hover
@@ -91,5 +96,6 @@
       : rename})
 
 {: create-client
+ : default-encoding
  : ROOT-URI
  : ROOT-PATH}
