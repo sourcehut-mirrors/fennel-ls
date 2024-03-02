@@ -161,7 +161,7 @@ a user-written file.
   ;; for example, if I'm searching for "foo.bar.baz", my immediate priority is to find foo,
   ;; and the stack has ["baz" "bar"]. "bar" is at the "top"/"end" of the stack as the next key to search.
   (if (sym? symbol)
-    (let [split (utils.multi-sym-split symbol (if ?byte (+ 1 (- ?byte symbol.bytestart))))
+    (let [split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))
           stack (stack-add-split! [] split)]
 
       (case (docs.get-global-metadata (. split 1))

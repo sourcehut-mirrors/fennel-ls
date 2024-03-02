@@ -91,8 +91,7 @@ new message handler `msgh`.")
 (fn test-multisym []
   (check "(local x {:foo 10}) x.foo|" "```fnl\n10\n```")
   (check "(local x {:foo 10}) x.|foo" "```fnl\n10\n```")
-  ;; TODO make it pick the other side of the multisym
-  ;; (check "(local x {:foo 10}) x|.foo" "```fnl\n{:foo 10}\n```")
+  (check "(local x {:foo 10}) x|.foo" "```fnl\n{:foo 10}\n```")
   (check "(local x {:foo 10}) |x.foo" "```fnl\n{:foo 10}\n```")
   (check "(local x {:foo \"hello\"}) x.foo|" "```fnl\n:hello\n```")
 

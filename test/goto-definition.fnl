@@ -178,9 +178,8 @@
   (check "(local a {:b {:c =={:d #\"hi\"}==}})
           (a.b.|c.d)")
 
-  ;; TODO fix the multisym splitter
-  ; (check "(local a {:b {:c =={:d #\"hi\"}==}})
-  ;         (a.b.c|.d)"))
+  (check "(local a {:b {:c =={:d #\"hi\"}==}})
+          (a.b.c|.d)")
 
 
 

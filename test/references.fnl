@@ -35,8 +35,7 @@
   (check "(fn x| []) ==x==")
   (check "(fn x [])| x")
   (check "(let [x nil] ==|x.y== ==x.z==)")
-  ;; TODO decide this the other way
-  ;; (check "(let [x nil] ==x|.y== ==x.z==)")
+  (check "(let [x nil] ==x|.y== ==x.z==)")
   (check "(let [x nil] x.|y x.z)")
   (check "(let [x nil] x.y| x.z)")
   (check "(let [x| 10]
