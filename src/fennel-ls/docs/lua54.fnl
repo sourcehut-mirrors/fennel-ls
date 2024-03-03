@@ -1122,7 +1122,9 @@ This function returns `table`.
 To change the metatable of other types from Lua code, you must use the
 debug library ([§6.10](https://lua.org/manual/5.4/manual.html#6.10))."}}
    :string
-   {:metadata {:fnl/docstring "TODO"}
+   {:metadata {:fnl/docstring "This library provides generic functions for string manipulation, such as finding and extracting substrings, and pattern matching. When indexing a string in Lua, the first character is at position 1 (not at 0, as in C). Indices are allowed to be negative and are interpreted as indexing backwards, from the end of the string. Thus, the last character is at position -1, and so on.
+
+You can use the string functions in object-oriented style. For instance, `(string.byte s i)` can be written as `(s:byte i)`"}
     :fields
     {:byte {:metadata {:fnl/arglist [:s :?i :?j] :fnl/docstring
                        "Returns the internal numeric codes of the characters `(. s i)`,
@@ -1401,7 +1403,9 @@ lowercase letters changed to uppercase.
 All other characters are left unchanged.
 The definition of what a lowercase letter is depends on the current locale."}}}}
    :table
-   {:metadata {:fnl/docstring "TODO"}
+   {:metadata {:fnl/docstring "This library provides generic functions for table manipulation.
+
+Remember that, whenever an operation needs the length of a table, all caveats about the length operator apply. All functions ignore non-numeric keys in the tables given as arguments."}
     :fields
     {:concat {:metadata {:fnl/arglist [:list :?sep :?i :?j] :fnl/docstring
                          "Given a list where all elements are strings or numbers,
