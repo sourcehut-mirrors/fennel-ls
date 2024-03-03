@@ -1417,7 +1417,7 @@ If `i` is greater than `j`, returns the empty string."}}
      :insert {:metadata {:fnl/arglist [:list :?pos :value] :fnl/docstring
                          "Inserts element `value` at position `pos` in `list`,
 shifting up the elements
-`(. list pos), (. list (+ pos 1)), ...;, (. list (length list))`.
+`(. list pos), (. list (+ pos 1)), ..., (. list (length list))`.
 The default value for `pos` is `(+ (length list) 1)`,
 so that a call `(table.insert t x)` inserts `x` at the end
 of the list `t`."}}
@@ -1441,7 +1441,7 @@ if some arguments are `nil`."}}
 returning the value of the removed element.
 When `pos` is an integer between 1 and `(length list)`,
 it shifts down the elements
-`(. list (+ pos 1)), (. list (+ pos 2)), ...;, (. list (length list))`
+`(. list (+ pos 1)), (. list (+ pos 2)), ..., (. list (length list))`
 and erases element `(. list (length list))`;
 The index `pos` can also be 0 when `(length list)` is 0,
 or `(length list) + 1`.
