@@ -1,6 +1,7 @@
 "Language
-This module is for searching through the data provided by compiler.fnl. It
-provides functions to search through a file.
+This module is for searching through the data provided by compiler.fnl.
+It searches through a file to find information about symbols that appear
+in the file.
 
 Imagine you have the following code.
 ```fnl
@@ -23,18 +24,18 @@ The search failed, and encountered something that isn't implemented.
 # A definition: `{:definition _ :file _}`
 The search succeeded and found a file with a user definition of a value.
 
-# A binding: `{:definition _ :file _ :binding _ :multival ?_ :keys ?_ :referenced-by ?_ :var? ?true :fields ?extra_fields}`
+# A document: `{:metadata {:fnl/docstring _ :fnl/arglist ?_} :fields ?{<key> <document>}}`
+A document is a definition that doesn't come from user code. For example,
+searching `table.insert` will find a document, but that info does not come from
+a user-written file.
+
+# A binding (if opts.stop-early?): `{:definition _ :file _ :binding _ :multival ?_ :keys ?_ :referenced-by ?_ :var? ?true :fields ?extra_fields}`
 If you set the option `opts.stop-early?`, search may stop at a binding instead
 of a true definition. A binding is a place where an identifier gets introduced.
 
 In the code example above, a search on the final symbol `z` would normally
 find the definition `10`, but if `opts.stop-early?` is set, it would find
 {:binding z :definition y}, referring to the `(local z y)` binding.
-
-# A document: `{:metadata {:fnl/docstring _ :fnl/arglist ?_ :fnl-ls/fields ?_}}`
-A document is a definition that doesn't come from user code. For example,
-searching `table.insert` will find a document, but that info does not come from
-a user-written file.
 "
 
 (local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
@@ -155,17 +156,24 @@ a user-written file.
         nil)))
 
 
-(λ search-main [self file symbol opts ?byte]
+;; the options thing is getting out of hand
+(λ search-main [self file symbol opts initialization-opts]
   "Find the definition of a symbol"
+
+  (assert (= (type initialization-opts) :table))
   ;; The stack is the multi-sym parts still to search
   ;; for example, if I'm searching for "foo.bar.baz", my immediate priority is to find foo,
   ;; and the stack has ["baz" "bar"]. "bar" is at the "top"/"end" of the stack as the next key to search.
   (if (sym? symbol)
-    (let [split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))
-          stack (stack-add-split! [] split)]
+    (let [stack
+          (if initialization-opts.stack
+              initialization-opts.stack
+              (let [?byte initialization-opts.byte
+                    split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))]
+                (stack-add-split! [] split)))]
 
-      (case (docs.get-global-metadata (. split 1))
-        document (search-document self document (stack-add-split! stack split) opts)
+      (case (docs.get-global-metadata (utils.multi-sym-base symbol))
+        document (search-document self document stack opts)
         _ (case (. file.references symbol)
             ref (search-assignment self file ref stack opts)
             _ (case (. file.definitions symbol)
@@ -247,7 +255,7 @@ a user-written file.
 (λ find-nearest-definition [self file symbol ?byte]
   (if (. file.definitions symbol)
     (. file.definitions symbol)
-    (search-main self file symbol {:stop-early? true} ?byte)))
+    (search-main self file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
  : find-nearest-definition

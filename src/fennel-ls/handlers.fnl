@@ -78,7 +78,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         (. file.require-calls parent)
         (language.search-ast self file parent [] {:stop-early? true})
         ;; regular symbol
-        (language.search-main self file symbol {:stop-early? true} byte))
+        (language.search-main self file symbol {:stop-early? true} {: byte}))
       result
       (if result.file
         (message.range-and-uri self result.file (or result.binding result.definition)))
@@ -107,7 +107,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [file (state.get-by-uri self uri)
         byte (utils.position->byte file.text position self.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
-      symbol (language.search-main self file symbol {} byte)
+      symbol (language.search-main self file symbol {} {: byte})
       result {:contents (formatter.hover-format result)
               :range (message.ast->range self file symbol)}
       (catch _ nil))))
@@ -153,31 +153,32 @@ Every time the client sends a message, it gets handled by a function in the corr
       (make-completion-item self file k scope))))
 
 (λ field-completion [self file symbol split]
-  (case (. file.references symbol)
-    ref
-    (let [stack (fcollect [i (- (length split) 1) 2 -1]
-                  (. split i))
-          last-found-binding []]
-      (case (language.search-assignment self file ref stack {:save-last-binding last-found-binding})
-        {: definition : file}
-        (case (values definition (type definition))
-          ;; fields of a string are hardcoded to "string"
-          (_str :string) (icollect [label _ (pairs string)]
-                           {: label :kind kinds.Field :textEdit {:newText label}})
-          ;; fields of a table
-          (tbl :table) (let [keys []]
-                         (icollect [label _ (pairs tbl) &into keys]
-                           label)
-                         (when (?. last-found-binding 1 :fields)
-                           (icollect [label _ (pairs (. last-found-binding 1 :fields)) &into keys]
-                             label))
-                         (icollect [_ label (pairs keys)]
-                           (if (= (type label) :string)
-                             (case (language.search-ast self file tbl [label] {})
-                               def (formatter.completion-item-format label def)
-                               _ {: label :kind kinds.Field :textEdit {:newText label}})))))
-                
-        _ nil))))
+  (let [stack (fcollect [i (- (length split) 1) 2 -1]
+                (. split i))
+        last-found-binding []
+        result (language.search-main self file symbol {:save-last-binding last-found-binding} {: stack})]
+    (case result
+      {: definition : file}
+      (case (values definition (type definition))
+        ;; fields of a string are hardcoded to "string"
+        (_str :string) (icollect [label _ (pairs string)]
+                         {: label :kind kinds.Field :textEdit {:newText label}})
+        ;; fields of a table
+        (tbl :table) (let [keys []]
+                       (icollect [label _ (pairs tbl) &into keys]
+                         label)
+                       (when (?. last-found-binding 1 :fields)
+                         (icollect [label _ (pairs (. last-found-binding 1 :fields)) &into keys]
+                           label))
+                       (icollect [_ label (pairs keys)]
+                         (if (= (type label) :string)
+                           (case (language.search-ast self file tbl [label] {})
+                             def (formatter.completion-item-format label def)
+                             _ {: label :kind kinds.Field :textEdit {:newText label}})))))
+      {: metadata : fields}
+      (icollect [label info (pairs fields)]
+        (formatter.completion-item-format label info))
+      _ nil)))
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)

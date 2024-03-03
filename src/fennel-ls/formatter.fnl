@@ -99,17 +99,17 @@ fntype is one of fn or λ or lambda"
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
-(λ completion-item-format [label def]
+(λ completion-item-format [label result]
   "Makes a completion item"
   (doto
-    (case (analyze-fn def.definition)
+    (case (analyze-fn result.definition)
       {:fntype _} {: label
                    :kind (if (label:find ":") kinds.Method kinds.Function)
                    :textEdit {:newText label}}
       _ {: label
          :kind kinds.Variable
          :textEdit {:newText label}})
-    (tset :documentation (hover-format def))))
+    (tset :documentation (hover-format result))))
 
 {: hover-format
  : completion-item-format}

@@ -191,6 +191,21 @@
 
   nil)
 
+(fn test-module []
+  (check "(coroutine.y|"
+    [{:label "yield"
+      :documentation #(and $.value ($.value:find "```fnl\n(yield ...)\n```" 1 true))}]
+    ["coroutine" "_G" "do"
+     {:documentation #(= nil $)}])
+  (check "(local c coroutine)
+          (c.y"
+    [{:label "yield"}]
+    ["coroutine" "_G" "do"])
+  (check "(local t table)
+          (t.i"
+    ["insert"]
+    [{:documentation #(= nil $)}])
+  nil)
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
 ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
@@ -221,4 +236,5 @@
  : test-local-in-macro
  : test-fn-arg
  : test-field
- : test-docs}
+ : test-docs
+ : test-module}

@@ -158,6 +158,15 @@ WARNING: this is only used in the test code, not in the real language server"
       (icollect [word (: (.. symbol ".") :gmatch "(.-)[.:]")]
         word))))
 
+(fn multi-sym-base [symbol]
+  (if (or (= symbol ".")
+          (= symbol "..")
+          (= symbol "...")
+          (= symbol ":")
+          (= symbol "?."))
+    (tostring symbol)
+    (pick-values 1 (: (tostring symbol) :match "[^.:]*"))))
+
 (λ type= [val typ]
   (= (type val) typ))
 
@@ -184,6 +193,7 @@ WARNING: this is only used in the test code, not in the real language server"
  : apply-changes
  : apply-edits
  : multi-sym-split
+ : multi-sym-base
  : get-ast-info
  : uniq-by
  : type=
