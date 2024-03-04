@@ -188,6 +188,7 @@
 ;; unnecessary (do) in body position
 ;; duplicate keys in kv table
 ;; (tset <sym> <str>) --> (set <sym>.<str>)
+;; (tset <sym> <any>) --> (set (. <sym> <any>))
 ;; {&as x} and [&as x] pattern with no other matches
 ;; Unused variables / fields (maybe difficult)
 ;; discarding results to various calls, such as unpack, values, etc

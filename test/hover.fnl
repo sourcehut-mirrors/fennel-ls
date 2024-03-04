@@ -6,9 +6,13 @@
 (fn check [file-contents ?response-string]
   (let [{: self : uri : cursor} (create-client-with-files file-contents)
         [message] (self:hover uri cursor)]
-    (if ?response-string
+    (if (= (type ?response-string) :string)
       (faith.= ?response-string (?. message :result :contents :value)
                (.. "Invalid hover message\nfrom:    " (view file-contents)))
+      (= (type ?response-string) :function)
+      (faith.is (?response-string (?. message :result :contents :value))
+               (.. "Invalid hover message\nfrom:    " (view file-contents)))
+
 
       (faith.= null message.result))))
 
@@ -58,6 +62,7 @@ and [`io.write`](https://lua.org/manual/5.4/manual.html#pdf-io.write).")
 ```
 This function is similar to [`pcall`](https://lua.org/manual/5.4/manual.html#pdf-pcall), except that it sets a
 new message handler `msgh`.")
+  (check "(table.inser|t [] :message" #($:find "```fnl\n(insert list ?pos value)\n```" 1 true))
   nil)
 
 (fn test-functions []
