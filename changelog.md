@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.2
+
+### Features
+* Completions and docs for `coroutine`, `debug`, `io`, `math`, `os`, `string`, `table`, `utf8` and their fields.
+* Global metadata can follow locals: With `(local p print)`, looking up `p` will show `print`'s information.
+* New lint for erroneous calls to (values) that are in a position that would get truncated immediately.
+* Upgrade to Fennel 1.4.2
+
+### Bug Fixes
+* `(-?> x)` and similar macros no longer give a warning (even in fennel 1.4.1 before my -?> patch landed)
+* Fixed off-by-one when measuring the cursor position on a multisym. For example, `table|.insert` (where `|` is the cursor) will correctly give information about `table` instead of `insert`.
+* Can give completions in the contexts "(let [x " and "(if ", which previously failed to compile.
+* Fields added to a table via `(fn t.field [] ...)` now properly appear in completions
+* `(include)` is now treated like `(require)`
+
+### Misc
+* Switched testing framework to faith
+* Tests abstract out the filesystem
+* Tests use the "|" character to mark the cursor, instead of manually specifying coordinates
+
 ## 0.1.1
 
 ### Features
