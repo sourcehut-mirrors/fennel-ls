@@ -1,35 +1,45 @@
 # fennel-ls
-A language server for fennel.
+A language server for Fennel.
 Supports Go-to-definition, and a little bit of completion suggestions.
 Fennel-LS uses static analysis, and does not execute your code.
 
-For now, you can ask fennel-ls to **treat your file as a macro file** if the very first characters in the file exactly match `;; fennel-ls: macro-file`. Expect this to change at some point in the future when I come up with a better way to specify which files are meant to be macro files.
+You can ask fennel-ls to **treat your file as a macro file** if the first line
+exactly matches `;; fennel-ls: macro-file`. Expect this to change at some point
+in the future when I come up with a better way to specify which files are meant
+to be macro files.
 
-## Building / Installing
-The build dependencies are `make` and `lua`. Lua 5.1 or higher is needed. Every other dependency is already included in the repository. See the License section at the bottom of the readme if you care about what other dependencies are being used.
+## Table of Contents
 
-Pick your favorite command to build and install the language server.
+- [Installation](#installation)
+- [Usage](#usage)
 
+## Installation
+I recommend building from source. I promise it's really easy! You need to have `make` and `lua` (5.1+). Every other dependency is included. See the License section at the bottom of this file for more info on the bundled dependencies.
+### Make (writes the file `/usr/local/bin/fennel-ls`)
 ```sh
-make && sudo make install # to install into /usr/local/bin
-make && make install PREFIX=$HOME # if you have ~/bin on your $PATH
+make && sudo make install
+```
+
+### Make (writes the file `$HOME/bin/fennel-ls`)
+```sh
+make install PREFIX=$HOME
+```
+
+### Make (writes the file `./fennel-ls`)
+```sh
+make
 ```
 
 ### NixOS
-
-If you are using NixOS, you may use the included `/flake.nix` or `/default.nix`
-to to build the language server configure a development environment.
+If you are using NixOS, you can use the included `/flake.nix` or `/default.nix`.
 
 ### LuaRocks
-
-If you are specifically the Neovim plugin `mason.nvim`, or have some other
-reason to support building on Windows, you may want to use the command:
+I recommend just using `make` if possible, but if not, `fennel-ls` can be built with LuaRocks.
 ```sh
 luarocks install fennel-ls --tree /path/to/your/new/luarocks/tree
 ```
 
-## Set Up Your Editor
-
+## Usage
 Once you've installed the binary somewhere on your computer, the next step is to set up your text editor! Each editor has a different way of doing it.
 
 If you are using vim+lspconfig, it is pretty simple:
@@ -48,7 +58,7 @@ Generally you need to give this information to your editor:
 * "fennel-ls" is a language server program on the $PATH
 * it should be run for .fnl files.
 
-## Batch mode
+## Usage
 
 You can gather diagnostics without connecting your editor:
 

@@ -2,7 +2,7 @@
 ([X] = complete,  [ ] = planned)
 
 My current goal is to work on completions a little bit more.
-- [ ] create a release
+- [X] create a release
 
 refactor brainstorm:
 - [ ] get rid of `bytes` stuff and use "stack" everywhere
@@ -66,7 +66,10 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [.] `unpack` or `values` into a special
     - [ ] `do`/`values` with only one inner form
     - [ ] redundant `do` as the last/only item in a form that accepts a "body"
-    - [ ] `var` forms that could be `local`
+    - [ ] `values`/`unpack` in a non tail position
+    - [ ] numbers and strings in a non tail position
+    - [ ] deprecated specials/macros
+    - [X] `var` forms that could be `local`
     - [ ] Arity checking
       - [ ] Too many args (assuming there is no ... argument)
       - [ ] Too few args (assuming the last argument is statically countable, and also account for ?optional arguments)
@@ -76,6 +79,7 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] Dead code (I'm not sure what sort of things cause dead code)
     - [ ] Unused fields (difficult)
     - [ ] unification in a `match` pattern (difficult)
+    - [ ] unused values in `λ` (difficult)
     - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
     - [ ] Type Checking
 - [X] Hover over a symbol for documentation
@@ -102,3 +106,11 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] arbitrary fields (may affect code behavior, may modify other files)
 - [ ] formatting with fnlfmt
 - [ ] Type annotations? Global type inference?
+
+
+fn-arg-nil: Function arguments are assumed to be nil in a function body, until there's a type system to give more information.
+
+hashfn: Hash functions currently don't work well.
+
+refs-dedup: 
+
