@@ -161,7 +161,7 @@
     [])
 
   (local things-that-are-allowed-to-have-missing-docs
-    {:lua 1 :set-forcibly! 1 :unpack 1 :setfenv 1 :getfenv 1 :module 1 :newproxy 1 :gcinfo 1 :loadstring 1 :bit 1 :jit 1})
+    {:lua 1 :set-forcibly! 1 :unpack 1 :setfenv 1 :getfenv 1 :module 1 :newproxy 1 :gcinfo 1 :loadstring 1 :bit 1 :jit 1 :bit32 1})
 
   (check "("
     [;; builtin specials
