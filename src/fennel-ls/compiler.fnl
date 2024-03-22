@@ -240,6 +240,7 @@ identifiers are declared / referenced in which places."
           (= 1 (msg:find "expected whitespace before opening delimiter"))
           (= 1 (msg:find "malformed multisym"))
           (= 1 (msg:find "expected at least one pattern/body pair"))
+          (= 1 (msg:find "module not found"))
           (when (and (sequence? ?ast)
                      (= 1 (% (length ?ast ) 2))
                      (= 1 (msg:find "expected even number of name/value bindings")))
