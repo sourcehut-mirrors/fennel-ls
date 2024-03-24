@@ -107,9 +107,9 @@ You can't load external lint rules with fennel-ls, but I would love to receive p
 fennel-ls is licensed under the MIT license. See LICENSE for more info.
 This project also contains files from other projects:
 * test/pl/* comes from [Penlight](https://github.com/lunarmodules/Penlight) [MIT license]
-  * (LICENSE)[test/pl/LICENSE.md]
+  * [LICENSE](test/pl/LICENSE.md)
 * src/fennel-ls/json/* is modified, but is originally from [json.lua](https://github.com/rxi/json.lua) [MIT license]
-  * (LICENSE)[src/fennel-ls/json/LICENSE]
+  * [LICENSE](src/fennel-ls/json/LICENSE)
 * src/fennel-ls/docs/* contains information from the [lua](https://lua.org) reference [MIT license]
 * test/faith/faith.lua is from [faith](https://git.sr.ht/~technomancy/faith) [MIT license]
 * fennel and src/fennel.lua are compiled from [fennel](https://git.sr.ht/~technomancy/fennel) [MIT license]
