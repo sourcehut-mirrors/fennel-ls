@@ -10,7 +10,7 @@
                                     :method "initialize"
                                     :params {:capabilities {:general {:positionEncodings [:utf-8]}}
                                              :clientInfo {:name "fennel-ls"}
-                                             :rootUri "file://"}}))]
+                                             :rootUri "file://."}}))]
     (var should-err? false)
     (each [_ filename (ipairs filenames)]
       (let [file (state.get-by-uri server (.. "file://" filename))]
