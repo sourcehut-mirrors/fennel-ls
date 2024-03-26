@@ -21,5 +21,6 @@
    :test.completion
    :test.references
    :test.diagnostic
+   :test.code-action
    :test.rename
    :test.misc])

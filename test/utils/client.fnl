@@ -86,6 +86,13 @@
       :textDocument {:uri file}
       : newName})))
 
+(fn code-action [self file range]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :textDocument/codeAction
+     {: range
+      :textDocument {:uri file}
+      :context {:diagnostics []}})))
+
 (set mt.__index
      {: open-file!
       : pretend-this-file-exists!
@@ -93,7 +100,8 @@
       : definition
       : hover
       : references
-      : rename})
+      : rename
+      : code-action})
 
 {: create-client
  : default-encoding

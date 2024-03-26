@@ -9,6 +9,10 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local {:scopes {:global {: specials}}}
   (require :fennel.compiler))
 
+(local diagnostic-mt {:__json_exclude_keys {:quickfix true}})
+(fn diagnostic [self]
+  (setmetatable self diagnostic-mt))
+
 (local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1 "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
 (fn special? [item]
   (and (sym? item)
@@ -28,11 +32,14 @@ the `file.diagnostics` field, filling it with diagnostics."
                             &until reference]
                  (or (= ref.ref-type :read)
                      (= ref.ref-type :mutate)))))
-    {:range (message.ast->range self file symbol)
-     :message (.. "unused definition: " (tostring symbol))
-     :severity message.severity.WARN
-     :code 301
-     :codeDescription "unused-definition"}))
+    (diagnostic
+      {:range (message.ast->range self file symbol)
+       :message (.. "unused definition: " (tostring symbol))
+       :severity message.severity.WARN
+       :code 301
+       :codeDescription "unused-definition"
+       :quickfix #[{:range (message.ast->range symbol)
+                    :newText (.. "_" (tostring symbol))}]})))
 
 (λ unknown-module-field [self file]
   "any multisym whose definition can't be found through a (require) call"
@@ -73,15 +80,21 @@ the `file.diagnostics` field, filling it with diagnostics."
                  (sym? (. last-item 1) :table.unpack))
              (. file.lexical last-item)
              (. file.lexical call))
-     {:range (message.ast->range self file last-item)
-      :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
-                   (if (sym? op "..")
-                     (let [unpackme (view (. last-item 2))]
-                       (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
-                     (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
-      :severity message.severity.WARN
-      :code 304
-      :codeDescription "bad-unpack"})))
+      (diagnostic
+        {:range (message.ast->range self file last-item)
+         :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
+                      (if (sym? op "..")
+                        (let [unpackme (view (. last-item 2))]
+                          (.. " Use (table.concat " unpackme ") instead of (.. (unpack " unpackme "))"))
+                        (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
+         :severity message.severity.WARN
+         :code 304
+         :codeDescription "bad-unpack"
+         :quickfix (if (and (= (length call) 2)
+                            (= (length (. call 2)) 2)
+                            (sym? op ".."))
+                     #[{:range (message.ast->range self file call)
+                        :newText (.. "(table.concat " (view (. call 2 2)) ")")}])}))))
 
 (λ var-never-set [self file symbol definition]
   (if (and definition.var? (not definition.var-set) (. file.lexical symbol))
@@ -94,15 +107,23 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 (λ op-with-no-arguments [self file op call]
   "A call like (+) that could be replaced with a literal"
-  (if (and (op? op)
-           (not (. call 2))
-           (. file.lexical call)
-           (not= nil (. op-identity-value (tostring op))))
-    {:range  (message.ast->range self file call)
-     :message (.. "write " (view (. op-identity-value (tostring op))) " instead of (" (tostring op) ")")
-     :severity message.severity.WARN
-     :code 306
-     :codeDescription "op-with-no-arguments"}))
+  (let [identity (. op-identity-value (tostring op))]
+    (if (and (op? op)
+             (not (. call 2))
+             (. file.lexical call)
+             (not= nil identity))
+      (diagnostic
+        {:range  (message.ast->range self file call)
+         :message (.. "write " (view identity) " instead of (" (tostring op) ")")
+         :severity message.severity.WARN
+         :code 306
+         :codeDescription "op-with-no-arguments"
+         :quickfix #[{:range (message.ast->range self file call)
+                      :newText (view identity)}]}))))
+
+; (fn quickfix.op-with-no-arguments [item]
+;   {:range item.range
+;    :newText (tostring item.data)})
 
 (λ multival-in-middle-of-call [self file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do

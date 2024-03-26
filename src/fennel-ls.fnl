@@ -10,6 +10,7 @@
                                     :method "initialize"
                                     :params {:capabilities {:general {:positionEncodings [:utf-8]}}
                                              :clientInfo {:name "fennel-ls"}
+                                             ; " don't think this is a valid URI, but I want to operate in the current directory
                                              :rootUri "file://."}}))]
     (var should-err? false)
     (each [_ filename (ipairs filenames)]

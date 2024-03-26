@@ -11,7 +11,6 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local language (require :fennel-ls.language))
 (local formatter (require :fennel-ls.formatter))
 (local utils (require :fennel-ls.utils))
-
 (local fennel (require :fennel))
 
 (local requests [])
@@ -33,7 +32,7 @@ Every time the client sends a message, it gets handled by a function in the corr
    :referencesProvider {:workDoneProgress false}
    ;; :documentHighlightProvider nil
    ;; :documentSymbolProvider nil
-   ;; :codeActionProvider nil
+   :codeActionProvider {:workDoneProgress false}
    ;; :codeLensProvider nil
    ;; :documentLinkProvider nil
    ;; :colorProvider nil
@@ -229,6 +228,23 @@ Every time the client sends a message, it gets handled by a function in the corr
         {:changes {definition.file.uri usages}})
       (catch _ nil))))
 
+(fn pos<= [pos-1 pos-2]
+  (or (< pos-1.line pos-2.line)
+      (and (= pos-1.line pos-2.line)
+           (<= pos-1.character pos-2.character))))
+
+(fn overlap? [range-1 range-2]
+  (and (pos<= range-1.start range-2.end)
+       (pos<= range-2.start range-1.end)))
+
+(λ requests.textDocument/codeAction [self send {: range :textDocument {: uri} &as params}]
+  (let [file (state.get-by-uri self uri)]
+    (icollect [_ diagnostic (ipairs file.diagnostics)]
+      (if (and (overlap? diagnostic.range range)
+               diagnostic.quickfix)
+        {:title diagnostic.codeDescription
+         :edit {:changes {uri (diagnostic.quickfix)}}}))))
+
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (state.set-uri-contents self uri (utils.apply-changes file.text contentChanges self.position-encoding))
@@ -243,12 +259,12 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ notifications.textDocument/didSave [self send {:textDocument {: uri}}]
   ;; TODO be careful about which modules need to be recomputed, and also eagerly flush existing files
-  (tset (require :fennel) :macro-loaded []))
+  (set fennel.macro-loaded []))
 
 (λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (set file.open? false)
-  (tset (require :fennel) :macro-loaded [])
+  (set fennel.macro-loaded [])
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (state.flush-uri self uri))
 
