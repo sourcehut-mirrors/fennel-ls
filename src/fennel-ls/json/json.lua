@@ -22,10 +22,15 @@
 -- SOFTWARE.
 --
 
+-- Modifications have been made to this file. The ORIGINAL code can be found at
+-- this URL: https://github.com/rxi/json.lua
+
 local json = { _version = "0.1.2" }
 
 -- unique placeholder for "null"
 json.null = { _ = "nil" }
+
+local view = require("fennel").view
 
 -------------------------------------------------------------------------------
 -- Encode
@@ -73,7 +78,7 @@ local function encode_table(val, stack)
     local n = 0
     for k in pairs(val) do
       if type(k) ~= "number" then
-        error("invalid table: mixed or invalid key types")
+        error("invalid table: mixed or invalid key types in " .. view(val))
       end
       n = n + 1
     end
@@ -89,11 +94,15 @@ local function encode_table(val, stack)
 
   else
     -- Treat as an object
+    local mt = getmetatable(val)
+    local exclude = mt and mt.__json_exclude_keys
     for k, v in pairs(val) do
-      if type(k) ~= "string" then
-        error("invalid table: mixed or invalid key types")
+      if not (exclude and exclude[k]) then
+        if type(k) ~= "string" then
+          error("invalid table: mixed or invalid key types in " .. view(val))
+        end
+        table.insert(res, encode(k, stack) .. ":" .. encode(v, stack))
       end
-      table.insert(res, encode(k, stack) .. ":" .. encode(v, stack))
     end
     stack[val] = nil
     return "{" .. table.concat(res, ",") .. "}"
