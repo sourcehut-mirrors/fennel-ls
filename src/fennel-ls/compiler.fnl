@@ -241,10 +241,15 @@ identifiers are declared / referenced in which places."
           (= 1 (msg:find "malformed multisym"))
           (= 1 (msg:find "expected at least one pattern/body pair"))
           (= 1 (msg:find "module not found"))
-          (when (and (sequence? ?ast)
-                     (= 1 (% (length ?ast ) 2))
-                     (= 1 (msg:find "expected even number of name/value bindings")))
+          (when (and (= 1 (msg:find "expected even number of name/value bindings"))
+                     (sequence? ?ast)
+                     (= 1 (% (length ?ast) 2)))
             (table.insert ?ast (sym :nil))
+            true)
+          (when (and (= 1 (msg:find "expected a function, macro, or special to call"))
+                     (sequence? ?ast)
+                     (= (length ?ast) 0))
+            (table.insert ?ast (sym :do))
             true)))
 
 
