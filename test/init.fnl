@@ -16,6 +16,7 @@
    :test.string-processing
    :test.capabilities
    :test.settings
+   :test.diagnostic
    :test.goto-definition
    :test.hover
    :test.completion

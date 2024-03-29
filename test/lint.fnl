@@ -36,44 +36,6 @@
                                            :escape-newlines? true})))
         (table.remove diagnostics i)))))
 
-(fn test-compile-error []
-  (check "(do do)"
-         [{:message "tried to reference a special form without calling it"
-           :range {:start {:character 4 :line 0}
-                   :end   {:character 6 :line 0}}}] [])
-  nil)
-
-(fn test-parse-error []
-  (check "(do (print :hello(]"
-         [{:message "expected whitespace before opening delimiter ("
-           :range {:start {:character 17 :line 0}
-                   :end   {:character 17 :line 0}}}] [])
-  nil)
-
-(fn test-macro-error []
-  (check "(match)"
-         [{:range {:start {:character 0 :line 0}
-                   :end   {:character 7 :line 0}}}] [])
-  nil)
-
-(fn test-multiple-errors []
-  (check "(unknown-global-1 unknown-global-2)"
-         [{:message "unknown identifier: unknown-global-1"}
-          {:message "unknown identifier: unknown-global-2"}] [])
-  (check "(let [x unknown-global"
-         [{:message "unknown identifier: unknown-global"}
-          {:message "expected body expression"}
-          {:message "expected closing delimiters )]"}] [])
-  (check "(let [x ()]
-            (print +))"
-         [{:message "expected a function, macro, or special to call"}
-          {:message "tried to reference a special form without calling it"}] [])
-  (check "(let [x]
-            (print +))"
-         [{:message "expected even number of name/value bindings"}
-          {:message "tried to reference a special form without calling it"}] [])
-  nil)
-
 (fn test-unused []
   (check "(local x 10)"
          [{:message "unused definition: x"
@@ -94,6 +56,8 @@
           [{:code 301
             :range {:start {:character 5 :line 0}
                     :end   {:character 6 :line 0}}}] [])
+  ;; setting a field without reading is okay
+  (check "(fn [a b] (set a.x 10) (fn b.f []))" [] [{}])
   nil)
 
 (fn test-ampersand []
@@ -112,11 +76,6 @@
   (check "(fn [x & more]
             (print x more))"
          [] [{:message "unused definition: &"} {}])
-  nil)
-
-(fn test-no-warnings []
-  ;; setting a field without reading is okay
-  (check "(fn [a b] (set a.x 10) (fn b.f []))" [] [{}])
   nil)
 
 (fn test-unknown-module-field []
@@ -208,13 +167,8 @@
 
 ;; unused variable, when a function binding is only used in its body, and the function value is discarded
 
-{: test-compile-error
- : test-parse-error
- : test-macro-error
- : test-multiple-errors
- : test-unused
+{: test-unused
  : test-ampersand
- : test-no-warnings
  : test-unknown-module-field
  : test-unnecessary-colon
  : test-unset-var
