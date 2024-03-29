@@ -20,7 +20,7 @@
    :test.hover
    :test.completion
    :test.references
-   :test.diagnostic
+   :test.lint
    :test.code-action
    :test.rename
    :test.misc])

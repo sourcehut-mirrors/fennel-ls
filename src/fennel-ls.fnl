@@ -1,7 +1,7 @@
 (local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
 (local state (require :fennel-ls.state))
-(local diagnostics (require :fennel-ls.diagnostics))
+(local lint (require :fennel-ls.lint))
 
 (λ check [filenames]
   (let [server (doto {}
@@ -15,7 +15,7 @@
     (var should-err? false)
     (each [_ filename (ipairs filenames)]
       (let [file (state.get-by-uri server (.. "file://" filename))]
-        (diagnostics.check server file)
+        (lint.check server file)
         (each [_ {: message :range {: start}} (ipairs file.diagnostics)]
           (print (: "%s:%s:%s %s" :format filename
                     ;; LSP line numbers are zero-indexed, but Emacs and Vim both use

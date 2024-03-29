@@ -5,7 +5,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
  and a textDocument/defintion request will call requests.textDocument/definition)"
 
-(local diagnostics (require :fennel-ls.diagnostics))
+(local lint (require :fennel-ls.lint))
 (local message (require :fennel-ls.message))
 (local state (require :fennel-ls.state))
 (local language (require :fennel-ls.language))
@@ -253,12 +253,12 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
   (local file (state.get-by-uri self uri))
   (state.set-uri-contents self uri (utils.apply-changes file.text contentChanges self.position-encoding))
-  (diagnostics.check self file)
+  (lint.check self file)
   (send (message.diagnostics file)))
 
 (λ notifications.textDocument/didOpen [self send {:textDocument {: languageId : text : uri}}]
   (local file (state.set-uri-contents self uri text))
-  (diagnostics.check self file)
+  (lint.check self file)
   (send (message.diagnostics file))
   (set file.open? true))
 
