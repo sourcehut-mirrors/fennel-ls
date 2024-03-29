@@ -27,6 +27,9 @@ clean:
 test:
 	TESTING=1 $(FENNEL) $(OPTS) --add-fennel-path "./test/faith/?.fnl" test/init.fnl
 
+repl:
+	$(FENNEL) $(OPTS) --add-fennel-path "./test/faith/?.fnl"
+
 testall:
 	$(MAKE) test LUA=lua5.1
 	$(MAKE) test LUA=lua5.2
