@@ -64,6 +64,14 @@
          [{:message "unknown identifier: unknown-global"}
           {:message "expected body expression"}
           {:message "expected closing delimiters )]"}] [])
+  (check "(let [x ()]
+            (print +))"
+         [{:message "expected a function, macro, or special to call"}
+          {:message "tried to reference a special form without calling it"}] [])
+  (check "(let [x]
+            (print +))"
+         [{:message "expected even number of name/value bindings"}
+          {:message "tried to reference a special form without calling it"}] [])
   nil)
 
 (fn test-unused []
