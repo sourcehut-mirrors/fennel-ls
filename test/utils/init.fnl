@@ -57,12 +57,12 @@
          : cursor
          : locations
          : text
-         : uri}))))
+         : uri
+         :encoding self.server.position-encoding}))))
 
 (fn position-past-end-of-text [text ?encoding]
   (utils.byte->position text (+ (length text) 1) (or ?encoding default-encoding)))
 
 {: create-client-with-files
  : position-past-end-of-text
- : default-encoding
  : get-markup}

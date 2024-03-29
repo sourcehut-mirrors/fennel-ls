@@ -1,15 +1,14 @@
 (local faith (require :faith))
-(local {: create-client-with-files
-        : default-encoding} (require :test.utils))
+(local {: create-client-with-files} (require :test.utils))
 (local {: null} (require :fennel-ls.json.json))
 (local {: apply-edits} (require :fennel-ls.utils))
 
 (fn check [file-content new-name expected-file-content]
-  (let [{: self : uri : cursor : text} (create-client-with-files file-content)
+  (let [{: self : uri : cursor : text : encoding} (create-client-with-files file-content)
         [{: result}] (self:rename uri cursor new-name)]
     (if (= null result)
       (faith.= expected-file-content text)
-      (let [new-content (apply-edits text (. result.changes uri) default-encoding)]
+      (let [new-content (apply-edits text (. result.changes uri) encoding)]
         (faith.= expected-file-content new-content)))))
 
 (fn test-rename []
