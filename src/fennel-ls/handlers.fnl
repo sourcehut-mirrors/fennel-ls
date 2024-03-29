@@ -142,7 +142,12 @@ Every time the client sends a message, it gets handled by a function in the corr
                   file.scope)
         ?parent (. parents 1)
         result []
-        in-call-position? (and (fennel.list? ?parent) (= ?symbol (. ?parent 1)))]
+        in-call-position? (and (fennel.list? ?parent)
+                               (or (= ?symbol (. ?parent 1))
+                                   ;; so, this is unfortunate
+                                   (and (= ?symbol nil)
+                                        (fennel.sym? (. ?parent 1) :do)
+                                        (= (. ?parent 1 :bytestart) nil))))]
     (collect-scope scope :manglings #(doto (make-completion-item self file $ scope) (tset :kind kinds.Variable)) result)
 
     (when in-call-position?

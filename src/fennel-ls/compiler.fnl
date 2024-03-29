@@ -247,7 +247,7 @@ identifiers are declared / referenced in which places."
             (table.insert ?ast (sym :nil))
             true)
           (when (and (= 1 (msg:find "expected a function, macro, or special to call"))
-                     (sequence? ?ast)
+                     (list? ?ast)
                      (= (length ?ast) 0))
             (table.insert ?ast (sym :do))
             true)))
