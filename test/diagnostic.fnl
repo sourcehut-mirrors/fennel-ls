@@ -57,23 +57,83 @@
   nil)
 
 (fn test-multiple-errors []
-  (check "(unknown-global-1 unknown-global-2)"
-         [{:message "unknown identifier: unknown-global-1"}
-          {:message "unknown identifier: unknown-global-2"}] [])
-  (check "(let [x unknown-global"
+  ;; compiler recovery for every fennel.friend error
+
+  (check "(let [x.y.z 10]
+            (print +))"
+         [{:message "unexpected multi symbol x.y.z"}
+          {:message "tried to reference a special form without calling it"}] [])
+
+  ;; use of global .* is aliased by a local
+
+  (check "(let [+ 10]
+            (print +))"
+         [{:message "local + was overshadowed by a special form or macro"}
+          {:message "tried to reference a special form without calling it"}] [])
+
+  (check "(let [x 10]
+            (set x 20)
+            (print x +))"
+         [{:message "expected var x"}
+          {:message "tried to reference a special form without calling it"}] [])
+
+  ;; expected macros to be table
+  ;; expected each macro to be a function
+  ;; macro tried to bind .* without gensym
+
+  (check "(do unknown-global
+            (print +))"
          [{:message "unknown identifier: unknown-global"}
-          {:message "expected body expression"}
-          {:message "expected closing delimiters )]"}] [])
-  ;; recovers from ()
+          {:message "tried to reference a special form without calling it"}] [])
+
   (check "(let [x ()]
             (print x +))"
          [{:message "expected a function, macro, or special to call"}
           {:message "tried to reference a special form without calling it"}] [])
+
+  (check "(let [x (3)]
+            (print x +))"
+         [{:message "cannot call literal value 3"}
+          {:message "tried to reference a special form without calling it"}] [])
+
+  (check "(let [x (fn [] ...)]
+            (print x +))"
+         [{:message "unexpected vararg"}
+          {:message "tried to reference a special form without calling it"}] [])
+
+  (check "(let [x #...]
+            (print x +))"
+         [{:message "use $... in hashfn"}
+          {:message "tried to reference a special form without calling it"}] [])
+
+  (check "(let [x unknown-global"
+         [{:message "unknown identifier: unknown-global"}
+          {:message "expected body expression"}
+          {:message "expected closing delimiters )]"}] [])
   ;; recovers from mismatched let
   (check "(let [x]
             (print x +))"
          [{:message "expected even number of name/value bindings"}
           {:message "tried to reference a special form without calling it"}] [])
+  ;; recovers from missing condition (if)
+  (check "(let [x (if)]
+            (print x +))"
+         [{:message "expected condition and body"}
+          {:message "tried to reference a special form without calling it"}] [])
+  ; recovers from missing condition (when)
+  (check "(let [x (when)]
+            (print x +))"
+         [{:message #($:find ".*macros.fnl:%d+: expected body")}
+          {:message "tried to reference a special form without calling it"}] [])
+  ;; recovers from missing body (when)
+  (check "(let [x (when (< (+ 9 10) 21))]
+            (print x +))"
+         [{:message #($:find ".*macros.fnl:%d+: expected body")}
+          {:message "tried to reference a special form without calling it"}] [])
+  (check "(let [x {:mismatched :curly :braces}]
+            (print x +))"
+       [{:message "expected even number of values in table literal"}
+        {:message "tried to reference a special form without calling it"}] [])
   nil)
 
 {: test-compile-error

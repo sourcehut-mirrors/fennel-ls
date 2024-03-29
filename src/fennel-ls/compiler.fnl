@@ -232,25 +232,41 @@ identifiers are declared / referenced in which places."
         (where [sym] (multisym? sym) (: (tostring sym) :find ":"))
         (reference sym scope :read)))
 
+    (local defer [])
+
     (λ attempt-to-recover! [msg ?ast]
       (or (= 1 (msg:find "unknown identifier"))
+          (= 1 (msg:find "local %S+ was overshadowed by a special form or macro"))
+          (= 1 (msg:find "expected var "))
+          (= 1 (msg:find "cannot call literal value"))
+          (= 1 (msg:find "unexpected vararg"))
           (= 1 (msg:find "expected closing delimiter"))
           (= 1 (msg:find "expected body expression"))
+          (= 1 (msg:find ".*fennel/macros.fnl:%d+: expected body"))
           (= 1 (msg:find "expected condition and body"))
           (= 1 (msg:find "expected whitespace before opening delimiter"))
           (= 1 (msg:find "malformed multisym"))
           (= 1 (msg:find "expected at least one pattern/body pair"))
           (= 1 (msg:find "module not found"))
+          (= 1 (msg:find "expected even number of values in table literal"))
+          (= 1 (msg:find "use $%.%.%. in hashfn"))
           (when (and (= 1 (msg:find "expected even number of name/value bindings"))
                      (sequence? ?ast)
                      (= 1 (% (length ?ast) 2)))
             (table.insert ?ast (sym :nil))
+            (table.insert defer #(table.remove ?ast))
             true)
           (when (and (= 1 (msg:find "expected a function, macro, or special to call"))
                      (list? ?ast)
                      (= (length ?ast) 0))
             (table.insert ?ast (sym :do))
-            true)))
+            (table.insert defer #(table.remove ?ast))
+            true)
+          (when (= 1 (msg:find "unexpected multi symbol"))
+            (let [old (tostring ?ast)]
+              (tset ?ast 1 "!!invalid-multi-symbol!!")
+              (table.insert defer #(tset ?ast 1 old))
+              true))))
 
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
@@ -352,6 +368,9 @@ identifiers are declared / referenced in which places."
           (filter-errors :compiler (xpcall #(fennel.compile form opts) fennel.traceback)))
 
         (set fennel.macro-path old-macro-path))
+
+      (each [_ cmd (ipairs defer)]
+        (cmd))
 
       (set file.ast ast)
       (set file.calls calls)
