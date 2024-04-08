@@ -110,13 +110,14 @@ entire fennel-ls project is referring to the same object."
   (make-configuration-from-template default-configuration ?c))
 
 (λ choose-position-encoding [init-params]
-  "fennel-ls natively uses utf-8, so ideally we will choose positionEncoding=utf-8.
-However, fennel-ls can fall back to positionEncoding=utf-16 (with a performance hit)."
+  "fennel-ls natively uses utf-8, so the goal is to choose positionEncoding=\"utf-8\".
+However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-16\" (with a performance hit)."
   (let [?position-encodings (?. init-params :capabilities :general :positionEncodings)
         utf8?
         (if (= (type ?position-encodings) :table)
-          (accumulate [_utf-8? false
-                       _ encoding (ipairs ?position-encodings)]
+          (accumulate [utf-8? false
+                       _ encoding (ipairs ?position-encodings)
+                       &until utf-8?]
             (or (= encoding :utf-8)
                 (= encoding :utf8)))
           false)]
