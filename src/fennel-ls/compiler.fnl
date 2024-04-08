@@ -86,14 +86,9 @@ identifiers are declared / referenced in which places."
       ;; find reference
       (let [name (string.match (tostring symbol) "[^%.:]+")]
         (case (find-definition (tostring name) scope)
-          target
-          (if (. references symbol)
-            (do ;; already exists
-              (assert (= symbol (. references symbol :symbol)) (.. "the symbol should always be the same")))
-              ;; (assert (= target (. references symbol :target)) (.. "different targets: " (view target) (view (. references symbol :target)))))
-            (let [ref {: symbol : target : ref-type}]
-              (tset references symbol ref)
-              (table.insert target.referenced-by ref))))))
+          target (let [ref {: symbol : target : ref-type}]
+                   (tset references symbol ref)
+                   (table.insert target.referenced-by ref)))))
 
     (λ symbol-to-expression [ast scope ?reference?]
       (assert (sym? ast) "symbols only")

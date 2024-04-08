@@ -226,7 +226,13 @@ Every time the client sends a message, it gets handled by a function in the corr
         (table.sort usages
           #(> (utils.position->byte definition.file.text $1.range.start :utf-8)
               (utils.position->byte definition.file.text $2.range.start :utf-8)))
-        {:changes {definition.file.uri usages}})
+        (var prev {})
+        (let [usages-dedup (icollect [_ edit (ipairs usages)]
+                             (when (or (not= edit.range.start.line prev.line)
+                                       (not= edit.range.start.character prev.character))
+                               (set prev edit.range.start)
+                               edit))]
+          {:changes {definition.file.uri usages-dedup}}))
       (catch _ nil))))
 
 (fn pos<= [pos-1 pos-2]

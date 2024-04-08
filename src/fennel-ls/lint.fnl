@@ -121,9 +121,6 @@ the `file.diagnostics` field, filling it with diagnostics."
          :quickfix #[{:range (message.ast->range self file call)
                       :newText (view identity)}]}))))
 
-; (fn quickfix.op-with-no-arguments [item]
-;   {:range item.range
-;    :newText (tostring item.data)})
 
 (λ multival-in-middle-of-call [self file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do

@@ -31,6 +31,7 @@
   (check "(fn [{:x x|}] x)" :foo
          "(fn [{:x foo}] foo)")
 
+  ;; issue fennel-ls#8
   (check "(λ [foo|] (print foo))" :something
          "(λ [something] (print something))")
 
