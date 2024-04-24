@@ -203,6 +203,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         (if ?completions
           (each [_ completion (ipairs ?completions)]
             (set completion.filterText (.. emacs-filter-text-prefix completion.label))
+            (set completion.insertText (.. emacs-filter-text-prefix completion.label))
             (set completion.textEdit {:newText completion.label  :range input-range})))
         ?completions))))
 
