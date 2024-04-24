@@ -1,8 +1,8 @@
 # Creating a new lint
 To start, you can set up all the plumbing:
 
-1. Go into `src/fennel-ls/diagnostics.fnl` and create a new function.
-2. At the bottom of `src/fennel-ls/diagnostics.fnl`, add an if statement in the
+1. Go into `src/fennel-ls/lint.fnl` and create a new function.
+2. At the bottom of `src/fennel-ls/lint.fnl`, add an if statement in the
    `check` function.
     * Choose which `each` loop to put your function in, so your lint can be
       applied to right thing.

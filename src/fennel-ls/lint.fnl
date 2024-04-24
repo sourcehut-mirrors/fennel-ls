@@ -121,7 +121,6 @@ the `file.diagnostics` field, filling it with diagnostics."
          :quickfix #[{:range (message.ast->range self file call)
                       :newText (view identity)}]}))))
 
-
 (λ multival-in-middle-of-call [self file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do
   something with multiple values. However, multiple values will get

@@ -233,6 +233,7 @@ identifiers are declared / referenced in which places."
       (or (= 1 (msg:find "unknown identifier"))
           (= 1 (msg:find "local %S+ was overshadowed by a special form or macro"))
           (= 1 (msg:find "expected var "))
+          (= 1 (msg:find "expected local "))
           (= 1 (msg:find "cannot call literal value"))
           (= 1 (msg:find "unexpected vararg"))
           (= 1 (msg:find "expected closing delimiter"))

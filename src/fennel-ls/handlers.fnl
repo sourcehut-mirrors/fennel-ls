@@ -132,7 +132,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ make-completion-item [self file name scope]
   (case (language.search-name-and-scope self file name scope)
     def (formatter.completion-item-format name def)
-    _ {:label name :textEdit {:newText name}}))
+    _ {:label name}))
 
 (λ scope-completion [self file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
@@ -162,7 +162,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       (case (values definition (type definition))
         ;; fields of a string are hardcoded to "string"
         (_str :string) (icollect [label _ (pairs string)]
-                         {: label :kind kinds.Field :textEdit {:newText label}})
+                         {: label :kind kinds.Field})
         ;; fields of a table
         (tbl :table) (let [keys []]
                        (icollect [label _ (pairs tbl) &into keys]
@@ -174,7 +174,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                          (if (= (type label) :string)
                            (case (language.search-ast self file tbl [label] {})
                              def (formatter.completion-item-format label def)
-                             _ {: label :kind kinds.Field :textEdit {:newText label}})))))
+                             _ {: label :kind kinds.Field})))))
       {: metadata : fields}
       (icollect [label info (pairs fields)]
         (formatter.completion-item-format label info))
@@ -192,16 +192,16 @@ Every time the client sends a message, it gets handled by a function in the corr
             ?completions (scope-completion self file byte ?symbol parents)]
         (if ?completions
           (each [_ completion (ipairs ?completions)]
-            (set completion.textEdit.range input-range)))
+            (set completion.textEdit {:newText completion.label :range input-range})))
         ?completions)
 
       ;; completion from field
       [_a _b &as split]
       (let [input-range (message.multisym->range self file ?symbol -1)
-            ?completions (field-completion self file ?symbol split input-range)]
+            ?completions (field-completion self file ?symbol split)]
         (if ?completions
           (each [_ completion (ipairs ?completions)]
-            (set completion.textEdit.range input-range)))
+            (set completion.textEdit {:newText completion.label :range input-range})))
         ?completions))))
 
 
