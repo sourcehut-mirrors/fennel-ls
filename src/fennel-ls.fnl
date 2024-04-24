@@ -1,3 +1,4 @@
+(require :fennel)
 (local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
 (local state (require :fennel-ls.state))
