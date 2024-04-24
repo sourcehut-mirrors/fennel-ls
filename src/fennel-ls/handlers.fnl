@@ -198,10 +198,12 @@ Every time the client sends a message, it gets handled by a function in the corr
       ;; completion from field
       [_a _b &as split]
       (let [input-range (message.multisym->range self file ?symbol -1)
+            emacs-filter-text-prefix (string.gsub (tostring ?symbol) "[^.:]*$" "")
             ?completions (field-completion self file ?symbol split)]
         (if ?completions
           (each [_ completion (ipairs ?completions)]
-            (set completion.textEdit {:newText completion.label :range input-range})))
+            (set completion.filterText (.. emacs-filter-text-prefix completion.label))
+            (set completion.textEdit {:newText completion.label  :range input-range})))
         ?completions))))
 
 
