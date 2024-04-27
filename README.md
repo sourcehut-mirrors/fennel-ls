@@ -47,7 +47,7 @@ If you are using vim+lspconfig, it is pretty simple:
 require('lspconfig').fennel_ls.setup()
 ```
 
-For Emacs, (eglot, built-in to 29+):
+For Emacs 30+, eglot will use fennel-ls automatically. For older versions:
 ```lisp
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs '(fennel-mode . ("fennel-ls"))))

@@ -11,8 +11,9 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
 OPTS=--add-package-path "./src/?.lua" --add-fennel-path "./src/?.fnl"
+OPTS+=--skip-include fennel.compiler
 
-.PHONY: clean test install ci selfcheck
+.PHONY: all clean test install ci selfcheck
 
 all: $(EXE)
 
