@@ -131,7 +131,10 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   (set self.modules {})
   (set self.root-uri params.rootUri)
   (set self.position-encoding (choose-position-encoding params))
-  (set self.configuration (make-configuration (?. params :initializationOptions :fennel-ls))))
+  (set self.configuration (make-configuration (?. params :initializationOptions :fennel-ls)))
+  ;; Eglot does completions differently than every other client I've seen so far, in that it considers foo.bar to be one "symbol".
+  ;; If the user types `foo.b`, every other client accepts `bar` as a completion, bun eglot wants the full `foo.bar` multisym.
+  (set self.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
 
 (λ write-configuration [self ?configuration]
   (set self.configuration (make-configuration ?configuration)))
