@@ -204,8 +204,8 @@ Every time the client sends a message, it gets handled by a function in the corr
             (let [prefix (string.gsub (tostring ?symbol) "[^.:]*$" "")]
               (each [_ completion (ipairs ?completions)]
                 (set completion.filterText (.. prefix completion.label))
-                (set completion.insertText (.. prefix completion.label))
-                (set completion.textEdit {:newText completion.label :range input-range})))
+                (set completion.insertText (.. prefix completion.label))))
+                ;; (set completion.textEdit {:newText completion.label :range input-range})))
             (each [_ completion (ipairs ?completions)]
               (set completion.textEdit {:newText completion.label :range input-range}))))
         ?completions))))
