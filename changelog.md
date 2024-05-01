@@ -1,5 +1,17 @@
 # Changelog
 
+### Features
+* Better results when syntax errors are present.
+
+### Bug Fixes
+* Solved a case where there were duplicate completion candidates
+* Special workaround for Eglot to be able to complete multisyms.
+    To be honest, this isn't even Eglot's fault; the LSP specification leaves it ambiguous
+    [Eglot's issue](https://github.com/joaotavora/eglot/issues/402)
+    [LSP's issue](https://github.com/microsoft/language-server-protocol/issues/648)
+    [fennel-mode can't fix it on their end](https://git.sr.ht/~technomancy/fennel-mode/commit/188ee04e86792cd4bce75d52b9603cc833b63b48)
+
+
 ## 0.1.2
 
 ### Features

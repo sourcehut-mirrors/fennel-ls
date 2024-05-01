@@ -170,15 +170,15 @@ WARNING: this is only used in the test code, not in the real language server"
 (λ type= [val typ]
   (= (type val) typ))
 
-(λ uniq-by [list eq?]
+(λ uniq-by [list key-fn]
   "I know the big O of this is bad, but we'll come back to it if it's a performance problem"
-  (let [result []]
+  (let [result []
+        seen {}]
     (each [_ new-item (ipairs list)]
-      (if (not (accumulate [any? nil
-                            _ seen-item (ipairs result)
-                            &until any?]
-                 (eq? seen-item new-item)))
-        (table.insert result new-item)))
+      (let [key (key-fn new-item)]
+        (when (not (. seen key))
+          (tset seen key true)
+          (table.insert result new-item))))
     result))
 
 (λ split-spaces [str]

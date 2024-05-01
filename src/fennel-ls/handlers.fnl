@@ -176,8 +176,9 @@ Every time the client sends a message, it gets handled by a function in the corr
                              def (formatter.completion-item-format label def)
                              _ {: label :kind kinds.Field})))))
       {: metadata : fields}
-      (icollect [label info (pairs fields)]
-        (formatter.completion-item-format label info))
+      (let [_metadata metadata]
+        (icollect [label info (pairs fields)]
+          (formatter.completion-item-format label info)))
       _ nil)))
 
 (λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
@@ -191,9 +192,10 @@ Every time the client sends a message, it gets handled by a function in the corr
       (let [input-range (if ?symbol (message.multisym->range self file ?symbol -1) {:start position :end position})
             ?completions (scope-completion self file byte ?symbol parents)]
         (if ?completions
-          (each [_ completion (ipairs ?completions)]
-            (set completion.textEdit {:newText completion.label :range input-range})))
-        ?completions)
+          (let [?completions (utils.uniq-by ?completions #$.label)]
+            (each [_ completion (ipairs ?completions)]
+              (set completion.textEdit {:newText completion.label :range input-range}))
+            ?completions)))
 
       ;; completion from field
       [_a _b &as split]

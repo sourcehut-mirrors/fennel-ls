@@ -54,18 +54,20 @@
                            "from:    " (view file-contents) "\n"
                            (view (. completions i) {:escape-newlines? true})))))
 
-    (each [_ e (ipairs expected)]
-      (let [i (find completions e)]
-        (faith.is i (.. "Didn't get completion: " (view e) "\n"
-                        "from:    " (view file-contents) "\n"
-                        (if (= (type e) :table)
-                          (let [candidate (find completions {:label e.label})]
-                            (if candidate
-                              (.. "Candidate that didn't match:\n"
-                                  (view (. completions candidate)
-                                        {:escape-newlines? true}))
-                              ""))
-                          "")))))))
+    (if (= (type expected) :table)
+      (each [_ e (ipairs expected)]
+        (let [i (find completions e)]
+          (faith.is i (.. "Didn't get completion: " (view e) "\n"
+                          "from:    " (view file-contents) "\n"
+                          (if (= (type e) :table)
+                            (let [candidate (find completions {:label e.label})]
+                              (if candidate
+                                (.. "Candidate that didn't match:\n"
+                                    (view (. completions candidate)
+                                          {:escape-newlines? true}))
+                                ""))
+                            "")))))
+      (expected completions))))
 
 (fn test-global []
   ;; TODO shouldn't this kind be Function?
@@ -103,6 +105,13 @@
                 bar 20
                 _ fo|" [:foo :bar] [])
   (check "(local x {:field 100})\n(if x.fi" [:field] [])
+  (check "(let [x 10] (let [x 10] x"
+         (fn [completions]
+           (faith.= 1 (accumulate [number-of-x 0 _ completion (ipairs completions)]
+                        (if (= completion.label :x)
+                          (+ number-of-x 1)
+                          number-of-x))))
+         [])
   nil)
 
 (fn test-builtin []
