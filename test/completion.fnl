@@ -22,19 +22,27 @@
                (or (= e.kind nil)
                    (and (= (type e.kind) :number) (= e.kind c.kind))
                    (and (= (type e.kind) :function) (e.kind c.kind)))
+               (or (= e.filterText nil)
+                   (and (= (type e.filterText) :string) (= e.filterText c.filterText))
+                   (and (= (type e.filterText) :function) (e.filterText c.filterText)))
+               (or (= e.insertText nil)
+                   (and (= (type e.insertText) :string) (= e.insertText c.insertText))
+                   (and (= (type e.insertText) :function) (e.insertText c.insertText)))
                (or (= e.documentation nil)
                    (and (= (type e.documentation) :string) (= e.documentation c.documentation))
                    (and (= (type e.documentation) :function) (e.documentation c.documentation))
                    (and (= e.documentation true) (not= nil c.documentation)))
                (or (= e.textEdit nil)
-                   (and (= e.textEdit.range.start.line      c.textEdit.range.start.line)
+                   (and (= (type e.textEdit) :table)
+                        (= e.textEdit.range.start.line      c.textEdit.range.start.line)
                         (= e.textEdit.range.start.character c.textEdit.range.start.character)
                         (= e.textEdit.range.end.line        c.textEdit.range.end.line)
-                        (= e.textEdit.range.end.character   c.textEdit.range.end.character)))))
+                        (= e.textEdit.range.end.character   c.textEdit.range.end.character))
+                   (and (= (type e.textEdit) :function)) (e.textEdit c.textEdit))))
       i)))
 
-(fn check [file-contents expected unexpected]
-  (let [{: self : uri : cursor : text} (create-client-with-files file-contents)
+(fn check [file-contents expected unexpected ?client-options]
+  (let [{: self : uri : cursor : text} (create-client-with-files file-contents ?client-options)
         [{:result ?result}] (self:completion uri
                               (or cursor
                                   (position-past-end-of-text text)))
@@ -206,6 +214,43 @@
     ["insert"]
     [{:documentation #(= nil $)}])
   nil)
+
+(local eglot {:params {:capabilities {:general {:positionEncodings [:utf-8]}}
+                       :clientInfo {:name "Eglot" :version "1 million"}
+                       :initializationOptions {}
+                       :processId 1000
+                       :rootPath "/home/my-cool-user/my-cool-project/"
+                       :rootUri "file:///home/my-cool-user/my-cool-project/"
+                       :trace "off"
+                       :workspaceFolders [{:name "/home/my-cool-user/my-cool-projects/"
+                                           :uri "file:///home/my-cool-user/my-cool-project/"}]}})
+
+(fn test-eglot-fields []
+  "tests for handling Eglot specially"
+  (check "(coroutine.y|"
+    [{:label "yield"
+      :filterText "coroutine.yield"
+      :insertText "coroutine.yield"
+      :textEdit #(= nil $)
+      :documentation #(and $.value ($.value:find "```fnl\n(yield ...)\n```" 1 true))}]
+    ["coroutine" "_G" "do"
+     {:documentation #(= nil $)}]
+    eglot)
+  (check "(local c coroutine)
+          (c.y"
+    [{:label "yield"
+      :filterText "c.yield"
+      :insertText "c.yield"
+      :textEdit #(= nil $)}]
+    ["coroutine" "_G" "do"]
+    eglot)
+  (check "(local x {:field (fn [])})
+          (x:"
+    [:field]
+    [{:insertText :field}
+     :local]
+    eglot))
+
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
 ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
@@ -221,10 +266,10 @@
   ;; (it "offers rich information about method completions")
   ;; (it "offers rich information about module completions")
   ;; (it "offers rich information about macro-module completions")))
-;; (it "suggests known fn keys when using the `:` special")
-;; (it "suggests known keys when using the `.` special")
 ;; (it "suggests known module names in `require` and `include` and `import-macros` and `require-macros` and friends")
 ;; (it "knows the fields of the standard lua library.")
+;; (it "suggests known fn keys when using the `:` special")
+;; (it "suggests known keys when using the `.` special")
 ;; (it "does not suggest special forms for the \"call\" position when a list isn't actually a call, ie destructuring assignment")
 ;; (it "suggests keys when typing out destructuring, as in `(local {: typinghere} (require :mod))`")
 ;; (it "only suggests tables for `ipairs` / begin work on type checking system")
@@ -237,4 +282,5 @@
  : test-fn-arg
  : test-field
  : test-docs
- : test-module}
+ : test-module
+ : test-eglot-fields}
