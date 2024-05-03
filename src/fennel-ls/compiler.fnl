@@ -25,6 +25,7 @@ identifiers are declared / referenced in which places."
 (local -require- (sym :require))
 (local -include- (sym :include))
 (local -fn- (sym :fn))
+(local -if- (sym :if))
 (local -lambda- (sym :lambda))
 (local -λ- (sym :λ))
 
@@ -210,6 +211,8 @@ identifiers are declared / referenced in which places."
     (λ compile-do [ast scope]
       (tset scopes ast scope))
 
+    (local defer [])
+
     (λ call [ast scope]
       (tset calls ast true)
       (tset scopes ast scope)
@@ -225,9 +228,11 @@ identifiers are declared / referenced in which places."
         (tset require-calls ast true)
         ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
         (where [sym] (multisym? sym) (: (tostring sym) :find ":"))
-        (reference sym scope :read)))
-
-    (local defer [])
+        (reference sym scope :read)
+        ;; NOTE HACK TODO this should be removed once fennel makes if statements work like normal
+        (where [(= -if-)])
+        (let [len (length ast)]
+          (table.insert defer #(tset ast (+ len 1) nil)))))
 
     (λ attempt-to-recover! [msg ?ast]
       (or (= 1 (msg:find "unknown identifier"))
