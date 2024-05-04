@@ -206,6 +206,16 @@
      {:kind #(= nil $)}
      {:label #(= nil $)}])
 
+  (check "(let [x :hi]
+            (x.|))"
+    [:gsub
+     :gmatch
+     :match
+     :sub
+     :len
+     :find]
+    [{:documentation #(= nil $)}])
+
   nil)
 
 (fn test-module []

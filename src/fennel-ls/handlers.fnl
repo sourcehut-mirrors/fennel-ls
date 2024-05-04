@@ -5,13 +5,14 @@ Every time the client sends a message, it gets handled by a function in the corr
 (ie, a textDocument/didChange notification will call notifications.textDocument/didChange
  and a textDocument/defintion request will call requests.textDocument/definition)"
 
-(local lint (require :fennel-ls.lint))
-(local message (require :fennel-ls.message))
-(local state (require :fennel-ls.state))
-(local language (require :fennel-ls.language))
+(local lint      (require :fennel-ls.lint))
+(local message   (require :fennel-ls.message))
+(local state     (require :fennel-ls.state))
+(local language  (require :fennel-ls.language))
 (local formatter (require :fennel-ls.formatter))
-(local utils (require :fennel-ls.utils))
-(local fennel (require :fennel))
+(local utils     (require :fennel-ls.utils))
+(local docs      (require :fennel-ls.docs))
+(local fennel    (require :fennel))
 
 (local requests [])
 (local notifications [])
@@ -161,8 +162,8 @@ Every time the client sends a message, it gets handled by a function in the corr
       {: definition : file}
       (case (values definition (type definition))
         ;; fields of a string are hardcoded to "string"
-        (_str :string) (icollect [label _ (pairs string)]
-                         {: label :kind kinds.Field})
+        (_str :string) (icollect [label info (pairs (. (docs.get-global-metadata :string) :fields))]
+                         (formatter.completion-item-format label info))
         ;; fields of a table
         (tbl :table) (let [keys []]
                        (icollect [label _ (pairs tbl) &into keys]
