@@ -65,6 +65,16 @@ new message handler `msgh`.")
   (check "(table.inser|t [] :message" #($:find "```fnl\n(insert list ?pos value)\n```" 1 true))
   nil)
 
+(fn test-module []
+  (check "coroutine.yie|ld"
+         "```fnl\n(yield ...)\n```\nSuspends the execution of the calling coroutine.\nAny arguments to `yield` are passed as extra results to `resume`.")
+  (check "string.cha|r"
+         "```fnl\n(char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms.")
+  (check "(local x :hello)
+          x.cha|r"
+         "```fnl\n(char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
+
+
 (fn test-functions []
   (check "(fn my-function| [arg1 arg2 arg3]
             (print arg1 arg2 arg3))"
@@ -124,6 +134,7 @@ new message handler `msgh`.")
 {: test-literals
  : test-builtins
  : test-globals
+ : test-module
  : test-functions
  : test-multisym
  : test-crash

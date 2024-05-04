@@ -6,9 +6,10 @@ compiler's plugin hook callbacks. It stores lexical info about which
 identifiers are declared / referenced in which places."
 
 (local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
+(local docs (require :fennel-ls.docs))
 (local message (require :fennel-ls.message))
-(local utils (require :fennel-ls.utils))
 (local searcher (require :fennel-ls.searcher))
+(local utils (require :fennel-ls.utils))
 
 (fn scope? [candidate]
   ;; just checking a couple of the fields
@@ -86,10 +87,12 @@ identifiers are declared / referenced in which places."
       (assert (scope? scope) :not-a-scope)
       ;; find reference
       (let [name (string.match (tostring symbol) "[^%.:]+")]
-        (case (find-definition (tostring name) scope)
+        (case (or (find-definition (tostring name) scope)
+                  (docs.get-global-metadata name))
           target (let [ref {: symbol : target : ref-type}]
                    (tset references symbol ref)
-                   (table.insert target.referenced-by ref)))))
+                   (when target.referenced-by
+                     (table.insert target.referenced-by ref))))))
 
     (λ symbol-to-expression [ast scope ?reference?]
       (assert (sym? ast) "symbols only")

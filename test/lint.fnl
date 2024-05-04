@@ -88,7 +88,10 @@
           "(local {: a : c &as guy} (require :the-guy-they-tell-you-not-to-worry-about))
            (print guy.b guy.d)"}
          [{:code 302}] [{:code 302 :message "unknown module field: a"}
-                        {:code 302 :message "unknown module field: b"}]))
+                        {:code 302 :message "unknown module field: b"}])
+  (check "table.insert2"
+         [{:code 302}]
+         []))
 
 (fn test-unnecessary-colon []
   (check "(let [x :haha] (: x :find :a))"

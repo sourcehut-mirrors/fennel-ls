@@ -65,6 +65,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-document [self document stack opts]
+  (doto opts (tset :searched-through-require true))
   (if (= 0 (length stack))
     document
     (. document.fields (. stack (length stack)))
@@ -90,23 +91,23 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (search-assignment self file {:target (. ?fields (table.remove stack))} stack opts)
         (search-multival self file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))
 
+(λ search-reference [self file ref stack opts]
+  (if ref.target.metadata
+     (search-document self ref.target stack opts)
+     ref.target.binding
+     (search-assignment self file ref stack opts)))
+
 (λ search-symbol [self file symbol stack opts]
   (if (= (tostring symbol) :nil)
     (if (= 0 (length stack))
       {:definition symbol : file}
       nil)
     (if (. file.references symbol)
-      (search-assignment self file (. file.references symbol) (stack-add-multisym! stack symbol) opts)
-      (let [parts (utils.multi-sym-split symbol)]
-        (case (docs.get-global-metadata (. parts 1))
-          document (search-document self document (stack-add-split! stack parts) opts)
-          _ nil)))))
+      (search-reference self file (. file.references symbol) (stack-add-multisym! stack symbol) opts))))
 
 (λ search-table [self file tbl stack opts]
   (if (. tbl (. stack (length stack)))
       (search-val self file (. tbl (table.remove stack)) stack opts)
-      (= 0 (length stack))
-      {:definition tbl : file} ;; BASE CASE !!
       nil)) ;; BASE CASE Give up
 
 (λ search-list [self file call stack multival opts]
@@ -151,8 +152,9 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (varg? ast)     nil ;; TODO function-args
         (= 1 multival)
         (if (sym? ast)            (search-symbol self file ast stack opts)
+            (= 0 (length stack))  {:definition ast : file} ;; BASE CASE !!
             (= :table (type ast)) (search-table self file ast stack opts)
-            (= 0 (length stack))  {:definition ast : file}) ;; BASE CASE !!
+            (= :string (type ast)) (search-document self (docs.get-global-metadata :string) stack opts))
         nil)))
 
 
@@ -175,7 +177,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
       (case (docs.get-global-metadata (utils.multi-sym-base symbol))
         document (search-document self document stack opts)
         _ (case (. file.references symbol)
-            ref (search-assignment self file ref stack opts)
+            ref (search-reference self file ref stack opts)
             _ (case (. file.definitions symbol)
                 def (search-multival self file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)))))))
 
@@ -260,6 +262,5 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 {: find-symbol
  : find-nearest-definition
  : search-main
- : search-assignment
  : search-name-and-scope
  :search-ast search-val}
