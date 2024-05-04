@@ -14,13 +14,20 @@
                    action))]
     (if (not action)
       (error
-         (.. "I couldn't find your action \"" action-I-want-to-take "\" in:
-"
+         (.. "I couldn't find your action \"" action-I-want-to-take "\" in:\n"
              (view (icollect [_ action (ipairs responses)]
                      action.title)))))
     (let [edits (?. action :edit :changes uri)
           edited-text (apply-edits text edits encoding)]
       (faith.= desired-file-contents edited-text))))
+(fn check-negative [file-contents action-not-suggested]
+  (let [{: self : uri :locations [range]} (create-client-with-files file-contents)
+        [{:result responses}] (self:code-action uri range.range)]
+    (each [_ action (ipairs responses)]
+      (assert (not= action.title action-not-suggested)
+        (.. "I found your action \"" action-not-suggested "\" in:\n"
+            (view (icollect [_ action (ipairs responses)]
+                    action.title)))))))
 
 (fn test-fix-op-no-arguments []
   (check "(let [x (+====)]
