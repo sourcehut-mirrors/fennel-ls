@@ -171,7 +171,6 @@ WARNING: this is only used in the test code, not in the real language server"
   (= (type val) typ))
 
 (λ uniq-by [list key-fn]
-  "I know the big O of this is bad, but we'll come back to it if it's a performance problem"
   (let [result []
         seen {}]
     (each [_ new-item (ipairs list)]

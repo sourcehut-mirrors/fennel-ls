@@ -4,7 +4,8 @@ to a given LSP request from the client.
 
 In general, this involves:
 * determining the type of the message
-* calling the appropriate handler"
+* calling the appropriate handler in the :fennel-ls.handlers module.
+"
 
 (local handlers (require :fennel-ls.handlers))
 (local message (require :fennel-ls.message))
@@ -30,7 +31,7 @@ In general, this involves:
 
 (λ handle-bad-response [self send id err]
   ;; Handle a message indicating an error. Right now, it just crashes the server.
-  (error (.. "oopsie: " err.code)))
+  (error (.. "Client sent fennel-ls an error: " err.code)))
 
 (λ handle-notification [self send method ?params]
   ;; Call the appropriate notification handler.
