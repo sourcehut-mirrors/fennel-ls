@@ -68,7 +68,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (doto opts (tset :searched-through-require true))
   (if (= 0 (length stack))
     document
-    (. document.fields (. stack (length stack)))
+    (and document.fields
+         (. document.fields (. stack (length stack))))
     (search-document self (. document.fields (table.remove stack)) stack opts)))
 
 (λ search-val [self file ast stack opts]

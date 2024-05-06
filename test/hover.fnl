@@ -118,6 +118,7 @@ new message handler `msgh`.")
 (fn test-crash []
   (check "|(local x {:foo \"hello\"}) x.foo" nil)
   (check "|\n(local x {:foo \"hello\"}) x.foo" nil)
+  (check "print.my-cool-real-field|" nil)
   nil)
 
 (fn test-multival []
