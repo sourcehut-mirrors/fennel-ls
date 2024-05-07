@@ -32,30 +32,57 @@
   (let [(header description) (html-describing-the-thing:match "^(.-)\n+(.-)\n*$")
         optional-args []
         signature (header:match "<code>(.-)</code>")
+        ;; strip commas
+        signature (signature:gsub "," " ")
         ;; Replace `[]`'d args with ?-prefixes
         ;; Three times is enough, as `table.concat` and `load` and `loadfile`
         ;; and `utf8.codepoint` and `utf8.len` have 3 sets of []'s.
         ;; Lua 5.2 manual has a typo, so the last pass makes the `]` optional.
-        signature (signature:gsub "%[,? ?([^%[%] ]+)([^%[%]]-)%](%]-%))"
+        signature (signature:gsub "%[ -([^%[%] ]+)([^%[%]]-)%](%]-%))"
                                   #(do (table.insert optional-args $1) (.. :? $1 $2 $3)))
-        signature (signature:gsub "%[,? ?([^%[%] ]+)([^%[%]]-)%](%]-%))"
+        signature (signature:gsub "%[ -([^%[%] ]+)([^%[%]]-)%](%]-%))"
                                   #(do (table.insert optional-args $1) (.. :? $1 $2 $3)))
-        signature (signature:gsub "%[,? ?([^%[%] ]+)([^%[%]]-)%]?(%]-)%)"
+        signature (signature:gsub "%[ -([^%[%] ]+)([^%[%]]-)%]?(%]-%))"
                                   #(do (table.insert optional-args $1) (.. :? $1 $2 $3)))
+        ;; hide the thread argument in the debug functions
+        signature (if (signature:find "debug") (signature:gsub "%[thread -%]" "") signature)
+        ;; hide the ?pos argument in table.insert
+        signature (if (signature:find "table%.insert") (signature:gsub "%[pos -%]" "") signature)
         ;; For some reason, they use an html middot, but we want to use periods.
-        signature (signature:gsub "&middot;&middot;&middot;" "...")]
-    nil
-    ;; Debug prints for now. I'm not sure how to process the description.
-    (if (not (signature:match "%("))
-      ;; (print "c" signature)
-      nil
-      (and (signature:match "[%[]")
-           (not (signature:match "debug"))
-           (not (signature:match "table.insert")))
-      (do
-        (print "========================" signature))
-      (print "?" signature))))
+        signature (signature:gsub "&middot;&middot;&middot;" "...")
+        ;; fix parens
+        signature (signature:gsub "^(.-) -%(" "(%1 ")
+        ;; fix spaces
+        signature (signature:gsub " +" " ")
+        signature (signature:gsub " +%)" ")")
+
+        ;; delete <p> tags
+        description (description:gsub "</?p>" "")
+        ;; trim whitespace
+        description (description:match "^%s*(.-)%s*$")
+        ;; <code> tags for optional args
+        description (accumulate [description description _ arg (ipairs optional-args)]
+                      (description:gsub (.. "<code>" arg "</code>")
+                                        (.. "`?" arg "`")))
+        ;; <code> tags for the rest
+        description (description:gsub "\"<code>(.-)</code>\"" "`\"%1\"`")
+        description (description:gsub "\'<code>(.-)</code>\'" "`\"%1\"`")
+        description (description:gsub "<code>(.-)</code>" "`%1`")
+        description (description:gsub "&nbsp;" " ")
+        description (description:gsub "&ndash;" "–")
+        description (description:gsub "&mdash;" "—")]
+
+    (assert (not (signature:find "[%[%]]")) (.. "bad signature " signature))
+    ;; Debug prints for now.
+    (print "=============")
+    (print "```fnl")
+    (print signature)
+    (print "```")
+    (print description)))
 
 
-(each [_ section (ipairs sections)]
+(var done false)
+(each [_ section (ipairs sections) &until done]
   (process-html-thing section))
+  ; (if (= (io.read) "done")
+  ;   (set done true)))
