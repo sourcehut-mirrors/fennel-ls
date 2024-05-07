@@ -88,7 +88,7 @@ identifiers are declared / referenced in which places."
       ;; find reference
       (let [name (string.match (tostring symbol) "[^%.:]+")]
         (case (or (find-definition (tostring name) scope)
-                  (docs.get-global-metadata name))
+                  (docs.get-global self name))
           target (let [ref {: symbol : target : ref-type}]
                    (tset references symbol ref)
                    (when target.referenced-by
@@ -359,8 +359,6 @@ identifiers are declared / referenced in which places."
             (collect-everything v result))))
 
       (collect-everything ast lexical)
-
-
 
       ;; This is bad; we mutate fennel.macro-path
       (let [old-macro-path fennel.macro-path]

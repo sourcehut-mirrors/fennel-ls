@@ -38,7 +38,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 {:binding z :definition y}, referring to the `(local z y)` binding.
 "
 
-(local {: sym? : list? : sequence? : varg? : sym} (require :fennel))
+(local {: sym? : list? : sequence? : varg?} (require :fennel))
 (local utils (require :fennel-ls.utils))
 (local state (require :fennel-ls.state))
 (local docs (require :fennel-ls.docs))
@@ -155,7 +155,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (if (sym? ast)            (search-symbol self file ast stack opts)
             (= 0 (length stack))  {:definition ast : file} ;; BASE CASE !!
             (= :table (type ast)) (search-table self file ast stack opts)
-            (= :string (type ast)) (search-document self (docs.get-global-metadata :string) stack opts))
+            (= :string (type ast)) (search-document self (docs.get-global self :string) stack opts))
         nil)))
 
 
@@ -175,7 +175,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                     split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))]
                 (stack-add-split! [] split)))]
 
-      (case (docs.get-global-metadata (utils.multi-sym-base symbol))
+      (case (docs.get-global self (utils.multi-sym-base symbol))
         document (search-document self document stack opts)
         _ (case (. file.references symbol)
             ref (search-reference self file ref stack opts)
@@ -193,7 +193,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (assert (= (type name) :string))
   (let [split (utils.multi-sym-split name)
         stack (stack-add-split! [] split)]
-    (case (docs.get-global-metadata (. split 1))
+    (case (docs.get-global self (. split 1))
       metadata (search-document self metadata stack (or ?opts {}))
       _ (case (find-local-definition file name scope)
           def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))

@@ -162,7 +162,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       {: definition : file}
       (case (values definition (type definition))
         ;; fields of a string are hardcoded to "string"
-        (_str :string) (icollect [label info (pairs (. (docs.get-global-metadata :string) :fields))]
+        (_str :string) (icollect [label info (pairs (. (docs.get-global self :string) :fields))]
                          (formatter.completion-item-format label info))
         ;; fields of a table
         (tbl :table) (let [keys []]
