@@ -21,15 +21,6 @@ identifiers are declared / referenced in which places."
     (= (type candidate.specials) :table)
     (= (type candidate.gensyms) :table)))
 
-;; words surrounded by - are symbols,
-;; because fennel doesn't allow 'require in a runtime file
-(local -require- (sym :require))
-(local -include- (sym :include))
-(local -fn- (sym :fn))
-(local -if- (sym :if))
-(local -lambda- (sym :lambda))
-(local -λ- (sym :λ))
-
 (λ ast->macro-ast [ast]
   [(fennel.list (sym :eval-compiler)
                 ((or table.unpack _G.unpack) ast))])
@@ -220,22 +211,24 @@ identifiers are declared / referenced in which places."
       (tset calls ast true)
       (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:
-      (case ast
+      (case (and (sym? (. ast 1)) (tostring (. ast 1)))
         ;; This cannot be done through the :fn feature of the compiler plugin system
         ;; because it needs to be called *before* the body of the function is processed.
         ;; TODO check if hashfn needs to be here
-        (where (or [(= -fn-)] [(= -lambda-)] [(= -λ-)]))
+        (where (or :fn :lambda :λ))
         (define-function ast scope)
-        (where (or [(= -require-) _modname]
-                   [(= -include-) _modname]))
+        (where (or :require :include))
         (tset require-calls ast true)
         ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
-        (where [sym] (multisym? sym) (: (tostring sym) :find ":"))
-        (reference sym scope :read)
+        (where method-call (= (type method-call) :string) (method-call:find ":"))
+        (reference (. ast 1) scope :read)
         ;; NOTE HACK TODO this should be removed once fennel makes if statements work like normal
-        (where [(= -if-)])
+        (where :if)
         (let [len (length ast)]
-          (table.insert defer #(tset ast (+ len 1) nil)))))
+          (table.insert defer #(tset ast (+ len 1) nil)))
+        (where :hashfn)
+        (let [head (. ast 1)]
+          (table.insert defer #(set head.byteend head.bytestart)))))
 
     (λ attempt-to-recover! [msg ?ast]
       (or (= 1 (msg:find "unknown identifier"))

@@ -132,6 +132,21 @@ new message handler `msgh`.")
   (check "(let [(x y z a) (do (do (values 1 (do (values (values 2 4) (do 3))))))]\n  (print x y z a|))" nil)
   nil)
 
+(fn test-macro []
+  (check "(macro bind [a b c]
+            \"docstring!\"
+            `(let [,a ,b] ,c))
+          (bind x print |x)"
+         #($:find "```fnl\n(print ...)\n```" 1 true))
+  ; (check "(macro foo [a b c]
+  ;           \"docstring!\"
+  ;           `(,a ,b ,c))
+  ;         (fo|o print :hello :world)"
+  ;        "```fnl\n(macro foo [a b c] ...)\n```\ndocstring!")
+  (check "#(prin|t :hello)"
+         #($:find "```fnl\n(print ...)\n```" 1 true))
+  nil)
+
 {: test-literals
  : test-builtins
  : test-globals
@@ -139,4 +154,5 @@ new message handler `msgh`.")
  : test-functions
  : test-multisym
  : test-crash
- : test-multival}
+ : test-multival
+ : test-macro}
