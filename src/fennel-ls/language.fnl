@@ -174,8 +174,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
               (let [?byte initialization-opts.byte
                     split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))]
                 (stack-add-split! [] split)))]
-
-      (case (docs.get-global self (utils.multi-sym-base symbol))
+      (case (docs.get-builtin self (utils.multi-sym-base symbol))
         document (search-document self document stack opts)
         _ (case (. file.references symbol)
             ref (search-reference self file ref stack opts)
@@ -192,11 +191,14 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   "find a definition just from the name of the item, and the scope it is in"
   (assert (= (type name) :string))
   (let [split (utils.multi-sym-split name)
-        stack (stack-add-split! [] split)]
-    (case (docs.get-global self (. split 1))
-      metadata (search-document self metadata stack (or ?opts {}))
-      _ (case (find-local-definition file name scope)
-          def (search-val self file def.definition (stack-add-keys! stack def.keys) (or ?opts {}))))))
+        stack (stack-add-split! [] split)
+        opts (or ?opts {})]
+    (case (docs.get-builtin self (. split 1))
+      metadata (search-document self metadata stack opts)
+      _ (case (docs.get-global self (. split 1))
+          metadata (search-document self metadata stack opts)
+          _ (case (find-local-definition file name scope)
+              def (search-val self file def.definition (stack-add-keys! stack def.keys) opts))))))
 
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object

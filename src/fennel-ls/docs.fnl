@@ -14,10 +14,13 @@
 (local lua54 (require :fennel-ls.docs.lua54))
 
 (fn get-global [_self global-name]
-  (or (. specials global-name)
-      (. macros* global-name)
-      (. lua54 global-name)))
+  (. lua54 global-name))
+
+(fn get-builtin [_self builtin-name]
+  (or (. specials builtin-name)
+      (. macros* builtin-name)))
 
 ;; TODO get-module-metadata
 
-{: get-global}
+{: get-global
+ : get-builtin}
