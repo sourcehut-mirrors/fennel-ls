@@ -65,7 +65,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-document [self document stack opts]
-  (doto opts (tset :searched-through-require true))
+  (when (not= (tostring (?. document :binding)) :_G)
+    (set opts.searched-through-require true))
   (if (= 0 (length stack))
     document
     (and document.fields

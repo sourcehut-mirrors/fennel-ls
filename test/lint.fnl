@@ -87,11 +87,17 @@
           :main.fnl
           "(local {: a : c &as guy} (require :the-guy-they-tell-you-not-to-worry-about))
            (print guy.b guy.d)"}
-         [{:code 302}] [{:code 302 :message "unknown module field: a"}
-                        {:code 302 :message "unknown module field: b"}])
-  (check "table.insert2"
-         [{:code 302}]
-         []))
+         [{:code 302 :message "unknown field: guy.d"}]
+         [{:code 302 :message "unknown field: a"}
+          {:code 302 :message "unknown field: b"}])
+  (check "table.insert2 table.insert"
+         [{:code 302 :message "unknown field: table.insert2"}]
+         [{:code 302 :message "unknown field: table.insert"}])
+  ;; if you explicitly write "_G", it should turn off this test. Hardcoded.
+  (check "_G.insert2"
+         []
+         [{:code 302}])
+  nil)
 
 (fn test-unnecessary-colon []
   (check "(let [x :haha] (: x :find :a))"
