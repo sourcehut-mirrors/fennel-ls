@@ -11,19 +11,23 @@
 
 (local html (file:read :a))
 
-;; The section about the standard library
+;; The section of the html about the standard library
 (local begin-index (assert (html:find "<h2>.%.1 &ndash; <a name=\".%.1\">Basic Functions.-\n")))
 (local end-index (assert (html:find "<h1>. &ndash; <a name=\".\".-\n" begin-index)))
 (local stdlib (html:sub begin-index (- end-index 1)))
 
 
-;; Each section split by <h3>
-;; TODO figure out <h2>
-(local sections [])
+(local module-items [])
+(local modules [])
 (fn loop [prev]
   (let [header (stdlib:find "<hr><h3>.-\n" (+ prev 1))
         section (stdlib:sub prev (if header (- header 1)))]
-    (table.insert sections section)
+    (let [index (section:find "<h2>")]
+      (if index
+        (do
+          (table.insert module-items (section:sub 1 (- index 1)))
+          (table.insert modules (section:sub index))))
+      (table.insert module-items section))
     (when header (loop header))))
 (loop (stdlib:find "<hr><h3>.-\n"))
 
@@ -74,15 +78,16 @@
 
     (assert (not (signature:find "[%[%]]")) (.. "bad signature " signature))
     ;; Debug prints for now.
-    (print "=============")
-    (print "```fnl")
-    (print signature)
-    (print "```")
-    (print description)))
+    (when false
+      (print "=============")
+      (print "```fnl")
+      (print signature)
+      (print "```")
+      (print description))))
 
 
 (var done false)
-(each [_ section (ipairs sections) &until done]
+(each [_ section (ipairs module-items) &until done]
   (process-html-thing section))
   ; (if (= (io.read) "done")
   ;   (set done true)))
