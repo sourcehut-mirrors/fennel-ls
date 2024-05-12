@@ -145,6 +145,13 @@ new message handler `msgh`.")
   ;        "```fnl\n(macro foo [a b c] ...)\n```\ndocstring!")
   (check "#(prin|t :hello)"
          #($:find "```fnl\n(print ...)\n```" 1 true))
+  (check "(hash|fn (print :hello))"
+         #($:find "```fnl\n(hashfn ...)\n```" 1 true))
+  (check "#prin|t"
+         #($:find "```fnl\n(print ...)\n```" 1 true))
+  (check ";; fennel-ls: macro-file
+          `(,prin|t :hello)"
+         #($:find "```fnl\n(print ...)\n```" 1 true))
   nil)
 
 {: test-literals

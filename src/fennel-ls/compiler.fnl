@@ -211,24 +211,21 @@ identifiers are declared / referenced in which places."
       (tset calls ast true)
       (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:
-      (case (and (sym? (. ast 1)) (tostring (. ast 1)))
-        ;; This cannot be done through the :fn feature of the compiler plugin system
-        ;; because it needs to be called *before* the body of the function is processed.
-        ;; TODO check if hashfn needs to be here
-        (where (or :fn :lambda :λ))
-        (define-function ast scope)
-        (where (or :require :include))
-        (tset require-calls ast true)
-        ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
-        (where method-call (= (type method-call) :string) (method-call:find ":"))
-        (reference (. ast 1) scope :read)
-        ;; NOTE HACK TODO this should be removed once fennel makes if statements work like normal
-        (where :if)
-        (let [len (length ast)]
-          (table.insert defer #(tset ast (+ len 1) nil)))
-        (where :hashfn)
-        (let [head (. ast 1)]
-          (table.insert defer #(set head.byteend head.bytestart)))))
+      (let [head (. ast 1)]
+        (case (and (sym? head) (tostring head))
+          ;; This cannot be done through the :fn feature of the compiler plugin system
+          ;; because it needs to be called *before* the body of the function is processed.
+          (where (or :fn :lambda :λ))
+          (define-function ast scope)
+          (where (or :require :include))
+          (tset require-calls ast true)
+          ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
+          (where method-call (= (type method-call) :string) (method-call:find ":"))
+          (reference head scope :read)
+          ;; NOTE HACK TODO this should be removed once fennel makes if statements work like normal
+          (where :if)
+          (let [len (length ast)]
+            (table.insert defer #(tset ast (+ len 1) nil))))))
 
     (λ attempt-to-recover! [msg ?ast]
       (or (= 1 (msg:find "unknown identifier"))
@@ -343,15 +340,25 @@ identifiers are declared / referenced in which places."
 
           ast (icollect [ok ast parser &until (not ok)] ast)]
 
-      (λ collect-everything [ast result]
+      (λ parsed [ast]
+        "runs on every ast tree that was parsed"
+        (if (sym? ast)
+          (case (values (tostring ast) (file.text:sub ast.bytestart ast.bytestart))
+            (where (:hashfn "#"))
+            (table.insert defer #(set ast.byteend ast.bytestart))
+            (where (or (:quote "'") (:quote "`")))
+            (table.insert defer #(set ast.byteend ast.bytestart))
+            (where (:unquote ","))
+            (table.insert defer #(set ast.byteend ast.bytestart))))
         (when (or (table? ast) (list? ast) (sym? ast))
-          (tset result ast true))
+          (tset lexical ast true))
+        ;; recursive call
         (when (or (table? ast) (list? ast))
           (each [k v (iter ast)]
-            (collect-everything k result)
-            (collect-everything v result))))
+            (parsed k)
+            (parsed v))))
 
-      (collect-everything ast lexical)
+      (parsed ast lexical)
 
       ;; This is bad; we mutate fennel.macro-path
       (let [old-macro-path fennel.macro-path]
