@@ -11,7 +11,9 @@
                (.. "Invalid hover message\nfrom:    " (view file-contents)))
       (= (type ?response-string) :function)
       (faith.is (?response-string (?. message :result :contents :value))
-               (.. "Invalid hover message\nfrom:    " (view file-contents)))
+               (.. "Invalid hover message:\n"
+                   (?. message :result :contents :value)
+                   "\nfrom:    " (view file-contents)))
 
 
       (faith.= null message.result))))
@@ -143,15 +145,26 @@ new message handler `msgh`.")
   ;           `(,a ,b ,c))
   ;         (fo|o print :hello :world)"
   ;        "```fnl\n(macro foo [a b c] ...)\n```\ndocstring!")
+  nil)
+
+(fn test-reader []
+  ;; works in #
   (check "#(prin|t :hello)"
          #($:find "```fnl\n(print ...)\n```" 1 true))
-  (check "(hash|fn (print :hello))"
-         #($:find "```fnl\n(hashfn ...)\n```" 1 true))
-  (check "#prin|t"
-         #($:find "```fnl\n(print ...)\n```" 1 true))
+  ;; works in ` and ,
   (check ";; fennel-ls: macro-file
           `(,prin|t :hello)"
          #($:find "```fnl\n(print ...)\n```" 1 true))
+  (check "#prin|t"
+         #($:find "```fnl\n(print ...)\n```" 1 true))
+  (check "(hash|fn (print :hello))"
+         #($:find "```fnl\n(hashfn ...)\n```" 1 true))
+  ;; You can use it ON the symbol
+  (check "#|(print)"
+         #($:find "```fnl\n(hashfn ...)\n```" 1 true))
+  (check ";; fennel-ls: macro-file
+          `|(print)"
+         #($:find "```fnl\n(quote x)\n```" 1 true))
   nil)
 
 {: test-literals
@@ -162,4 +175,5 @@ new message handler `msgh`.")
  : test-multisym
  : test-crash
  : test-multival
- : test-macro}
+ : test-macro
+ : test-reader}
