@@ -1,5 +1,5 @@
 "work in progress script to generate /src/fennel-ls/docs/lua54.fnl automatically"
-
+(local {: view} (require :fennel))
 (local version "5.4")
 (local filename (.. "lua" version ".html"))
 (var file (io.open filename :r))
@@ -26,8 +26,8 @@
       (if index
         (do
           (table.insert module-items (section:sub 1 (- index 1)))
-          (table.insert modules (section:sub index))))
-      (table.insert module-items section))
+          (table.insert modules (section:sub index)))
+        (table.insert module-items section)))
     (when header (loop header))))
 (loop (stdlib:find "<hr><h3>.-\n"))
 
@@ -74,16 +74,20 @@
         description (description:gsub "<code>(.-)</code>" "`%1`")
         description (description:gsub "&nbsp;" " ")
         description (description:gsub "&ndash;" "–")
-        description (description:gsub "&mdash;" "—")]
+        description (description:gsub "&mdash;" "—")
+        name (signature:match "[^() ]+")
+        key (name:match "[^.:]+$")
+        ?module (and (name:find "[.:]") (name:match "^[^.:]+"))]
 
     (assert (not (signature:find "[%[%]]")) (.. "bad signature " signature))
     ;; Debug prints for now.
-    (when false
-      (print "=============")
-      (print "```fnl")
-      (print signature)
-      (print "```")
-      (print description))))
+    (when (not ?module)
+      (print
+        (.. (view ?module)
+            (view key)
+            " "
+            (view {:binding (signature:match "[^() ]+")
+                   :metadata {:fnl/docstring description}}))))))
 
 
 (var done false)
