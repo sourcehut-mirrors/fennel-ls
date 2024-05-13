@@ -208,6 +208,7 @@ identifiers are declared / referenced in which places."
     (local defer [])
 
     (λ call [ast scope]
+      "every list that is a call to a special or macro or function"
       (tset calls ast true)
       (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:

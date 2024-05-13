@@ -203,14 +203,11 @@
 ; ;; (it "can go to the definition in a lua file")
 ; ;; (it "finds (set a.b) definitions")
 ; (it "finds (fn a.b [] ...) declarations"
-;   (check :goto-definition.fnl 51 12 :goto-definition.fnl 50 4 50 22))
 ; ;; (it "finds (tset a :b) definitions")
 ; ;; (it "finds (setmetatable a {:__index {:b def}) definitions")
 ; ;; (it "finds definitions into a function (fn foo [] (local x 10) {: x}) (let [result (foo)] (print result.x)) finds result.x")
 ; ;; (it "finds definitions through a function (fn foo [{: y}] {:x y}) (let [result (foo {:y {}})] (print result.x)) finds result.x")
 ; ;; (it "finds through setmetatable with an :__index function")
-; ;; (it "can go to a function's references OR read type inference comments when callsite isn't available (PICK ONE)")
-; ;; (it "can work with a custom fennelpath") ;; Wait until an options system is done
 
 {: test-basics
  : test-indirection
