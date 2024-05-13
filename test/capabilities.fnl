@@ -35,8 +35,11 @@
   (let [(_ [response]) (create-client {:params (params-with-encodings nil)})]
     (faith.= :utf-16 (. response :result :positionEncoding)))
 
-  (let [(_ [response]) (create-client {:params (params-with-encodings [:some-nonsense-encoding-I-dont-know])})]
+  (let [(_ [response]) (create-client {:params (params-with-encodings [:random-encoding])})]
     (faith.= :utf-16 (. response :result :positionEncoding)))
+
+  (let [(_ [response]) (create-client {:params (params-with-encodings [:utf-8 :utf-16])})]
+    (faith.= :utf-8 (. response :result :positionEncoding)))
 
   nil)
 
