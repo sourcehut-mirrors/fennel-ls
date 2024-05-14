@@ -39,6 +39,7 @@
   (create-client-with-files "(macro foo {} nil)
                              (λ test {} nil)
                              (λ {} nil")
+  (create-client-with-files "(fn foo []\n  #\n  (print :test))")
   nil)
 
 (fn test-split-spaces []
