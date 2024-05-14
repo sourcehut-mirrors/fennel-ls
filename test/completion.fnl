@@ -233,6 +233,10 @@
           (t.i"
     ["insert"]
     [{:documentation #(= nil $)}])
+  (check "debug.deb|"
+    [{:label "debug"
+      :documentation #(and $.value ($.value:find "```fnl\n(debug.debug)\n```" 1 true))}]
+    [])
   nil)
 
 (local eglot {:params {:capabilities {:general {:positionEncodings [:utf-8]}}

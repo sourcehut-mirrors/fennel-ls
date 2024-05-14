@@ -29,9 +29,11 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
   "formats a special using its builtin metadata magic"
   (..
     (code-block
-      (if metadata.fnl/arglist
-        (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")")
-        (tostring binding)))
+      (if (not metadata.fnl/arglist)
+        (tostring binding)
+        (= 0 (length metadata.fnl/arglist))
+        (.. "(" (tostring binding) ")")
+        (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")")))
     "\n"
     metadata.fnl/docstring))
 
