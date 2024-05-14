@@ -177,6 +177,7 @@
     [{:label :xyzzy :kind kinds.Variable :documentation true}] ;; TODO shouldn't this be kinds.Function
     [])
 
+  ;; things that aren't present in lua5.4 but are in other versions, I guess??
   (local things-that-are-allowed-to-have-missing-docs
     {:lua 1 :set-forcibly! 1 :unpack 1 :setfenv 1 :getfenv 1 :module 1 :newproxy 1 :gcinfo 1 :loadstring 1 :bit 1 :jit 1 :bit32 1})
 
@@ -221,7 +222,7 @@
 (fn test-module []
   (check "(coroutine.y|"
     [{:label "yield"
-      :documentation #(and $.value ($.value:find "```fnl\n(yield ...)\n```" 1 true))}]
+      :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
     ["coroutine" "_G" "do"
      {:documentation #(= nil $)}])
   (check "(local c coroutine)
@@ -251,7 +252,7 @@
       :filterText "coroutine.yield"
       :insertText "coroutine.yield"
       :textEdit #(= nil $)
-      :documentation #(and $.value ($.value:find "```fnl\n(yield ...)\n```" 1 true))}]
+      :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
     ["coroutine" "_G" "do"
      {:documentation #(= nil $)}]
     eglot)

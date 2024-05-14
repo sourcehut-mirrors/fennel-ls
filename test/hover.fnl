@@ -40,41 +40,43 @@
 
 (fn test-globals []
   (check "(pri|nt :hello :world)" "```fnl\n(print ...)\n```
-Receives any number of arguments and prints their values to `stdout`,
-converting each argument to a string following the same rules of
-[`tostring`](https://lua.org/manual/5.4/manual.html#pdf-tostring).
+Receives any number of arguments
+and prints their values to `stdout`,
+converting each argument to a string
+following the same rules of `tostring`.
 
-The function `print` is not intended for formatted output, but only as
-a quick way to show a value, for instance for debugging. For complete
-control over the output, use
-[`string.format`](https://lua.org/manual/5.4/manual.html#pdf-string.format)
-and [`io.write`](https://lua.org/manual/5.4/manual.html#pdf-io.write).")
+The function `print` is not intended for formatted output,
+but only as a quick way to show a value,
+for instance for debugging.
+For complete control over the output,
+use `string.format` and `io.write`.")
   (check "(local x print) (x| :hello :world)" "```fnl\n(print ...)\n```
-Receives any number of arguments and prints their values to `stdout`,
-converting each argument to a string following the same rules of
-[`tostring`](https://lua.org/manual/5.4/manual.html#pdf-tostring).
+Receives any number of arguments
+and prints their values to `stdout`,
+converting each argument to a string
+following the same rules of `tostring`.
 
-The function `print` is not intended for formatted output, but only as
-a quick way to show a value, for instance for debugging. For complete
-control over the output, use
-[`string.format`](https://lua.org/manual/5.4/manual.html#pdf-string.format)
-and [`io.write`](https://lua.org/manual/5.4/manual.html#pdf-io.write).")
+The function `print` is not intended for formatted output,
+but only as a quick way to show a value,
+for instance for debugging.
+For complete control over the output,
+use `string.format` and `io.write`.")
   (check "(xpca|ll io.open debug.traceback :filename.txt)" "```fnl
-(xpcall f msgh ...)
+(xpcall f msgh ?arg1 ...)
 ```
-This function is similar to [`pcall`](https://lua.org/manual/5.4/manual.html#pdf-pcall), except that it sets a
-new message handler `msgh`.")
-  (check "(table.inser|t [] :message" #($:find "```fnl\n(insert list ?pos value)\n```" 1 true))
+This function is similar to `pcall`,
+except that it sets a new message handler `msgh`.")
+  (check "(table.inser|t [] :message" #($:find "```fnl\n(table.insert list value)\n```" 1 true))
   nil)
 
 (fn test-module []
   (check "coroutine.yie|ld"
-         "```fnl\n(yield ...)\n```\nSuspends the execution of the calling coroutine.\nAny arguments to `yield` are passed as extra results to `resume`.")
+         "```fnl\n(coroutine.yield ...)\n```\nSuspends the execution of the calling coroutine.\nAny arguments to `yield` are passed as extra results to `resume`.")
   (check "string.cha|r"
-         "```fnl\n(char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms.")
+         "```fnl\n(string.char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms.")
   (check "(local x :hello)
           x.cha|r"
-         "```fnl\n(char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
+         "```fnl\n(string.char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
 
 
 (fn test-functions []
