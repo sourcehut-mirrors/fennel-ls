@@ -38,6 +38,9 @@ testall:
 	$(MAKE) test LUA=lua5.4
 	$(MAKE) test LUA=luajit
 
+docs:
+	$(FENNEL) $(OPTS) make-docs.fnl
+
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
