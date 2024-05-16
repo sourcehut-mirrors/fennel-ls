@@ -29,9 +29,12 @@
             (table.insert fields section)))
         (when header (loop header))))
 
+
+    (fn make-title [name]
+      (.. "<hr><h3><a name=\"pdf-" name "\"><code>" name "</code></a></h3>\n"))
     ;; Artificially insert the `arg` docs.
     ;; This isn't present in the "Basic Functions" part of the manual, but is still useful to be included in the docs.
-    (let [arg-signature "<hr><h3><a name=\"pdf-arg\"><code>arg</code></a></h3>\n"
+    (let [arg-signature (make-title :arg)
           arg-description (-> html
                               ;; The goal here is to extract the smallest string which:
                               ;; 1) contains the string "global table called <code>arg</code>"
@@ -46,6 +49,9 @@
                               (: :match "(.-)>p<\n")
                               (: :reverse))]
       (table.insert fields (.. arg-signature arg-description)))
+    (table.insert fields (.. (make-title "io.stdin") "stdin file"))
+    (table.insert fields (.. (make-title "io.stdout") "stdout file"))
+    (table.insert fields (.. (make-title "io.stderr") "stderr file"))
     (loop (stdlib:find "<hr><h3>.-\n"))
     (values modules fields last-update)))
 
@@ -205,6 +211,9 @@
           (view (list (sym :local) (sym :docs) docs))
           "\n"
           "(set docs._G.fields docs)\n"
+          "(set docs.io.fields.stdin.fields docs.io.fields)\n"
+          "(set docs.io.fields.stdout.fields docs.io.fields)\n"
+          "(set docs.io.fields.stderr.fields docs.io.fields)\n"
           "docs\n"))
       (print (.. "Emitted docs for lua" version)))))
 

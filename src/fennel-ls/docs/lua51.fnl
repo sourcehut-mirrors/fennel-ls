@@ -418,6 +418,12 @@ on all platforms."}}
                :read {:binding "io.read"
                       :metadata {:fnl/arglist ["..."]
                                  :fnl/docstring "Equivalent to `io.input():read`."}}
+               :stderr {:binding "io.stderr"
+                        :metadata {:fnl/docstring "stderr file"}}
+               :stdin {:binding "io.stdin"
+                       :metadata {:fnl/docstring "stdin file"}}
+               :stdout {:binding "io.stdout"
+                        :metadata {:fnl/docstring "stdout file"}}
                :tmpfile {:binding "io.tmpfile"
                          :metadata {:fnl/arglist {}
                                     :fnl/docstring "Returns a handle for a temporary file.
@@ -1401,4 +1407,7 @@ after this first result.
 In case of any error,
 `xpcall` returns **false** plus the result from `err`."}}})
 (set docs._G.fields docs)
+(set docs.io.fields.stdin.fields docs.io.fields)
+(set docs.io.fields.stdout.fields docs.io.fields)
+(set docs.io.fields.stderr.fields docs.io.fields)
 docs
