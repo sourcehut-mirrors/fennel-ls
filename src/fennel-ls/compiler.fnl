@@ -263,7 +263,6 @@ identifiers are declared / referenced in which places."
               (table.insert defer #(tset ?ast 1 old))
               true))))
 
-
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range self file ast)
                       (line+byte->range self file 1 1))]
@@ -344,6 +343,7 @@ identifiers are declared / referenced in which places."
       (λ parsed [ast]
         "runs on every ast tree that was parsed"
         ;; TODO in fennel 1.5+, bug fennel#221 will be fixed, and all syms in the ast should have a bytestart
+        ;; the extra check can be removed
         (if (and (sym? ast) ast.bytestart)
           (case (values (tostring ast) (file.text:sub ast.bytestart ast.bytestart))
             (where (:hashfn "#"))

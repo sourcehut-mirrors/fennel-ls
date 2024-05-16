@@ -1,7 +1,8 @@
 "State
-This module keeps track of the state of the language server.
-There are helpers to get files (get-by functions are all for
-getting files), and there's stuff for configuration options.
+This module keeps track of the state of the language server:
+* Settings
+* Loaded files
+
 There is no global state in this project: all state is stored
 in the \"self\" object. Pretty much every \"self\" in the
 entire fennel-ls project is referring to the same object."
@@ -137,6 +138,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   (set self.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
 
 (λ write-configuration [self ?configuration]
+  "This is where we can put anything that needs to react to config changes"
   (set self.configuration (make-configuration ?configuration)))
 
 {: flush-uri
