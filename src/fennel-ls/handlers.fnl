@@ -17,56 +17,56 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local requests [])
 (local notifications [])
 
-(local capabilities
-  {:textDocumentSync {:openClose true :change 2}
-   ;; :notebookDocumentSync nil
-   :completionProvider {:workDoneProgress false}
-   :hoverProvider {:workDoneProgress false
-                   :resolveProvider false
-                   :triggerCharacters ["(" "[" "{" "." ":" "\""]
-                   :completionItem {:labelDetailsSupport false}}
-   ;; :signatureHelpProvider nil
-   ;; :declarationProvider nil
-   :definitionProvider {:workDoneProgress false}
-   ;; :typeDefinitionProvider nil
-   ;; :implementationProvider nil
-   :referencesProvider {:workDoneProgress false}
-   ;; :documentHighlightProvider nil
-   ;; :documentSymbolProvider nil
-   :codeActionProvider {:workDoneProgress false}
-   ;; :codeLensProvider nil
-   ;; :documentLinkProvider nil
-   ;; :colorProvider nil
-   ;; :documentFormattingProvider nil
-   ;; :documentRangeFormattingProvider nil
-   ;; :documentOnTypeFormattingProvider nil
-   :renameProvider {:workDoneProgress false}})
-   ;; :foldingRangeProvider nil
-   ;; :executeCommandProvider nil
-   ;; :selectionRangeProvider nil
-   ;; :linkedEditingRangeProvider nil
-   ;; :callHierarchyProvider nil
-   ;; :semanticTokensProvider nil
-   ;; :monikerProvider nil
-   ;; :typeHierarchyProvider nil
-   ;; :inlineValueProvider nil
-   ;; :inlayHintProvider nil
-   ;; ;; this is for PULL diagnostics, but fennel-ls currently does PUSH diagnostics
-   ;; :diagnosticProvider {:workDoneProgress false}})
-   ;; :workspaceSymbolProvider nil
-   ;; :workspace {:workspaceFolders nil
-   ;;             :documentOperations {:didCreate nil
-   ;;                                  :willCreate nil
-   ;;                                  :didRename nil
-   ;;                                  :willRename nil
-   ;;                                  :didDelete nil
-   ;;                                  :willDelete nil}})
-
 (λ requests.initialize [self send params]
   (state.init-state self params)
-  {:capabilities capabilities
-   :positionEncoding self.position-encoding
-   :serverInfo {:name "fennel-ls" :version "0.1.0"}})
+  (let [capabilities
+        {:positionEncoding self.position-encoding
+         :textDocumentSync {:openClose true :change 2}
+         ;; :notebookDocumentSync nil
+         :completionProvider {:workDoneProgress false
+                              :resolveProvider false
+                              :triggerCharacters ["(" "[" "{" "." ":" "\""]
+                              :completionItem {:labelDetailsSupport false}}
+         :hoverProvider {:workDoneProgress false}
+         ;; :signatureHelpProvider nil
+         ;; :declarationProvider nil
+         :definitionProvider {:workDoneProgress false}
+         ;; :typeDefinitionProvider nil
+         ;; :implementationProvider nil
+         :referencesProvider {:workDoneProgress false}
+         ;; :documentHighlightProvider nil
+         ;; :documentSymbolProvider nil
+         :codeActionProvider {:workDoneProgress false}
+         ;; :codeLensProvider nil
+         ;; :documentLinkProvider nil
+         ;; :colorProvider nil
+         ;; :documentFormattingProvider {:workDoneProgress false}
+         ;; :documentRangeFormattingProvider nil
+         ;; :documentOnTypeFormattingProvider nil
+         :renameProvider {:workDoneProgress false}}]
+         ;; :foldingRangeProvider nil
+         ;; :executeCommandProvider nil
+         ;; :selectionRangeProvider nil
+         ;; :linkedEditingRangeProvider nil
+         ;; :callHierarchyProvider nil
+         ;; :semanticTokensProvider nil
+         ;; :monikerProvider nil
+         ;; :typeHierarchyProvider nil
+         ;; :inlineValueProvider nil
+         ;; :inlayHintProvider nil
+         ;; ;; this is for PULL diagnostics, but fennel-ls currently does PUSH diagnostics
+         ;; :diagnosticProvider {:workDoneProgress false}})
+         ;; :workspaceSymbolProvider nil
+         ;; :workspace {:workspaceFolders nil
+         ;;             :fileOperations {:didCreate nil
+         ;;                              :willCreate nil
+         ;;                              :didRename nil
+         ;;                              :willRename nil
+         ;;                              :didDelete nil
+         ;;                              :willDelete nil}}
+         ;; :experimental nil)
+    {: capabilities
+     :serverInfo {:name "fennel-ls" :version "0.1.0"}}))
 
 (λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
   (let [file (state.get-by-uri self uri)
