@@ -293,9 +293,7 @@ identifiers are declared / referenced in which places."
           (call-me-to-reset-the-compiler)
           (error "__NOT_AN_ERROR"))))
 
-    (local allowed-globals
-      (icollect [k _ (pairs _G)]
-        k))
+    (local allowed-globals (docs.get-all-globals self))
     (each [_ v (ipairs (utils.split-spaces self.configuration.extra-globals))]
       (table.insert allowed-globals v))
 
