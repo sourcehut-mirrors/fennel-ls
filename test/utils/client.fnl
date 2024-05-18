@@ -11,24 +11,25 @@
   (.. "file://" ROOT-PATH))
 
 (local default-encoding :utf-8)
-(local default-params
-   {:capabilities {:general {:positionEncodings [default-encoding]}}
-    :clientInfo {:name "Neovim" :version "0.7.2"}
-    :initializationOptions {}
-    :processId 16245
-    :rootPath ROOT-PATH
-    :rootUri ROOT-URI
-    :trace "off"
-    :workspaceFolders [{:name ROOT-PATH
-                        :uri ROOT-URI}]})
 
 (local mt {})
-(fn create-client [?opts]
+(fn create-client [?opts ?provide-root-uri]
   (let [self (doto {:server [] :prev-id 1} (setmetatable mt))
+        params (or (?. ?opts :params)
+                   {:capabilities {:general {:positionEncodings [default-encoding]}}
+                    :clientInfo {:name "Neovim" :version "0.7.2"}
+                    :initializationOptions {}
+                    :processId 16245
+                    :rootPath (if ?provide-root-uri ROOT-PATH)
+                    :rootUri (if ?provide-root-uri ROOT-URI)
+                    :trace "off"
+                    :workspaceFolders (if ?provide-root-uri
+                                        [{:name ROOT-PATH
+                                          :uri ROOT-URI}])})
         initialize {:id 1
                     :jsonrpc "2.0"
                     :method "initialize"
-                    :params (or (?. ?opts :params) default-params)}
+                    : params}
         result (dispatch.handle* self.server initialize)]
     (case (?. ?opts :settings)
       settings

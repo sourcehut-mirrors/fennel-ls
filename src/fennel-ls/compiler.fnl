@@ -55,7 +55,7 @@ identifiers are declared / referenced in which places."
     {:start position :end position}))
 
 
-(λ compile [{:configuration {: macro-path} : root-uri &as self} file]
+(λ compile [{:configuration {: macro-path} :root-uri ?root-uri &as self} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
@@ -364,14 +364,16 @@ identifiers are declared / referenced in which places."
 
       ;; This is bad; we mutate fennel.macro-path
       (let [old-macro-path fennel.macro-path]
-        (set fennel.macro-path
-             (searcher.add-workspaces-to-path macro-path [root-uri]))
+        (when ?root-uri
+          (set fennel.macro-path
+               (searcher.add-workspaces-to-path macro-path [?root-uri])))
 
         ;; compile
         (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
           (filter-errors :compiler (xpcall #(fennel.compile form opts) fennel.traceback)))
 
-        (set fennel.macro-path old-macro-path))
+        (when ?root-uri
+          (set fennel.macro-path old-macro-path)))
 
       (each [_ cmd (ipairs defer)]
         (cmd))

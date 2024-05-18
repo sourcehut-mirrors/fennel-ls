@@ -42,19 +42,21 @@ I suspect this file may be gone after a bit of refactoring."
        (case (io.open (utils.uri->path uri))
          f (do (f:close) true))))
 
-(λ lookup [{:configuration {: fennel-path} : root-uri &as self} mod]
-  (let [mod (mod:gsub "%." sep)
-        root-path (utils.uri->path root-uri)]
-    (accumulate [uri nil
-                 segment (fennel-path:gmatch "[^;]+")
-                 &until uri]
-      (let [segment (segment:gsub "%?" mod)
-            segment (if (absolute? segment)
-                      segment
-                      (join root-path segment))
-            segment (utils.path->uri segment)]
-        (if (file-exists? self segment)
-          segment)))))
+(λ lookup [{:configuration {: fennel-path} :root-uri ?root-uri &as self} mod]
+  "Use the fennel path to find a file on disk"
+  (when ?root-uri
+    (let [mod (mod:gsub "%." sep)
+          root-path (utils.uri->path ?root-uri)]
+      (accumulate [uri nil
+                   segment (fennel-path:gmatch "[^;]+")
+                   &until uri]
+        (let [segment (segment:gsub "%?" mod)
+              segment (if (absolute? segment)
+                        segment
+                        (join root-path segment))
+              segment (utils.path->uri segment)]
+          (if (file-exists? self segment)
+            segment))))))
 
 {: lookup
  : add-workspaces-to-path}

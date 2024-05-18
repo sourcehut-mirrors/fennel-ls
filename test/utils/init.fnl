@@ -34,10 +34,10 @@
     result))
 
 (fn create-client-with-files [file-contents ?client-options]
-  (let [file-contents (if (= (type file-contents) :string)
-                        {:main.fnl file-contents}
-                        file-contents)
-        self (create-client ?client-options)
+  (let [(?give-a-root-uri file-contents) (if (= (type file-contents) :string)
+                                           (values nil {:main.fnl file-contents})
+                                           (values true file-contents))
+        self (create-client ?client-options ?give-a-root-uri)
         locations []]
     (each [name marked (pairs file-contents)]
       (if (not= name :main.fnl)
