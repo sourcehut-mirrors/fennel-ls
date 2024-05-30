@@ -37,7 +37,8 @@
                         (= e.textEdit.range.start.line      c.textEdit.range.start.line)
                         (= e.textEdit.range.start.character c.textEdit.range.start.character)
                         (= e.textEdit.range.end.line        c.textEdit.range.end.line)
-                        (= e.textEdit.range.end.character   c.textEdit.range.end.character))
+                        (= e.textEdit.range.end.character   c.textEdit.range.end.character)
+                        (= e.textEdit.newText c.textEdit.newText))
                    (and (= (type e.textEdit) :function)) (e.textEdit c.textEdit))))
       i)))
 
@@ -187,7 +188,8 @@
       :kind kinds.Operator
       :documentation true
       :textEdit {:range {:start {:line 0 :character 1}
-                         :end   {:line 0 :character 1}}}}
+                         :end   {:line 0 :character 1}}
+                 :newText :local}}
      ;; builtin macros
      {:label :-?>
       :kind kinds.Keyword
