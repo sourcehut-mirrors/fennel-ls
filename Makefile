@@ -6,11 +6,13 @@ SRC=$(wildcard src/*.fnl)
 SRC+=$(wildcard src/fennel-ls/*.fnl)
 SRC+=$(wildcard src/fennel-ls/docs/*.fnl)
 
+BUILD_DIR=./build
+
 DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
-OPTS=--add-package-path "./src/?.lua" --add-fennel-path "./src/?.fnl"
+OPTS=--add-package-path "src/?.lua" --add-fennel-path "src/?.fnl"
 OPTS+=--skip-include fennel.compiler
 
 .PHONY: all clean test install ci selfcheck
@@ -24,12 +26,13 @@ $(EXE): $(SRC)
 
 clean:
 	rm -f $(EXE)
+	rm -rf $(BUILD_DIR)
 
 test:
-	TESTING=1 $(FENNEL) $(OPTS) --add-fennel-path "./test/faith/?.fnl" test/init.fnl
+	TESTING=1 $(FENNEL) $(OPTS) --add-fennel-path "test/faith/?.fnl" test/init.fnl
 
 repl:
-	$(FENNEL) $(OPTS) --add-fennel-path "./test/faith/?.fnl"
+	$(FENNEL) $(OPTS) --add-fennel-path "test/faith/?.fnl"
 
 testall:
 	$(MAKE) test LUA=lua5.1
@@ -39,7 +42,7 @@ testall:
 	$(MAKE) test LUA=luajit
 
 docs:
-	$(FENNEL) $(OPTS) make-docs.fnl
+	$(FENNEL) $(OPTS) --add-fennel-path "tools/?.fnl" tools/gen-docs.fnl
 
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
