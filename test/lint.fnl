@@ -98,6 +98,12 @@
   (check "_G.insert2"
          []
          [{:code 302}])
+  ;; we don't care about nested
+  (check {:requireme.fnl "{:field []}"
+          :main.fnl "(local {: field} (require :requireme))
+                     field.unknown"}
+         []
+         [{:code 302}])
   nil)
 
 (fn test-unnecessary-colon []

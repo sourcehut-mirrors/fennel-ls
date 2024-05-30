@@ -65,17 +65,18 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-document [self document stack opts]
-  (when (not= (tostring (?. document :binding)) :_G)
-    (set opts.searched-through-require true))
+  (when (and (not= (tostring (?. document :binding)) :_G)
+             (= (length stack) 1))
+    (set opts.searched-through-require-with-stack-size-1 true))
   (if (= 0 (length stack))
     document
     (and document.fields
          (. document.fields (. stack (length stack))))
     (search-document self (. document.fields (table.remove stack)) stack opts)))
 
-(λ search-val [self file ast stack opts]
+(λ search-val [self file ?ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"
-  (search-multival self file ast stack 1 opts))
+  (search-multival self file ?ast stack 1 opts))
 
 (λ search-assignment [self file assignment stack opts]
   (let [{:target {:binding _
@@ -130,7 +131,9 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
               (let [newfile (state.get-by-module self mod)]
                 (when newfile
                   (let [newitem (. newfile.ast (length newfile.ast))]
-                    (search-val self newfile newitem stack (doto opts (tset :searched-through-require true)))))))))
+                    (when (= (length stack) 1)
+                      (set opts.searched-through-require-with-stack-size-1 true))
+                    (search-val self newfile newitem stack opts)))))))
         "."
         (if (= multival 1)
           (let [[_ & rest] call]
@@ -149,15 +152,16 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
           {:definition call : file}))))) ;; BASE CASE!!
 
 (set search-multival
-  (λ [self file ast stack multival opts]
-    (if (list? ast)     (search-list self file ast stack multival opts)
-        (varg? ast)     nil ;; TODO function-args
-        (= 1 multival)
-        (if (sym? ast)            (search-symbol self file ast stack opts)
-            (= 0 (length stack))  {:definition ast : file} ;; BASE CASE !!
-            (= :table (type ast)) (search-table self file ast stack opts)
-            (= :string (type ast)) (search-document self (docs.get-global self :string) stack opts))
-        nil)))
+  (λ [self file ?ast stack multival opts]
+    (let [ast ?ast] ;; it was a bad idea to use λ because ast may be nil
+      (if (list? ast)     (search-list self file ast stack multival opts)
+          (varg? ast)     nil ;; TODO function-args
+          (= 1 multival)
+          (if (sym? ast)            (search-symbol self file ast stack opts)
+              (= 0 (length stack))  {:definition ast : file} ;; BASE CASE !!
+              (= :table (type ast)) (search-table self file ast stack opts)
+              (= :string (type ast)) (search-document self (docs.get-global self :string) stack opts))
+          nil))))
 
 
 ;; the options thing is getting out of hand

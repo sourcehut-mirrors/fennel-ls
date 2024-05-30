@@ -47,7 +47,7 @@ the `file.diagnostics` field, filling it with diagnostics."
     (if (. (utils.multi-sym-split symbol) 2)
       (let [opts {}
             item (language.search-ast self file symbol [] opts)]
-        (if (and (not item) opts.searched-through-require)
+        (if (and (not item) opts.searched-through-require-with-stack-size-1)
           {:range (message.ast->range self file symbol)
            :message (.. "unknown field: " (tostring symbol))
            :severity message.severity.WARN
