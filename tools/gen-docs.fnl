@@ -41,6 +41,7 @@
                   result "\n"))))
 
 (fn main []
+  (mkdir-p "build/")
   (let [{:convert lua-manual} (require :tools.gen-docs.lua-manual)
         {:convert tic-manual} (require :tools.gen-docs.tic80)]
     (derive-docs-from-url "https://www.lua.org/manual/5.1/manual.html" "lua51.fnl" lua-manual)
