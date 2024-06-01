@@ -25,7 +25,8 @@
                                 "([_%w]+)%s+`([^`]+)`%s(.-)\n### ")]
       (let [arglist (markdown->arglist args)]
         (values name {:metadata {:fnl/arglist arglist
-                                 :fnl/docstring docs}})))))
+                                 :fnl/docstring docs}
+                      :binding name})))))
 
 (fn convert [contents]
   (fennel.view (markdown->data contents)))

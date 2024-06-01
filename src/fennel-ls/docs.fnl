@@ -22,17 +22,36 @@
   (when (not (. versions version))
     (error (.. "fennel-ls doesn't know about lua version " version "\n"
                "The allowed versions are: "
-               (fennel.view (icollect [key (pairs versions)]
-                              key)))))
+               (fennel.view (doto (icollect [key (pairs versions)] key) table.sort)))))
   (. versions version))
 
+(local libraries
+  {:tic80 (require :fennel-ls.docs.tic80)})
+
+(fn get-native-library [library]
+  (when (not (. libraries library))
+    (error (.. "fennel-ls doesn't know about native library " library "\n"
+               "The builtin libraries are: "
+               (fennel.view (doto (icollect [key (pairs libraries)] key) table.sort)))))
+  (. libraries library))
+
 (fn get-all-globals [self]
-  (icollect [name (pairs (get-lua-version self.configuration.version))]
-    name))
+  (let [result []]
+    (each [_ library (ipairs self.configuration.native-libraries)]
+      (icollect [name (pairs (get-native-library library)) &into result]
+        name))
+    (icollect [name (pairs (get-lua-version self.configuration.version)) &into result]
+      name)))
 
 (fn get-global [self global-name]
-  (. (get-lua-version self.configuration.version)
-     global-name))
+  (or
+    (accumulate [result nil
+                 _ library (ipairs self.configuration.native-libraries)
+                 &until result]
+      (. (get-native-library library)
+         global-name))
+    (. (get-lua-version self.configuration.version)
+       global-name)))
 
 (fn get-builtin [_self builtin-name]
   (or (. specials builtin-name)

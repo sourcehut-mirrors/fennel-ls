@@ -61,7 +61,16 @@
     (faith.= [] diagnostics))
   nil)
 
+(fn test-native-libaries []
+  (let [{:diagnostics bad} (create-client-with-files "(print btn)"
+                             {:settings {}})
+        {:diagnostics good} (create-client-with-files "(print btn)"
+                              {:settings {:fennel-ls {:native-libraries [:tic80]}}})]
+    (faith.not= [] bad)
+    (faith.= [] good)))
+
 {: test-path
  : test-extra-globals
  : test-lints
- : test-initialization-options}
+ : test-initialization-options
+ : test-native-libaries}

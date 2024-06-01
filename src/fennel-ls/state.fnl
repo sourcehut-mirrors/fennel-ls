@@ -105,6 +105,7 @@ entire fennel-ls project is referring to the same object."
             :var-never-set (option true)
             :op-with-no-arguments (option true)
             :multival-in-middle-of-call (option true)}
+   :native-libraries (option [])
    :extra-globals (option "")})
 
 (λ make-configuration [?c]
