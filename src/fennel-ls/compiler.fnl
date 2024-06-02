@@ -46,16 +46,16 @@ identifiers are declared / referenced in which places."
        (tset self key val)
        val))})
 
-(λ line+byte->range [self file line byte]
+(λ line+byte->range [server file line byte]
   (let [line (- line 1)
         ;; some errors in fennel erroneously say column -1
         ;; try compiling "(do\n" to see what I mean
         byte (math.max 0 byte)
-        position (utils.pos->position file.text line byte self.position-encoding)]
+        position (utils.pos->position file.text line byte server.position-encoding)]
     {:start position :end position}))
 
 
-(λ compile [{:configuration {: macro-path} :root-uri ?root-uri &as self} file]
+(λ compile [{:configuration {: macro-path} :root-uri ?root-uri &as server} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
@@ -79,7 +79,7 @@ identifiers are declared / referenced in which places."
       ;; find reference
       (let [name (string.match (tostring symbol) "[^%.:]+")]
         (case (or (find-definition (tostring name) scope)
-                  (docs.get-global self name))
+                  (docs.get-global server name))
           target (let [ref {: symbol : target : ref-type}]
                    (tset references symbol ref)
                    (when target.referenced-by
@@ -264,8 +264,8 @@ identifiers are declared / referenced in which places."
               true))))
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
-      (let [range (or (message.ast->range self file ast)
-                      (line+byte->range self file 1 1))]
+      (let [range (or (message.ast->range server file ast)
+                      (line+byte->range server file 1 1))]
         (table.insert diagnostics
           {:range range
            :message msg
@@ -280,7 +280,7 @@ identifiers are declared / referenced in which places."
 
     (λ on-parse-error [msg filename line byte _source call-me-to-reset-the-compiler]
       (let [line (if (= line "?") 1 line)
-            range (line+byte->range self file line byte)]
+            range (line+byte->range server file line byte)]
         (table.insert diagnostics
           {:range range
            :message msg
@@ -293,8 +293,8 @@ identifiers are declared / referenced in which places."
           (call-me-to-reset-the-compiler)
           (error "__NOT_AN_ERROR"))))
 
-    (local allowed-globals (docs.get-all-globals self))
-    (each [_ v (ipairs (utils.split-spaces self.configuration.extra-globals))]
+    (local allowed-globals (docs.get-all-globals server))
+    (each [_ v (ipairs (utils.split-spaces server.configuration.extra-globals))]
       (table.insert allowed-globals v))
 
     ;; TODO clean up this code. It's awful now that there is error handling
@@ -329,7 +329,7 @@ identifiers are declared / referenced in which places."
                               (error (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
                                          "\n\n^^^ the error message above here is the root problem\n\n"))
                               (table.insert diagnostics
-                                {:range (line+byte->range self file 1 1)
+                                {:range (line+byte->range server file 1 1)
                                  :message (.. "unrecoverable " component " error: " err)}))))
 
           parser (let [p (fennel.parser file.text file.uri opts)]

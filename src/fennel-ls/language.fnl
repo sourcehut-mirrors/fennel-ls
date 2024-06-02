@@ -64,7 +64,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   "add the multisy values to the end of the stack in reverse order"
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
-(λ search-document [self document stack opts]
+(λ search-document [server document stack opts]
   (when (and (not= (tostring (?. document :binding)) :_G)
              (= (length stack) 1))
     (set opts.searched-through-require-with-stack-size-1 true))
@@ -72,13 +72,13 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
     document
     (and document.fields
          (. document.fields (. stack (length stack))))
-    (search-document self (. document.fields (table.remove stack)) stack opts)))
+    (search-document server (. document.fields (table.remove stack)) stack opts)))
 
-(λ search-val [self file ?ast stack opts]
+(λ search-val [server file ?ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"
-  (search-multival self file ?ast stack 1 opts))
+  (search-multival server file ?ast stack 1 opts))
 
-(λ search-assignment [self file assignment stack opts]
+(λ search-assignment [server file assignment stack opts]
   (let [{:target {:binding _
                   :definition ?definition
                   :keys ?keys
@@ -91,56 +91,56 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         assignment.target ;; BASE CASE!!
         ;; search a virtual field from :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
-        (search-assignment self file {:target (. ?fields (table.remove stack))} stack opts)
-        (search-multival self file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))
+        (search-assignment server file {:target (. ?fields (table.remove stack))} stack opts)
+        (search-multival server file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))
 
-(λ search-reference [self file ref stack opts]
+(λ search-reference [server file ref stack opts]
   (if ref.target.metadata
-     (search-document self ref.target stack opts)
+     (search-document server ref.target stack opts)
      ref.target.binding
-     (search-assignment self file ref stack opts)))
+     (search-assignment server file ref stack opts)))
 
-(λ search-symbol [self file symbol stack opts]
+(λ search-symbol [server file symbol stack opts]
   (if (= (tostring symbol) :nil)
     (if (= 0 (length stack))
       {:definition symbol : file}
       nil)
     (if (. file.references symbol)
-      (search-reference self file (. file.references symbol) (stack-add-multisym! stack symbol) opts))))
+      (search-reference server file (. file.references symbol) (stack-add-multisym! stack symbol) opts))))
 
-(λ search-table [self file tbl stack opts]
+(λ search-table [server file tbl stack opts]
   (if (. tbl (. stack (length stack)))
-      (search-val self file (. tbl (table.remove stack)) stack opts)
+      (search-val server file (. tbl (table.remove stack)) stack opts)
       nil)) ;; BASE CASE Give up
 
-(λ search-list [self file call stack multival opts]
+(λ search-list [server file call stack multival opts]
   (let [head (. call 1)]
     (if (sym? head)
       (case (tostring head)
         (where (or :do :let))
-        (search-multival self file (. call (length call)) stack multival opts)
+        (search-multival server file (. call (length call)) stack multival opts)
         :values
         (let [len (- (length call) 1)]
           (if (< multival len)
-            (search-val self file (. call (+ 1 multival)) stack opts)
-            (search-multival self file (. call (+ len 1)) stack (+ multival (- len) 1) opts)))
+            (search-val server file (. call (+ 1 multival)) stack opts)
+            (search-multival server file (. call (+ len 1)) stack (+ multival (- len) 1) opts)))
         (where (or :require :include))
         (let [mod (. call 2)]
           (if (= multival 1)
             (when (= :string (type mod))
-              (let [newfile (state.get-by-module self mod)]
+              (let [newfile (state.get-by-module server mod)]
                 (when newfile
                   (let [newitem (. newfile.ast (length newfile.ast))]
                     (when (= (length stack) 1)
                       (set opts.searched-through-require-with-stack-size-1 true))
-                    (search-val self newfile newitem stack opts)))))))
+                    (search-val server newfile newitem stack opts)))))))
         "."
         (if (= multival 1)
           (let [[_ & rest] call]
-            (search-val self file (. call 2) (stack-add-split! stack rest) opts)))
+            (search-val server file (. call 2) (stack-add-split! stack rest) opts)))
         ;; TODO assume-function-name analyze-metatable
         :setmetatable
-        (search-val self file (. call 2) stack opts)
+        (search-val server file (. call 2) stack opts)
 
         (where (or :fn :lambda :λ))
         (if (and (= multival 1) (= 0 (length stack)))
@@ -152,20 +152,20 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
           {:definition call : file}))))) ;; BASE CASE!!
 
 (set search-multival
-  (λ [self file ?ast stack multival opts]
+  (λ [server file ?ast stack multival opts]
     (let [ast ?ast] ;; it was a bad idea to use λ because ast may be nil
-      (if (list? ast)     (search-list self file ast stack multival opts)
+      (if (list? ast)     (search-list server file ast stack multival opts)
           (varg? ast)     nil ;; TODO function-args
           (= 1 multival)
-          (if (sym? ast)            (search-symbol self file ast stack opts)
+          (if (sym? ast)            (search-symbol server file ast stack opts)
               (= 0 (length stack))  {:definition ast : file} ;; BASE CASE !!
-              (= :table (type ast)) (search-table self file ast stack opts)
-              (= :string (type ast)) (search-document self (docs.get-global self :string) stack opts))
+              (= :table (type ast)) (search-table server file ast stack opts)
+              (= :string (type ast)) (search-document server (docs.get-global server :string) stack opts))
           nil))))
 
 
 ;; the options thing is getting out of hand
-(λ search-main [self file symbol opts initialization-opts]
+(λ search-main [server file symbol opts initialization-opts]
   "Find the definition of a symbol"
 
   (assert (= (type initialization-opts) :table))
@@ -179,12 +179,12 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
               (let [?byte initialization-opts.byte
                     split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))]
                 (stack-add-split! [] split)))]
-      (case (docs.get-builtin self (utils.multi-sym-base symbol))
-        document (search-document self document stack opts)
+      (case (docs.get-builtin server (utils.multi-sym-base symbol))
+        document (search-document server document stack opts)
         _ (case (. file.references symbol)
-            ref (search-reference self file ref stack opts)
+            ref (search-reference server file ref stack opts)
             _ (case (. file.definitions symbol)
-                def (search-multival self file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)))))))
+                def (search-multival server file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)))))))
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
@@ -192,18 +192,18 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
       definition definition
       _ (find-local-definition file name ?scope.parent))))
 
-(λ search-name-and-scope [self file name scope ?opts]
+(λ search-name-and-scope [server file name scope ?opts]
   "find a definition just from the name of the item, and the scope it is in"
   (assert (= (type name) :string))
   (let [split (utils.multi-sym-split name)
         stack (stack-add-split! [] split)
         opts (or ?opts {})]
-    (case (docs.get-builtin self (. split 1))
-      metadata (search-document self metadata stack opts)
-      _ (case (docs.get-global self (. split 1))
-          metadata (search-document self metadata stack opts)
+    (case (docs.get-builtin server (. split 1))
+      metadata (search-document server metadata stack opts)
+      _ (case (docs.get-global server (. split 1))
+          metadata (search-document server metadata stack opts)
           _ (case (find-local-definition file name scope)
-              def (search-val self file def.definition (stack-add-keys! stack def.keys) opts))))))
+              def (search-val server file def.definition (stack-add-keys! stack def.keys) opts))))))
 
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object
@@ -262,10 +262,10 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 
-(λ find-nearest-definition [self file symbol ?byte]
+(λ find-nearest-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
     (. file.definitions symbol)
-    (search-main self file symbol {:stop-early? true} {:byte ?byte})))
+    (search-main server file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
  : find-nearest-definition

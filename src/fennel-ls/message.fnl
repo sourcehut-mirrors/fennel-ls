@@ -58,14 +58,14 @@ LSP json objects."
    : id
    :result (nullify ?result)})
 
-(λ ast->range [self file ?ast]
+(λ ast->range [server file ?ast]
   (case (fennel.ast-source ?ast)
     {: bytestart : byteend} {:start (utils.byte->position file.text bytestart
-                                                          self.position-encoding)
+                                                          server.position-encoding)
                              :end   (utils.byte->position file.text (+ byteend 1)
-                                                          self.position-encoding)}))
+                                                          server.position-encoding)}))
 
-(λ multisym->range [self file ast n]
+(λ multisym->range [server file ast n]
   (let [spl (utils.multi-sym-split ast)
         n (if (< n 0) (+ n 1 (length spl)) n)]
     (case (values (utils.get-ast-info ast :bytestart)
@@ -77,12 +77,12 @@ LSP json objects."
             bytesubend (faccumulate [b byteend
                                      i (+ n 1) (length spl)]
                          (- b (length (. spl i)) 1))]
-        {:start (utils.byte->position file.text bytesubstart self.position-encoding)
-         :end   (utils.byte->position file.text (+ bytesubend 1) self.position-encoding)}))))
+        {:start (utils.byte->position file.text bytesubstart server.position-encoding)
+         :end   (utils.byte->position file.text (+ bytesubend 1) server.position-encoding)}))))
 
-(λ range-and-uri [self {: uri &as file} ?ast]
+(λ range-and-uri [server {: uri &as file} ?ast]
   "if possible, returns the location of a symbol"
-  (case (ast->range self file ?ast)
+  (case (ast->range server file ?ast)
     range {: range : uri}))
 
 (λ diagnostics [file]

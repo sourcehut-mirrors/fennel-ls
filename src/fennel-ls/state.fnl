@@ -4,15 +4,14 @@ This module keeps track of the state of the language server:
 * Loaded files
 
 There is no global state in this project: all state is stored
-in the \"self\" object. Pretty much every \"self\" in the
-entire fennel-ls project is referring to the same object."
+in the \"server\" object."
 
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
 (local {: compile} (require :fennel-ls.compiler))
 
-(λ read-file [self uri]
-  (let [text (case (. self.preload uri)
+(λ read-file [server uri]
+  (let [text (case (. server.preload uri)
                preload preload
                _ (let [file (io.open (utils.uri->path uri))]
                     (if file
@@ -22,48 +21,48 @@ entire fennel-ls project is referring to the same object."
                       (error (.. "failed to open file" uri)))))]
     {: uri : text}))
 
-(λ get-by-uri [self uri]
-  (or (. self.files uri)
-      (let [file (read-file self uri)]
-        (compile self file)
-        (tset self.files uri file)
+(λ get-by-uri [server uri]
+  (or (. server.files uri)
+      (let [file (read-file server uri)]
+        (compile server file)
+        (tset server.files uri file)
         file)))
 
-(λ get-by-module [self module]
+(λ get-by-module [server module]
   ;; check the cache
-  (case (. self.modules module)
+  (case (. server.modules module)
     uri
-    (or (get-by-uri self uri)
+    (or (get-by-uri server uri)
       ;; if the cached uri isn't found, clear the cache and try again
-      (do (tset self.modules module nil)
-          (get-by-module self module)))
+      (do (tset server.modules module nil)
+          (get-by-module server module)))
     nil
-    (case (searcher.lookup self module)
+    (case (searcher.lookup server module)
       uri
       (do
-        (tset self.modules module uri)
-        (get-by-uri self uri)))))
+        (tset server.modules module uri)
+        (get-by-uri server uri)))))
 
-(λ set-uri-contents [self uri text]
-  (case (. self.files uri)
+(λ set-uri-contents [server uri text]
+  (case (. server.files uri)
     ;; modify existing file
     file
     (do
       (when (not= text file.text)
         (set file.text text)
-        (compile self file))
+        (compile server file))
       file)
 
     ;; create new file
     nil
     (let [file {: uri : text}]
-      (tset self.files uri file)
-      (compile self file)
+      (tset server.files uri file)
+      (compile server file)
       file)))
 
-(λ flush-uri [self uri]
+(λ flush-uri [server uri]
   "get rid of data about a file, in case it changed in some way"
-  (tset self.files uri nil))
+  (tset server.files uri nil))
 
 ;; TODO: set the warning levels of lints
 ;; allow all globals
@@ -127,20 +126,20 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
      :utf-8
      :utf-16)))
 
-(λ init-state [self params]
-  (set self.files {})
-  (set self.preload {})
-  (set self.modules {})
-  (set self.root-uri params.rootUri)
-  (set self.position-encoding (choose-position-encoding params))
-  (set self.configuration (make-configuration (?. params :initializationOptions :fennel-ls)))
+(λ init-state [server params]
+  (set server.files {})
+  (set server.preload {})
+  (set server.modules {})
+  (set server.root-uri params.rootUri)
+  (set server.position-encoding (choose-position-encoding params))
+  (set server.configuration (make-configuration (?. params :initializationOptions :fennel-ls)))
   ;; Eglot does completions differently than every other client I've seen so far, in that it considers foo.bar to be one "symbol".
   ;; If the user types `foo.b`, every other client accepts `bar` as a completion, bun eglot wants the full `foo.bar` multisym.
-  (set self.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
+  (set server.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
 
-(λ write-configuration [self ?configuration]
+(λ write-configuration [server ?configuration]
   "This is where we can put anything that needs to react to config changes"
-  (set self.configuration (make-configuration ?configuration)))
+  (set server.configuration (make-configuration ?configuration)))
 
 {: flush-uri
  : get-by-module

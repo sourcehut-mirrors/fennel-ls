@@ -37,12 +37,12 @@ I suspect this file may be gone after a bit of refactoring."
           (table.insert result (join (utils.uri->path workspace) path)))))
     (table.concat result ";")))
 
-(fn file-exists? [self uri]
-   (or (. self.preload uri)
+(fn file-exists? [server uri]
+   (or (. server.preload uri)
        (case (io.open (utils.uri->path uri))
          f (do (f:close) true))))
 
-(λ lookup [{:configuration {: fennel-path} :root-uri ?root-uri &as self} mod]
+(λ lookup [{:configuration {: fennel-path} :root-uri ?root-uri &as server} mod]
   "Use the fennel path to find a file on disk"
   (when ?root-uri
     (let [mod (mod:gsub "%." sep)
@@ -55,7 +55,7 @@ I suspect this file may be gone after a bit of refactoring."
                         segment
                         (join root-path segment))
               segment (utils.path->uri segment)]
-          (if (file-exists? self segment)
+          (if (file-exists? server segment)
             segment))))))
 
 {: lookup

@@ -35,25 +35,25 @@
                (fennel.view (doto (icollect [key (pairs libraries)] key) table.sort)))))
   (. libraries library))
 
-(fn get-all-globals [self]
+(fn get-all-globals [server]
   (let [result []]
-    (each [_ library (ipairs self.configuration.native-libraries)]
+    (each [_ library (ipairs server.configuration.native-libraries)]
       (icollect [name (pairs (get-native-library library)) &into result]
         name))
-    (icollect [name (pairs (get-lua-version self.configuration.version)) &into result]
+    (icollect [name (pairs (get-lua-version server.configuration.version)) &into result]
       name)))
 
-(fn get-global [self global-name]
+(fn get-global [server global-name]
   (or
     (accumulate [result nil
-                 _ library (ipairs self.configuration.native-libraries)
+                 _ library (ipairs server.configuration.native-libraries)
                  &until result]
       (. (get-native-library library)
          global-name))
-    (. (get-lua-version self.configuration.version)
+    (. (get-lua-version server.configuration.version)
        global-name)))
 
-(fn get-builtin [_self builtin-name]
+(fn get-builtin [_server builtin-name]
   (or (. specials builtin-name)
       (. macros* builtin-name)))
 

@@ -17,10 +17,10 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local requests [])
 (local notifications [])
 
-(λ requests.initialize [self send params]
-  (state.init-state self params)
+(λ requests.initialize [server send params]
+  (state.init-state server params)
   (let [capabilities
-        {:positionEncoding self.position-encoding
+        {:positionEncoding server.position-encoding
          :textDocumentSync {:openClose true :change 2}
          ;; :notebookDocumentSync nil
          :completionProvider {:workDoneProgress false
@@ -68,48 +68,48 @@ Every time the client sends a message, it gets handled by a function in the corr
     {: capabilities
      :serverInfo {:name "fennel-ls" :version "0.1.0"}}))
 
-(λ requests.textDocument/definition [self send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri self uri)
-        byte (utils.position->byte file.text position self.position-encoding)]
+(λ requests.textDocument/definition [server send {: position :textDocument {: uri}}]
+  (let [file (state.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       (symbol [parent])
       (if
         ;; require call
         (. file.require-calls parent)
-        (language.search-ast self file parent [] {:stop-early? true})
+        (language.search-ast server file parent [] {:stop-early? true})
         ;; regular symbol
-        (language.search-main self file symbol {:stop-early? true} {: byte}))
+        (language.search-main server file symbol {:stop-early? true} {: byte}))
       result
       (if result.file
-        (message.range-and-uri self result.file (or result.binding result.definition)))
+        (message.range-and-uri server result.file (or result.binding result.definition)))
       (catch _ nil))))
 
-(λ requests.textDocument/references [self send {: position
-                                                :textDocument {: uri}
-                                                :context {:includeDeclaration ?include-declaration?}}]
-  (let [file (state.get-by-uri self uri)
-        byte (utils.position->byte file.text position self.position-encoding)]
+(λ requests.textDocument/references [server send {: position
+                                                  :textDocument {: uri}
+                                                  :context {:includeDeclaration ?include-declaration?}}]
+  (let [file (state.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol
-      (language.find-nearest-definition self file symbol byte)
+      (language.find-nearest-definition server file symbol byte)
       (where definition (not= definition.referenced-by nil))
       (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
-                     (message.range-and-uri self definition.file symbol))]
+                     (message.range-and-uri server definition.file symbol))]
         (if ?include-declaration?
           (table.insert result
-            (message.range-and-uri self definition.file definition.binding)))
+            (message.range-and-uri server definition.file definition.binding)))
 
         ;; TODO don't include duplicates
         result)
       (catch _ nil))))
 
-(λ requests.textDocument/hover [self send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri self uri)
-        byte (utils.position->byte file.text position self.position-encoding)]
+(λ requests.textDocument/hover [server send {: position :textDocument {: uri}}]
+  (let [file (state.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
-      symbol (language.search-main self file symbol {} {: byte})
+      symbol (language.search-main server file symbol {} {: byte})
       result {:contents (formatter.hover-format result)
-              :range (message.ast->range self file symbol)}
+              :range (message.ast->range server file symbol)}
       (catch _ nil))))
 
 ;; All of the helper functions for textDocument/completion are here until I
@@ -130,12 +130,12 @@ Every time the client sends a message, it gets handled by a function in the corr
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
-(λ make-completion-item [self file name scope]
-  (case (language.search-name-and-scope self file name scope)
+(λ make-completion-item [server file name scope]
+  (case (language.search-name-and-scope server file name scope)
     def (formatter.completion-item-format name def)
     _ {:label name}))
 
-(λ scope-completion [self file byte ?symbol parents]
+(λ scope-completion [server file byte ?symbol parents]
   (let [scope (or (accumulate [result nil
                                _ parent (ipairs parents)
                                &until result]
@@ -145,24 +145,24 @@ Every time the client sends a message, it gets handled by a function in the corr
         result []
         in-call-position? (and (fennel.list? ?parent)
                                (= ?symbol (. ?parent 1)))]
-    (collect-scope scope :manglings #(doto (make-completion-item self file $ scope) (tset :kind kinds.Variable)) result)
+    (collect-scope scope :manglings #(doto (make-completion-item server file $ scope) (tset :kind kinds.Variable)) result)
 
     (when in-call-position?
-      (collect-scope scope :macros #(doto (make-completion-item self file $ scope) (tset :kind kinds.Keyword)) result)
-      (collect-scope scope :specials #(doto (make-completion-item self file $ scope) (tset :kind kinds.Operator)) result))
+      (collect-scope scope :macros #(doto (make-completion-item server file $ scope) (tset :kind kinds.Keyword)) result)
+      (collect-scope scope :specials #(doto (make-completion-item server file $ scope) (tset :kind kinds.Operator)) result))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
-      (make-completion-item self file k scope))))
+      (make-completion-item server file k scope))))
 
-(λ field-completion [self file symbol split]
+(λ field-completion [server file symbol split]
   (let [stack (fcollect [i (- (length split) 1) 2 -1]
                 (. split i))
         last-found-binding []
-        result (language.search-main self file symbol {:save-last-binding last-found-binding} {: stack})]
+        result (language.search-main server file symbol {:save-last-binding last-found-binding} {: stack})]
     (case result
       {: definition : file}
       (case (values definition (type definition))
         ;; fields of a string are hardcoded to "string"
-        (_str :string) (icollect [label info (pairs (. (docs.get-global self :string) :fields))]
+        (_str :string) (icollect [label info (pairs (. (docs.get-global server :string) :fields))]
                          (formatter.completion-item-format label info))
         ;; fields of a table
         (tbl :table) (let [keys []]
@@ -173,7 +173,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                            label))
                        (icollect [_ label (pairs keys)]
                          (if (= (type label) :string)
-                           (case (language.search-ast self file tbl [label] {})
+                           (case (language.search-ast server file tbl [label] {})
                              def (formatter.completion-item-format label def)
                              _ {: label :kind kinds.Field})))))
       {: metadata : fields}
@@ -182,16 +182,16 @@ Every time the client sends a message, it gets handled by a function in the corr
           (formatter.completion-item-format label info)))
       _ nil)))
 
-(λ requests.textDocument/completion [self send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri self uri)
-        byte (utils.position->byte file.text position self.position-encoding)
+(λ requests.textDocument/completion [server send {: position :textDocument {: uri}}]
+  (let [file (state.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)
         (?symbol parents) (language.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
 
       ;; completion from current scope
       (where (or nil [_ nil]))
-      (let [input-range (if ?symbol (message.multisym->range self file ?symbol -1) {:start position :end position})
-            ?completions (scope-completion self file byte ?symbol parents)]
+      (let [input-range (if ?symbol (message.multisym->range server file ?symbol -1) {:start position :end position})
+            ?completions (scope-completion server file byte ?symbol parents)]
         (if ?completions
           (let [?completions (utils.uniq-by ?completions #$.label)]
             (each [_ completion (ipairs ?completions)]
@@ -200,10 +200,10 @@ Every time the client sends a message, it gets handled by a function in the corr
 
       ;; completion from field
       [_a _b &as split]
-      (let [input-range (message.multisym->range self file ?symbol -1)
-            ?completions (field-completion self file ?symbol split)]
+      (let [input-range (message.multisym->range server file ?symbol -1)
+            ?completions (field-completion server file ?symbol split)]
         (if ?completions
-          (if self.EGLOT_COMPLETION_QUIRK_MODE
+          (if server.EGLOT_COMPLETION_QUIRK_MODE
             (let [prefix (string.gsub (tostring ?symbol) "[^.:]*$" "")]
               (each [_ completion (ipairs ?completions)]
                 (set completion.filterText (.. prefix completion.label))
@@ -214,21 +214,21 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 
 
-(λ requests.textDocument/rename [self send {: position :textDocument {: uri} :newName new-name}]
-  (let [file (state.get-by-uri self uri)
-        byte (utils.position->byte file.text position self.position-encoding)]
+(λ requests.textDocument/rename [server send {: position :textDocument {: uri} :newName new-name}]
+  (let [file (state.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol
-      (language.find-nearest-definition self file symbol symbol.bytestart)
+      (language.find-nearest-definition server file symbol symbol.bytestart)
       ;; TODO we are assuming that every reference is in the same file
       (where definition (not= definition.referenced-by nil))
       (let [usages (icollect [_ {: symbol} (ipairs definition.referenced-by)
-                              &into [{:range (message.multisym->range self definition.file definition.binding 1)
+                              &into [{:range (message.multisym->range server definition.file definition.binding 1)
                                       :newText new-name}]]
                      (if (and (. file.lexical symbol)
                               (not (rawequal symbol definition.binding)))
                        {:newText new-name
-                        :range (message.multisym->range self definition.file symbol 1)}))]
+                        :range (message.multisym->range server definition.file symbol 1)}))]
 
         ;; NOTE: I don't care about encoding here because we just need the relative positions
         (table.sort usages
@@ -252,45 +252,45 @@ Every time the client sends a message, it gets handled by a function in the corr
   (and (pos<= range-1.start range-2.end)
        (pos<= range-2.start range-1.end)))
 
-(λ requests.textDocument/codeAction [self send {: range :textDocument {: uri} &as params}]
-  (let [file (state.get-by-uri self uri)]
+(λ requests.textDocument/codeAction [server send {: range :textDocument {: uri} &as params}]
+  (let [file (state.get-by-uri server uri)]
     (icollect [_ diagnostic (ipairs file.diagnostics)]
       (if (and (overlap? diagnostic.range range)
                diagnostic.quickfix)
         {:title diagnostic.codeDescription
          :edit {:changes {uri (diagnostic.quickfix)}}}))))
 
-(λ notifications.textDocument/didChange [self send {: contentChanges :textDocument {: uri}}]
-  (local file (state.get-by-uri self uri))
-  (state.set-uri-contents self uri (utils.apply-changes file.text contentChanges self.position-encoding))
-  (lint.check self file)
+(λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
+  (local file (state.get-by-uri server uri))
+  (state.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))
+  (lint.check server file)
   (send (message.diagnostics file)))
 
-(λ notifications.textDocument/didOpen [self send {:textDocument {: languageId : text : uri}}]
-  (local file (state.set-uri-contents self uri text))
-  (lint.check self file)
+(λ notifications.textDocument/didOpen [server send {:textDocument {: languageId : text : uri}}]
+  (local file (state.set-uri-contents server uri text))
+  (lint.check server file)
   (send (message.diagnostics file))
   (set file.open? true))
 
-(λ notifications.textDocument/didSave [self send {:textDocument {: uri}}]
+(λ notifications.textDocument/didSave [server send {:textDocument {: uri}}]
   ;; TODO be careful about which modules need to be recomputed, and also eagerly flush existing files
   (set fennel.macro-loaded []))
 
-(λ notifications.textDocument/didClose [self send {:textDocument {: uri}}]
-  (local file (state.get-by-uri self uri))
+(λ notifications.textDocument/didClose [server send {:textDocument {: uri}}]
+  (local file (state.get-by-uri server uri))
   (set file.open? false)
   (set fennel.macro-loaded [])
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
-  (state.flush-uri self uri))
+  (state.flush-uri server uri))
 
-(λ notifications.workspace/didChangeConfiguration [self send {: settings}]
-  (state.write-configuration self (?. settings :fennel-ls)))
+(λ notifications.workspace/didChangeConfiguration [server send {: settings}]
+  (state.write-configuration server (?. settings :fennel-ls)))
 
-(λ requests.shutdown [self send]
+(λ requests.shutdown [server send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"
   nil)
 
-(λ notifications.exit [self]
+(λ notifications.exit [server]
   "This is the real shutdown request, we can quit now"
   (os.exit 0))
 

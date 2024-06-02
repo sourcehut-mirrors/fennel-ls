@@ -1,5 +1,5 @@
 "Diagnostics
-Provides the function (check self file), which goes through a file and mutates
+Provides the function (check server file), which goes through a file and mutates
 the `file.diagnostics` field, filling it with diagnostics."
 
 (local {: sym? : list? : view} (require :fennel))
@@ -10,8 +10,8 @@ the `file.diagnostics` field, filling it with diagnostics."
   (require :fennel.compiler))
 
 (local diagnostic-mt {:__json_exclude_keys {:quickfix true}})
-(fn diagnostic [self]
-  (setmetatable self diagnostic-mt))
+(fn diagnostic [server]
+  (setmetatable server diagnostic-mt))
 
 (local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1 "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
 (fn special? [item]
@@ -24,7 +24,7 @@ the `file.diagnostics` field, filling it with diagnostics."
        (. ops (tostring item))
        item))
 
-(λ unused-definition [self file symbol definition]
+(λ unused-definition [server file symbol definition]
   "local variable that is defined but not used"
   (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
                (accumulate [reference false
@@ -33,7 +33,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                  (or (= ref.ref-type :read)
                      (= ref.ref-type :mutate)))))
     (diagnostic
-      {:range (message.ast->range self file symbol)
+      {:range (message.ast->range server file symbol)
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
        :code 301
@@ -41,20 +41,20 @@ the `file.diagnostics` field, filling it with diagnostics."
        :quickfix #[{:range (message.ast->range symbol)
                     :newText (.. "_" (tostring symbol))}]})))
 
-(λ unknown-module-field [self file]
+(λ unknown-module-field [server file]
   "any multisym whose definition can't be found through a (require) call"
   (icollect [symbol (pairs file.references) &into file.diagnostics]
     (if (. (utils.multi-sym-split symbol) 2)
       (let [opts {}
-            item (language.search-ast self file symbol [] opts)]
+            item (language.search-ast server file symbol [] opts)]
         (if (and (not item) opts.searched-through-require-with-stack-size-1)
-          {:range (message.ast->range self file symbol)
+          {:range (message.ast->range server file symbol)
            :message (.. "unknown field: " (tostring symbol))
            :severity message.severity.WARN
            :code 302
            :codeDescription "unknown-module-field"})))))
 
-(λ unnecessary-method [self file colon call]
+(λ unnecessary-method [server file colon call]
   "a call to the : builtin that could just be a multisym"
   (if (and (sym? colon ":")
            (sym? (. call 2))
@@ -63,13 +63,13 @@ the `file.diagnostics` field, filling it with diagnostics."
       (if (and (= :string (type method))
                (not (method:find "^[0-9]"))
                (not (method:find "[^!$%*+-/0-9<=>?A-Z\\^_a-z|\128-\255]")))
-        {:range (message.ast->range self file call)
+        {:range (message.ast->range server file call)
          :message (.. "unnecessary : call: use (" (tostring (. call 2)) ":" method ")")
          :severity message.severity.WARN
          :code 303
          :codeDescription "unnecessary-method"}))))
 
-(λ bad-unpack [self file op call]
+(λ bad-unpack [server file op call]
   "an unpack call leading into an operator"
   (let [last-item (. call (length call))]
     (if (and (op? op)
@@ -81,7 +81,7 @@ the `file.diagnostics` field, filling it with diagnostics."
              (. file.lexical last-item)
              (. file.lexical call))
       (diagnostic
-        {:range (message.ast->range self file last-item)
+        {:range (message.ast->range server file last-item)
          :message (.. "faulty unpack call: " (tostring op) " isn't variadic at runtime."
                       (if (sym? op "..")
                         (let [unpackme (view (. last-item 2))]
@@ -93,19 +93,19 @@ the `file.diagnostics` field, filling it with diagnostics."
          :quickfix (if (and (= (length call) 2)
                             (= (length (. call 2)) 2)
                             (sym? op ".."))
-                     #[{:range (message.ast->range self file call)
+                     #[{:range (message.ast->range server file call)
                         :newText (.. "(table.concat " (view (. call 2 2)) ")")}])}))))
 
-(λ var-never-set [self file symbol definition]
+(λ var-never-set [server file symbol definition]
   (if (and definition.var? (not definition.var-set) (. file.lexical symbol))
-    {:range (message.ast->range self file symbol)
+    {:range (message.ast->range server file symbol)
      :message (.. "var is never set: " (tostring symbol) " Consider using (local) instead of (var)")
      :severity message.severity.WARN
      :code 305
      :codeDescription "var-never-set"}))
 
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
-(λ op-with-no-arguments [self file op call]
+(λ op-with-no-arguments [server file op call]
   "A call like (+) that could be replaced with a literal"
   (let [identity (. op-identity-value (tostring op))]
     (if (and (op? op)
@@ -113,15 +113,15 @@ the `file.diagnostics` field, filling it with diagnostics."
              (. file.lexical call)
              (not= nil identity))
       (diagnostic
-        {:range  (message.ast->range self file call)
+        {:range  (message.ast->range server file call)
          :message (.. "write " (view identity) " instead of (" (tostring op) ")")
          :severity message.severity.WARN
          :code 306
          :codeDescription "op-with-no-arguments"
-         :quickfix #[{:range (message.ast->range self file call)
+         :quickfix #[{:range (message.ast->range server file call)
                       :newText (view identity)}]}))))
 
-(λ multival-in-middle-of-call [self file fun call arg index]
+(λ multival-in-middle-of-call [server file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do
   something with multiple values. However, multiple values will get
   \"adjusted\" to one value if they don't come at the end of the call."
@@ -132,29 +132,29 @@ the `file.diagnostics` field, filling it with diagnostics."
                (sym? (. arg 1) :unpack)
                (sym? (. arg 1) :_G.unpack)
                (sym? (. arg 1) :table.unpack)))
-    {:range (message.ast->range self file arg)
+    {:range (message.ast->range server file arg)
      :message (.. "bad " (tostring (. arg 1)) " call: only the first value of the multival will be used")
      :severity message.severity.WARN
      :code 307
      :codeDescription "bad-unpack"}))
 
-(λ check [self file]
+(λ check [server file]
   "fill up the file.diagnostics table with linting things"
-  (let [checks self.configuration.checks
+  (let [checks server.configuration.checks
         diagnostics file.diagnostics]
 
     ;; definition lints
     (each [symbol definition (pairs file.definitions)]
-      (if checks.unused-definition (table.insert diagnostics (unused-definition self file symbol definition)))
-      (if checks.var-never-set     (table.insert diagnostics (var-never-set     self file symbol definition))))
+      (if checks.unused-definition (table.insert diagnostics (unused-definition server file symbol definition)))
+      (if checks.var-never-set     (table.insert diagnostics (var-never-set     server file symbol definition))))
 
     ;; call lints
     ;; all non-macro calls. This only covers specials and function calls.
     (each [[head &as call] (pairs file.calls)]
       (when head
-        (if checks.bad-unpack           (table.insert diagnostics (bad-unpack           self file head call)))
-        (if checks.unnecessary-method   (table.insert diagnostics (unnecessary-method   self file head call)))
-        (if checks.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments self file head call)))
+        (if checks.bad-unpack           (table.insert diagnostics (bad-unpack           server file head call)))
+        (if checks.unnecessary-method   (table.insert diagnostics (unnecessary-method   server file head call)))
+        (if checks.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments server file head call)))
 
         ;; argument lints
         ;; every argument to a special or a function call
@@ -162,10 +162,10 @@ the `file.diagnostics` field, filling it with diagnostics."
         ;; I'll wait till we have more lints in here to see if it needs to change.
         (for [index 2 (length call)]
           (let [arg (. call index)]
-            (if checks.multival-in-middle-of-call (table.insert diagnostics (multival-in-middle-of-call self file head call arg index)))))))
+            (if checks.multival-in-middle-of-call (table.insert diagnostics (multival-in-middle-of-call server file head call arg index)))))))
 
     (if checks.unknown-module-field
-      (unknown-module-field self file))))
+      (unknown-module-field server file))))
     ;; (if checks.unnecessary-values
     ;;   (unnecessary-values file)))
     ;; (if checks.unnecessary-do)
