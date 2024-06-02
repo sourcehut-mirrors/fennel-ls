@@ -7,7 +7,8 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (local lint      (require :fennel-ls.lint))
 (local message   (require :fennel-ls.message))
-(local state     (require :fennel-ls.state))
+(local files     (require :fennel-ls.files))
+(local config    (require :fennel-ls.config))
 (local language  (require :fennel-ls.language))
 (local formatter (require :fennel-ls.formatter))
 (local utils     (require :fennel-ls.utils))
@@ -18,7 +19,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local notifications [])
 
 (λ requests.initialize [server send params]
-  (state.init-state server params)
+  (config.initialize server params)
   (let [capabilities
         {:positionEncoding server.position-encoding
          :textDocumentSync {:openClose true :change 2}
@@ -69,7 +70,7 @@ Every time the client sends a message, it gets handled by a function in the corr
      :serverInfo {:name "fennel-ls" :version "0.1.0"}}))
 
 (λ requests.textDocument/definition [server send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri server uri)
+  (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       (symbol [parent])
@@ -87,7 +88,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/references [server send {: position
                                                   :textDocument {: uri}
                                                   :context {:includeDeclaration ?include-declaration?}}]
-  (let [file (state.get-by-uri server uri)
+  (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol
@@ -104,7 +105,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       (catch _ nil))))
 
 (λ requests.textDocument/hover [server send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri server uri)
+  (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol (language.search-main server file symbol {} {: byte})
@@ -183,7 +184,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       _ nil)))
 
 (λ requests.textDocument/completion [server send {: position :textDocument {: uri}}]
-  (let [file (state.get-by-uri server uri)
+  (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)
         (?symbol parents) (language.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
@@ -215,7 +216,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 
 (λ requests.textDocument/rename [server send {: position :textDocument {: uri} :newName new-name}]
-  (let [file (state.get-by-uri server uri)
+  (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (language.find-symbol file.ast byte)
       symbol
@@ -253,7 +254,7 @@ Every time the client sends a message, it gets handled by a function in the corr
        (pos<= range-2.start range-1.end)))
 
 (λ requests.textDocument/codeAction [server send {: range :textDocument {: uri} &as params}]
-  (let [file (state.get-by-uri server uri)]
+  (let [file (files.get-by-uri server uri)]
     (icollect [_ diagnostic (ipairs file.diagnostics)]
       (if (and (overlap? diagnostic.range range)
                diagnostic.quickfix)
@@ -261,13 +262,13 @@ Every time the client sends a message, it gets handled by a function in the corr
          :edit {:changes {uri (diagnostic.quickfix)}}}))))
 
 (λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
-  (local file (state.get-by-uri server uri))
-  (state.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))
+  (local file (files.get-by-uri server uri))
+  (files.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))
   (lint.check server file)
   (send (message.diagnostics file)))
 
 (λ notifications.textDocument/didOpen [server send {:textDocument {: languageId : text : uri}}]
-  (local file (state.set-uri-contents server uri text))
+  (local file (files.set-uri-contents server uri text))
   (lint.check server file)
   (send (message.diagnostics file))
   (set file.open? true))
@@ -277,14 +278,14 @@ Every time the client sends a message, it gets handled by a function in the corr
   (set fennel.macro-loaded []))
 
 (λ notifications.textDocument/didClose [server send {:textDocument {: uri}}]
-  (local file (state.get-by-uri server uri))
+  (local file (files.get-by-uri server uri))
   (set file.open? false)
   (set fennel.macro-loaded [])
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
-  (state.flush-uri server uri))
+  (files.flush-uri server uri))
 
 (λ notifications.workspace/didChangeConfiguration [server send {: settings}]
-  (state.write-configuration server (?. settings :fennel-ls)))
+  (config.write-configuration server (?. settings :fennel-ls)))
 
 (λ requests.shutdown [server send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"

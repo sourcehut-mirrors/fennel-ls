@@ -40,7 +40,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 
 (local {: sym? : list? : sequence? : varg?} (require :fennel))
 (local utils (require :fennel-ls.utils))
-(local state (require :fennel-ls.state))
+(local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
 
 (local get-ast-info utils.get-ast-info)
@@ -128,7 +128,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (let [mod (. call 2)]
           (if (= multival 1)
             (when (= :string (type mod))
-              (let [newfile (state.get-by-module server mod)]
+              (let [newfile (files.get-by-module server mod)]
                 (when newfile
                   (let [newitem (. newfile.ast (length newfile.ast))]
                     (when (= (length stack) 1)

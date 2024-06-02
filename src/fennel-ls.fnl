@@ -1,21 +1,23 @@
 (require :fennel)
 (local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
-(local state (require :fennel-ls.state))
-(local lint (require :fennel-ls.lint))
 
 (λ check [filenames]
+  "non-interactive mode that gets executed from CLI with --check.
+   runs lints on each file, then formats and prints them"
+  (local files (require :fennel-ls.files))
+  (local lint (require :fennel-ls.lint))
   (let [server (doto {}
                  (dispatch.handle* {:id 1
                                     :jsonrpc "2.0"
                                     :method "initialize"
                                     :params {:capabilities {:general {:positionEncodings [:utf-8]}}
                                              :clientInfo {:name "fennel-ls"}
-                                             ; " don't think this is a valid URI, but I want to operate in the current directory
+                                             ; don't think this is a valid URI, but I want to operate in the current directory
                                              :rootUri "file://."}}))]
     (var should-err? false)
     (each [_ filename (ipairs filenames)]
-      (let [file (state.get-by-uri server (.. "file://" filename))]
+      (let [file (files.get-by-uri server (.. "file://" filename))]
         (lint.check server file)
         (each [_ {: message :range {: start}} (ipairs file.diagnostics)]
           (print (: "%s:%s:%s %s" :format filename
