@@ -37,7 +37,7 @@
   (let [(?give-a-root-uri file-contents) (if (= (type file-contents) :string)
                                            (values nil {:main.fnl file-contents})
                                            (values true file-contents))
-        client (create-client ?client-options ?give-a-root-uri)
+        (client server) (create-client ?client-options ?give-a-root-uri)
         locations []]
     (each [name marked (pairs file-contents)]
       (if (not= name :main.fnl)
@@ -53,12 +53,13 @@
         {: range : uri})
       (let [[{:params {: diagnostics}}] (client:open-file! uri text)]
         {: client
+         : server
          : diagnostics
          : cursor
          : locations
          : text
          : uri
-         :encoding client.server.position-encoding}))))
+         :encoding server.position-encoding}))))
 
 (fn position-past-end-of-text [text ?encoding]
   (utils.byte->position text (+ (length text) 1) (or ?encoding default-encoding)))
