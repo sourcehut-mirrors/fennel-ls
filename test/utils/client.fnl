@@ -14,7 +14,7 @@
 
 (local mt {})
 (fn create-client [?opts ?provide-root-uri]
-  (let [self (doto {:server [] :prev-id 1} (setmetatable mt))
+  (let [client (doto {:server [] :prev-id 1} (setmetatable mt))
         params (or (?. ?opts :params)
                    {:capabilities {:general {:positionEncodings [default-encoding]}}
                     :clientInfo {:name "Neovim" :version "0.7.2"}
@@ -30,14 +30,14 @@
                     :jsonrpc "2.0"
                     :method "initialize"
                     : params}
-        result (dispatch.handle* self.server initialize)]
+        result (dispatch.handle* client.server initialize)]
     (case (?. ?opts :settings)
       settings
-      (dispatch.handle* self.server
+      (dispatch.handle* client.server
         {:jsonrpc "2.0"
          :method :workspace/didChangeConfiguration
          :params {: settings}}))
-    (values self result)))
+    (values client result)))
 
 (fn next-id! [self]
   (set self.prev-id (+ self.prev-id 1))

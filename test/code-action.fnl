@@ -6,8 +6,8 @@
 (create-client-with-files "(print :hi)")
 
 (fn check [file-contents action-I-want-to-take desired-file-contents]
-  (let [{: self : uri :locations [range] : encoding : text} (create-client-with-files file-contents)
-        [{:result responses}] (self:code-action uri range.range)
+  (let [{: client : uri :locations [range] : encoding : text} (create-client-with-files file-contents)
+        [{:result responses}] (client:code-action uri range.range)
         action (accumulate [result nil
                             _ action (ipairs responses) &until result]
                  (if (= action.title action-I-want-to-take)
@@ -21,8 +21,8 @@
           edited-text (apply-edits text edits encoding)]
       (faith.= desired-file-contents edited-text))))
 (fn check-negative [file-contents action-not-suggested]
-  (let [{: self : uri :locations [range]} (create-client-with-files file-contents)
-        [{:result responses}] (self:code-action uri range.range)]
+  (let [{: client : uri :locations [range]} (create-client-with-files file-contents)
+        [{:result responses}] (client:code-action uri range.range)]
     (each [_ action (ipairs responses)]
       (assert (not= action.title action-not-suggested)
         (.. "I found your action \"" action-not-suggested "\" in:\n"
@@ -39,10 +39,10 @@
 ; (fn test-fix-method-function []
 ;   (check "(local x {})
 ;           (fn x:y [a b c]
-;             (print self a b c))"
+;             (print client a b c))"
 ;          "TO-BE-NAMED"
 ;          "(local x {})
-;           (fn x.y [self a b c]
-;             (print self a b c))"))
+;           (fn x.y [client a b c]
+;             (print client a b c))"))
 
 {: test-fix-op-no-arguments}

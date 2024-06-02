@@ -16,8 +16,8 @@
                                        (= a.range.end.character b.range.end.character)))))))))))
 
 (fn check [file-contents]
-  (let [{: self : uri : cursor : locations} (create-client-with-files file-contents)
-        [response] (self:references uri cursor)]
+  (let [{: client : uri : cursor : locations} (create-client-with-files file-contents)
+        [response] (client:references uri cursor)]
     (if (not= null response.result)
       (do
         (table.sort locations location-comparator)

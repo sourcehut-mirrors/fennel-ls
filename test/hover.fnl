@@ -4,8 +4,8 @@
 (local {: null} (require :fennel-ls.json.json))
 
 (fn check [file-contents ?response-string]
-  (let [{: self : uri : cursor} (create-client-with-files file-contents)
-        [message] (self:hover uri cursor)]
+  (let [{: client : uri : cursor} (create-client-with-files file-contents)
+        [message] (client:hover uri cursor)]
     (if (= (type ?response-string) :string)
       (faith.= ?response-string (?. message :result :contents :value)
                (.. "Invalid hover message\nfrom:    " (view file-contents)))

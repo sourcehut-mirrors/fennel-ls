@@ -4,14 +4,14 @@
 (local {: create-client-with-files} (require :test.utils))
 
 (fn test-path []
-  (let [{: self : uri : cursor :locations [location]}
+  (let [{: client : uri : cursor :locations [location]}
         (create-client-with-files
           {:modname.fnl "{:this-is-in-modname {:this :one :isnt :on :the :path}}"
            :modname/modname/modname/modname.fnl "(fn ==this-is-in-modname== [] nil) {: this-is-in-modname}"
            :main.fnl "(local {: this-is-in-mod|name} (require :modname))"}
           {:settings {:fennel-ls {:fennel-path "./?/?/?/?.fnl"}}})
 
-        [response] (self:definition uri cursor)]
+        [response] (client:definition uri cursor)]
     (faith.= location response.result
       "error message")))
 
@@ -29,7 +29,7 @@
   ;; (it "recompiles modules if the macro files are modified)"
 
   ;; (it "can infer the macro path from fennel-path"
-  ;;   (local self (doto [] ({:settings {:fennel-ls {:fennel-path "./?/?/?/?.fnl"}}))))
+  ;;   (local client (doto [] ({:settings {:fennel-ls {:fennel-path "./?/?/?/?.fnl"}}))))
 
 (fn test-extra-globals []
   (let [{:diagnostics good} (create-client-with-files "(foo-100 bar :baz)" {:settings {:fennel-ls {:extra-globals "foo-100 bar"}}})
@@ -39,10 +39,10 @@
   nil)
 
   ;; (it "can turn off strict globals"
-  ;;   (local self (doto [] (setup-server {:fennel-ls {:checks {:globals false}}}))))
+  ;;   (local client (doto [] (setup-server {:fennel-ls {:checks {:globals false}}}))))
 
   ;; (it "can treat globals as a warning instead of an error"
-  ;;   (local self (doto [] (setup-server {:fennel-ls {:diagnostics {:E202 "warning"}}})))))
+  ;;   (local client (doto [] (setup-server {:fennel-ls {:diagnostics {:E202 "warning"}}})))))
 
 (fn test-lints []
   (let [{:diagnostics good} (create-client-with-files "(local x 10)" {:settings {:fennel-ls {:checks {:unused-definition false}}}})

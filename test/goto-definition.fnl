@@ -4,8 +4,8 @@
 (local {: view} (require :fennel))
 
 (fn check [file-contents]
-  (let [{: self : uri : cursor :locations [location]} (create-client-with-files file-contents)
-        [message] (self:definition uri cursor)]
+  (let [{: client : uri : cursor :locations [location]} (create-client-with-files file-contents)
+        [message] (client:definition uri cursor)]
     (if location
       (faith.= location message.result
         (.. "Didn't go to location: \n" (view file-contents)))

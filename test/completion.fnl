@@ -43,8 +43,8 @@
       i)))
 
 (fn check [file-contents expected unexpected ?client-options]
-  (let [{: self : uri : cursor : text} (create-client-with-files file-contents ?client-options)
-        [{:result ?result}] (self:completion uri
+  (let [{: client : uri : cursor : text} (create-client-with-files file-contents ?client-options)
+        [{:result ?result}] (client:completion uri
                               (or cursor
                                   (position-past-end-of-text text)))
         completions (or ?result [])]
