@@ -11,6 +11,8 @@ identifiers are declared / referenced in which places."
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
 
+(local nil* (sym :nil))
+
 (fn scope? [candidate]
   ;; just checking a couple of the fields
   (and
@@ -66,6 +68,8 @@ identifiers are declared / referenced in which places."
         calls         {} ; all calls in the macro-expanded code -> true
         lexical       {} ; all lists, tables, and symbols in the original source
         require-calls {}] ; the keys are all the calls that start with `require
+
+    (local defer [])
 
     (λ find-definition [name ?scope]
       (if ?scope
@@ -185,18 +189,18 @@ identifiers are declared / referenced in which places."
           _ []))
       (each [_ argument (ipairs args)]
         (if (not (sym? argument :&))
-          (define (sym :nil) argument scope)))) ;; TODO  for now, function arguments are set to nil
+          (define nil* argument scope)))) ;; TODO  for now, function arguments are set to nil
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
       (define-function-name ast scope))
 
     (λ compile-for [ast scope binding]
-       (define (sym :nil) binding scope))
+       (define nil* binding scope))
 
     (λ compile-each [ast scope bindings]
       (each [_ binding (ipairs bindings)]
-        (define (sym :nil) binding scope)))
+        (define nil* binding scope)))
 
     (λ compile-fn [ast scope]
       (tset scopes ast scope)
@@ -204,8 +208,6 @@ identifiers are declared / referenced in which places."
 
     (λ compile-do [ast scope]
       (tset scopes ast scope))
-
-    (local defer [])
 
     (λ call [ast scope]
       "every list that is a call to a special or macro or function"
@@ -216,7 +218,7 @@ identifiers are declared / referenced in which places."
         (case (and (sym? head) (tostring head))
           ;; This cannot be done through the :fn feature of the compiler plugin system
           ;; because it needs to be called *before* the body of the function is processed.
-          (where (or :fn :lambda :λ))
+          (where :fn)
           (define-function ast scope)
           (where (or :require :include))
           (tset require-calls ast true)
@@ -248,7 +250,7 @@ identifiers are declared / referenced in which places."
           (when (and (= 1 (msg:find "expected even number of name/value bindings"))
                      (sequence? ?ast)
                      (= 1 (% (length ?ast) 2)))
-            (table.insert ?ast (sym :nil))
+            (table.insert ?ast nil*)
             (table.insert defer #(table.remove ?ast))
             true)
           (when (and (= 1 (msg:find "expected a function, macro, or special to call"))
@@ -356,7 +358,13 @@ identifiers are declared / referenced in which places."
         (when (or (table? ast) (list? ast))
           (each [k v (iter ast)]
             (parsed k)
-            (parsed v))))
+            (parsed v)))
+        (when (and (list? ast)
+                   (or (sym? (. ast 1) :λ)
+                       (sym? (. ast 1) :lambda)))
+          (let [old-sym (. ast 1)]
+            (tset ast 1 (sym :fn))
+            (table.insert defer #(tset ast 1 old-sym)))))
 
       (parsed ast lexical)
 

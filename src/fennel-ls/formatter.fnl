@@ -53,14 +53,16 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 fntype is one of fn or λ or lambda"
   (case ?ast
     ;; name + docstring
-    (where [fntype name arglist docstring _body]
+    (where [fntype name arglist docstring body]
+      body
       (fn? fntype)
       (sym? name)
       (type= arglist :table)
       (type= docstring :string))
     {: fntype : name : arglist : docstring}
     ;; docstring
-    (where [fntype arglist docstring _body]
+    (where [fntype arglist docstring body]
+      body
       (fn? fntype)
       (type= arglist :table)
       (type= docstring :string))

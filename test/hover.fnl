@@ -96,15 +96,18 @@ except that it sets a new message handler `msgh`.")
             \"this is a doc string\"
             (print arg1 arg2 arg3))
           (my-function)|" nil)
-  (check "(λ foo| [x ...]
+  (check "(fn foo| [x ...]
             \"not a docstring, this gets returned\")"
          "```fnl\n(fn foo [x ...] ...)\n```")
+  (check "(λ foo| [x ...]
+            \"not a docstring, this gets returned\")"
+         "```fnl\n(λ foo [x ...] ...)\n```")
   (check "(λ foo| [{: start : end}]
             :body)"
-         "```fnl\n(fn foo [{: end : start}] ...)\n```")
+         "```fnl\n(λ foo [{: end : start}] ...)\n```")
   (check "(λ foo| [{:list [a b c] :table {: d : e : f}}]
             :body)"
-         "```fnl\n(fn foo [{:list [a b c] :table {: d : e : f}}] ...)\n```")
+         "```fnl\n(λ foo [{:list [a b c] :table {: d : e : f}}] ...)\n```")
   nil)
 
 (fn test-multisym []

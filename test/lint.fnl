@@ -59,6 +59,11 @@
   ;; setting a field without reading is okay
   (check "(fn [a b] (set a.x 10) (fn b.f []))" [] [{}])
   (check "(case {:b 1} (where (or {:a x} {:b x})) x)" [] [{}])
+
+  (check "(fn foo [a] nil) (foo)" [{:message "unused definition: a"}] [])
+  (check "(λ foo [a] nil) (foo)" [{:message "unused definition: a"}] [])
+  (check "(lambda foo [a] nil) (foo)" [{:message "unused definition: a"}] [])
+
   nil)
 
 (fn test-ampersand []
