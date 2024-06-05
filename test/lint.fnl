@@ -99,7 +99,7 @@
          [{:code 302 :message "unknown field: table.insert2"}]
          [{:code 302 :message "unknown field: table.insert"}])
   ;; if you explicitly write "_G", it should turn off this test.
-  ;; Hardcoded at the top of language.fnl/search-document.
+  ;; Hardcoded at the top of analyzer.fnl/search-document.
   (check "_G.insert2"
          []
          [{:code 302}])

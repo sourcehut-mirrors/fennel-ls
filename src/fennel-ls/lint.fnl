@@ -3,7 +3,7 @@ Provides the function (check server file), which goes through a file and mutates
 the `file.diagnostics` field, filling it with diagnostics."
 
 (local {: sym? : list? : view} (require :fennel))
-(local language (require :fennel-ls.language))
+(local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
 (local {:scopes {:global {: specials}}}
@@ -46,7 +46,7 @@ the `file.diagnostics` field, filling it with diagnostics."
   (icollect [symbol (pairs file.references) &into file.diagnostics]
     (if (. (utils.multi-sym-split symbol) 2)
       (let [opts {}
-            item (language.search-ast server file symbol [] opts)]
+            item (analyzer.search-ast server file symbol [] opts)]
         (if (and (not item) opts.searched-through-require-with-stack-size-1)
           {:range (message.ast->range server file symbol)
            :message (.. "unknown field: " (tostring symbol))

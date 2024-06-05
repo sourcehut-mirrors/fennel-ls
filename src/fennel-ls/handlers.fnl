@@ -9,7 +9,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local message   (require :fennel-ls.message))
 (local files     (require :fennel-ls.files))
 (local config    (require :fennel-ls.config))
-(local language  (require :fennel-ls.language))
+(local analyzer  (require :fennel-ls.analyzer))
 (local formatter (require :fennel-ls.formatter))
 (local utils     (require :fennel-ls.utils))
 (local docs      (require :fennel-ls.docs))
@@ -72,14 +72,14 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/definition [server send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (language.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol file.ast byte)
       (symbol [parent])
       (if
         ;; require call
         (. file.require-calls parent)
-        (language.search-ast server file parent [] {:stop-early? true})
+        (analyzer.search-ast server file parent [] {:stop-early? true})
         ;; regular symbol
-        (language.search-main server file symbol {:stop-early? true} {: byte}))
+        (analyzer.search-main server file symbol {:stop-early? true} {: byte}))
       result
       (if result.file
         (message.range-and-uri server result.file (or result.binding result.definition)))
@@ -90,9 +90,9 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                   :context {:includeDeclaration ?include-declaration?}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (language.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol file.ast byte)
       symbol
-      (language.find-nearest-definition server file symbol byte)
+      (analyzer.find-nearest-definition server file symbol byte)
       (where definition (not= definition.referenced-by nil))
       (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
                      (message.range-and-uri server definition.file symbol))]
@@ -107,14 +107,14 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/hover [server send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (language.find-symbol file.ast byte)
-      symbol (language.search-main server file symbol {} {: byte})
+    (case-try (analyzer.find-symbol file.ast byte)
+      symbol (analyzer.search-main server file symbol {} {: byte})
       result {:contents (formatter.hover-format result)
               :range (message.ast->range server file symbol)}
       (catch _ nil))))
 
 ;; All of the helper functions for textDocument/completion are here until I
-;; finish refactoring them, and then they can find a home in language.fnl
+;; finish refactoring them, and then they can find a home in analyzer.fnl
 (λ collect-scope [scope typ callback ?target]
   (let [result (or ?target [])]
     (var scope scope)
@@ -132,7 +132,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
 (λ make-completion-item [server file name scope]
-  (case (language.search-name-and-scope server file name scope)
+  (case (analyzer.search-name-and-scope server file name scope)
     def (formatter.completion-item-format name def)
     _ {:label name}))
 
@@ -158,7 +158,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [stack (fcollect [i (- (length split) 1) 2 -1]
                 (. split i))
         last-found-binding []
-        result (language.search-main server file symbol {:save-last-binding last-found-binding} {: stack})]
+        result (analyzer.search-main server file symbol {:save-last-binding last-found-binding} {: stack})]
     (case result
       {: definition : file}
       (case (values definition (type definition))
@@ -174,7 +174,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                            label))
                        (icollect [_ label (pairs keys)]
                          (if (= (type label) :string)
-                           (case (language.search-ast server file tbl [label] {})
+                           (case (analyzer.search-ast server file tbl [label] {})
                              def (formatter.completion-item-format label def)
                              _ {: label :kind kinds.Field})))))
       {: metadata : fields}
@@ -186,7 +186,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/completion [server send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)
-        (?symbol parents) (language.find-symbol file.ast byte)]
+        (?symbol parents) (analyzer.find-symbol file.ast byte)]
     (case (-?> ?symbol utils.multi-sym-split)
 
       ;; completion from current scope
@@ -218,9 +218,9 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/rename [server send {: position :textDocument {: uri} :newName new-name}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (language.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol file.ast byte)
       symbol
-      (language.find-nearest-definition server file symbol symbol.bytestart)
+      (analyzer.find-nearest-definition server file symbol symbol.bytestart)
       ;; TODO we are assuming that every reference is in the same file
       (where definition (not= definition.referenced-by nil))
       (let [usages (icollect [_ {: symbol} (ipairs definition.referenced-by)
