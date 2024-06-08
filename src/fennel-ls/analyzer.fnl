@@ -1,4 +1,4 @@
-"Language
+"Analyzer
 This module is for searching through the data provided by compiler.fnl.
 It searches through a file to find information about symbols that appear
 in the file.

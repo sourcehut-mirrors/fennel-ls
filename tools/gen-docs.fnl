@@ -1,26 +1,5 @@
 "Script to generate /src/fennel-ls/docs/lua54.fnl and friends automatically"
-
-(fn sh [...]
-  "run a shell command."
-  (let [command (table.concat
-                  (icollect [_ arg (ipairs [...])]
-                      (if
-                        ;; table skips escaping
-                        (= (type arg) :table)
-                        (. arg 1)
-                        ;; simple string skips escaping
-                        (arg:find "^[a-zA-Z0-9/_-]+$")
-                        arg
-                        ;; full escaping
-                        (.. "'"
-                            (string.gsub arg "'" "\\'")
-                            "'")))
-                  " ")]
-    (print (.. "tools/gen-docs: " command))
-    (os.execute command)))
-
-(fn mkdir-p [dirname]
-  (sh "mkdir" "-p" dirname))
+(local {: sh} (require :tools.util.sh))
 
 (fn curl-cached [url]
   (let [filename (.. "build/" (url:gsub "[/:]" "_"))
@@ -41,7 +20,7 @@
                   result "\n"))))
 
 (fn main []
-  (mkdir-p "build/")
+  (sh :mkdir :-p "build/")
   (let [{:convert lua-manual} (require :tools.gen-docs.lua-manual)
         {:convert tic-manual} (require :tools.gen-docs.tic80)]
     (derive-docs-from-url "https://www.lua.org/manual/5.1/manual.html" "lua51.fnl" lua-manual)
