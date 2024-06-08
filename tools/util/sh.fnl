@@ -7,7 +7,7 @@
                         (= (type arg) :table)
                         (. arg 1)
                         ;; simple string skips escaping
-                        (arg:find "^[a-zA-Z0-9/_-%.]+$")
+                        (arg:find "^[a-zA-Z0-9/_%.-]+$")
                         arg
                         ;; full escaping
                         (.. "'"

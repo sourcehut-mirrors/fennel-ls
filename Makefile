@@ -28,7 +28,6 @@ $(EXE): $(SRC)
 
 clean:
 	rm -f $(EXE)
-	rm -rf $(BUILD_DIR)
 
 test:
 	TESTING=1 $(FENNEL) $(FENNELFLAGS) --add-fennel-path "test/faith/?.fnl" test/init.fnl
@@ -44,7 +43,10 @@ testall:
 	$(MAKE) test LUA=luajit
 
 docs:
-	$(FENNEL) $(FENNELFLAGS) --add-fennel-path "tools/?.fnl" tools/gen-docs.fnl
+	$(FENNEL) $(FENNELFLAGS) tools/gen-docs.fnl
+
+install-deps:
+	$(FENNEL) $(FENNELFLAGS) tools/vendor.fnl
 
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
