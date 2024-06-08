@@ -16,15 +16,15 @@
              "https://git.sr.ht/~technomancy/fennel"
              fennel-version)
   (sh :make :-C "build/fennel"))
-sh :cp "build/fennel/fennel" "."
+(sh :cp "build/fennel/fennel" ".")
 (sh :cp "build/fennel/fennel.lua" "src")
 
 ;; get faith
-(when (not (io.open "build/fennel/faith.fnl"))
+(when (not (io.open "build/faith/faith.fnl"))
   (git-clone "build/faith" "https://git.sr.ht/~technomancy/faith" faith-version))
 (sh :cp "build/faith/faith.fnl" "test/faith/faith.fnl")
 
 ;; get penlight.stringio
-(when (not (io.open "build/pl/stringio.lua"))
+(when (not (io.open "build/penlight/lua/pl/stringio.lua"))
   (git-clone "build/penlight" "https://github.com/lunarmodules/Penlight" penlight-version))
 (sh :cp "build/penlight/lua/pl/stringio.lua" "test/pl/stringio.lua")

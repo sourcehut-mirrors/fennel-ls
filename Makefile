@@ -12,8 +12,10 @@ DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
-OPTS=--add-package-path "src/?.lua" --add-fennel-path "src/?.fnl"
-OPTS+=--skip-include fennel.compiler
+FENNELFLAGS=--add-package-path "src/?.lua" --add-fennel-path "src/?.fnl"
+FENNELFLAGS+=--skip-include fennel.compiler
+EXTRA_FENNELFLAGS ?=
+FENNELFLAGS+= $(EXTRA_FENNELFLAGS)
 
 .PHONY: all clean test install ci selfcheck
 
@@ -21,7 +23,7 @@ all: $(EXE)
 
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
-	$(FENNEL) $(OPTS) --require-as-include --compile src/fennel-ls.fnl >> $@
+	$(FENNEL) $(FENNELFLAGS) --require-as-include --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
 clean:
@@ -29,10 +31,10 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 test:
-	TESTING=1 $(FENNEL) $(OPTS) --add-fennel-path "test/faith/?.fnl" test/init.fnl
+	TESTING=1 $(FENNEL) $(FENNELFLAGS) --add-fennel-path "test/faith/?.fnl" test/init.fnl
 
 repl:
-	$(FENNEL) $(OPTS) --add-fennel-path "test/faith/?.fnl"
+	$(FENNEL) $(FENNELFLAGS) --add-fennel-path "test/faith/?.fnl"
 
 testall:
 	$(MAKE) test LUA=lua5.1
@@ -42,7 +44,7 @@ testall:
 	$(MAKE) test LUA=luajit
 
 docs:
-	$(FENNEL) $(OPTS) --add-fennel-path "tools/?.fnl" tools/gen-docs.fnl
+	$(FENNEL) $(FENNELFLAGS) --add-fennel-path "tools/?.fnl" tools/gen-docs.fnl
 
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
@@ -50,4 +52,4 @@ install: $(EXE)
 ci: testall $(EXE)
 
 selfcheck:
-	$(FENNEL) $(OPTS) src/fennel-ls.fnl --check $(SRC)
+	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --check $(SRC)
