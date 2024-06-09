@@ -17,7 +17,7 @@ FENNELFLAGS+=--skip-include fennel.compiler
 EXTRA_FENNELFLAGS ?=
 FENNELFLAGS+= $(EXTRA_FENNELFLAGS)
 
-.PHONY: all clean test install ci selfcheck
+.PHONY: all clean test repl install docs install-deps ci selfcheck
 
 all: $(EXE)
 
@@ -26,32 +26,36 @@ $(EXE): $(SRC)
 	$(FENNEL) $(FENNELFLAGS) --require-as-include --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
-clean:
-	rm -f $(EXE)
+repl:
+	$(FENNEL) $(FENNELFLAGS)
+
+docs:
+	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl
+
+rm-docs:
+	rm -rf src/fennel-ls/docs/
+
+deps:
+	$(FENNEL) $(FENNELFLAGS) tools/get-deps.fnl
+
+rm-deps:
+	rm -rf fennel deps/
+
+selfcheck:
+	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --check $(SRC)
+
+install: $(EXE)
+	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
 test:
 	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
-repl:
-	$(FENNEL) $(FENNELFLAGS)
-
-testall:
+ci:
 	$(MAKE) test LUA=lua5.1
 	$(MAKE) test LUA=lua5.2
 	$(MAKE) test LUA=lua5.3
 	$(MAKE) test LUA=lua5.4
 	$(MAKE) test LUA=luajit
 
-docs:
-	$(FENNEL) $(FENNELFLAGS) tools/gen-docs.fnl
-
-install-deps:
-	$(FENNEL) $(FENNELFLAGS) tools/vendor.fnl
-
-install: $(EXE)
-	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
-
-ci: testall $(EXE)
-
-selfcheck:
-	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --check $(SRC)
+clean:
+	rm -f $(EXE)

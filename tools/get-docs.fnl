@@ -21,8 +21,9 @@
 
 (fn main []
   (sh :mkdir :-p "build/")
-  (let [{:convert lua-manual} (require :tools.gen-docs.lua-manual)
-        {:convert tic-manual} (require :tools.gen-docs.tic80)]
+  (sh :mkdir :-p "src/fennel-ls/docs/")
+  (let [{:convert lua-manual} (require :tools.get-docs.lua-manual)
+        {:convert tic-manual} (require :tools.get-docs.tic80)]
     (derive-docs-from-url "https://www.lua.org/manual/5.1/manual.html" "lua51.fnl" lua-manual)
     (derive-docs-from-url "https://www.lua.org/manual/5.2/manual.html" "lua52.fnl" lua-manual)
     (derive-docs-from-url "https://www.lua.org/manual/5.3/manual.html" "lua53.fnl" lua-manual)

@@ -14,7 +14,7 @@
                             (string.gsub arg "'" "\\'")
                             "'")))
                   " ")]
-    (print (.. "tools/gen-docs: " command))
+    (print (.. "running command: " command))
     (os.execute command)))
 
 {: sh}

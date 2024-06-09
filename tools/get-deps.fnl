@@ -12,7 +12,6 @@
 (local dkjson-md5sum "94320e64e95f9bb5b06d9955e5391a78  build/dkjson.lua")
 (local dkjson-sha1sum "6926b65aa74ae8278b6c5923c0c5568af4f1fef1  build/dkjson.lua")
 
-(sh :mkdir :-p "deps/")
 
 ;; get fennel
 (sh :mkdir :-p "build/")
@@ -36,7 +35,8 @@
   (assert (= 0 (sh :echo dkjson-md5sum [:|] :md5sum "--check --status")))
   (assert (= 0 (sh :echo dkjson-sha1sum [:|] :sha1sum "--check --status"))))
 
-
+;; copy to the "deps" folder
+(sh :mkdir :-p "deps/")
 (sh :cp "build/fennel/fennel" ".")
 (sh :cp "build/fennel/fennel.lua" "deps/")
 (sh :cp "build/faith/faith.fnl" "deps/")
