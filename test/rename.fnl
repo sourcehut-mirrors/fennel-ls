@@ -1,6 +1,6 @@
 (local faith (require :faith))
 (local {: create-client-with-files} (require :test.utils))
-(local {: null} (require :fennel-ls.json.json))
+(local {: null} (require :dkjson))
 (local {: apply-edits} (require :fennel-ls.utils))
 
 (fn check [file-content new-name expected-file-content]

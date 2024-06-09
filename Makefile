@@ -12,7 +12,7 @@ DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
-FENNELFLAGS=--add-package-path "src/?.lua" --add-fennel-path "src/?.fnl"
+FENNELFLAGS=--add-package-path "src/?.lua;deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 FENNELFLAGS+=--skip-include fennel.compiler
 EXTRA_FENNELFLAGS ?=
 FENNELFLAGS+= $(EXTRA_FENNELFLAGS)
@@ -30,10 +30,10 @@ clean:
 	rm -f $(EXE)
 
 test:
-	TESTING=1 $(FENNEL) $(FENNELFLAGS) --add-fennel-path "test/faith/?.fnl" test/init.fnl
+	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
 repl:
-	$(FENNEL) $(FENNELFLAGS) --add-fennel-path "test/faith/?.fnl"
+	$(FENNEL) $(FENNELFLAGS)
 
 testall:
 	$(MAKE) test LUA=lua5.1

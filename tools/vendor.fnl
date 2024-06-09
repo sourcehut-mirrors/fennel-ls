@@ -8,23 +8,39 @@
 (local fennel-version "1.4.2")
 (local faith-version "0.1.2")
 (local penlight-version "1.14.0")
+(local dkjson-version "2.7")
+(local dkjson-md5sum "94320e64e95f9bb5b06d9955e5391a78  build/dkjson.lua")
+(local dkjson-sha1sum "6926b65aa74ae8278b6c5923c0c5568af4f1fef1  build/dkjson.lua")
 
-;; get && build fennel
-(sh :mkdir :-p "build")
+(sh :mkdir :-p "deps/")
+
+;; get fennel
+(sh :mkdir :-p "build/")
 (when (not (io.open "build/fennel/fennel"))
   (git-clone "build/fennel"
              "https://git.sr.ht/~technomancy/fennel"
              fennel-version)
   (sh :make :-C "build/fennel"))
-(sh :cp "build/fennel/fennel" ".")
-(sh :cp "build/fennel/fennel.lua" "src")
 
 ;; get faith
 (when (not (io.open "build/faith/faith.fnl"))
   (git-clone "build/faith" "https://git.sr.ht/~technomancy/faith" faith-version))
-(sh :cp "build/faith/faith.fnl" "test/faith/faith.fnl")
 
 ;; get penlight.stringio
 (when (not (io.open "build/penlight/lua/pl/stringio.lua"))
   (git-clone "build/penlight" "https://github.com/lunarmodules/Penlight" penlight-version))
-(sh :cp "build/penlight/lua/pl/stringio.lua" "test/pl/stringio.lua")
+
+
+(when (not (io.open "build/dkjson.lua"))
+  (sh :curl (.. "http://dkolf.de/dkjson-lua/dkjson-" dkjson-version ".lua") [:>] "build/dkjson.lua")
+  (assert (= 0 (sh :echo dkjson-md5sum [:|] :md5sum "--check --status")))
+  (assert (= 0 (sh :echo dkjson-sha1sum [:|] :sha1sum "--check --status"))))
+
+
+(sh :cp "build/fennel/fennel" ".")
+(sh :cp "build/fennel/fennel.lua" "deps/")
+(sh :cp "build/faith/faith.fnl" "deps/")
+(sh :mkdir :-p "deps/pl")
+(sh :cp "build/penlight/lua/pl/stringio.lua" "deps/pl/")
+(sh :cp "build/penlight/LICENSE.md" "deps/pl/")
+(sh :cp "build/dkjson.lua" "deps/")

@@ -8,7 +8,7 @@ There are only two functions exposed here:
 It's probably not compliant yet, because serialization of [] and {} is the same.
 Luckily, I'm testing with Neovim, so I can pretend these problems don't exist for now."
 
-(local {: encode : decode} (require :fennel-ls.json.json))
+(local {: encode : decode} (require :dkjson))
 
 (λ read-header [in ?header]
   "Reads the header of a JSON-RPC message"
@@ -43,11 +43,11 @@ If there aren't enough bytes, return nil"
 (λ read [in]
   "Reads and parses a JSON-RPC message from the input stream
 Returns a table with the message if it succeeded, or a string with the parse error if it fails."
-  (let [(_success? result)
+  (let [(?result _?err-pos ?err)
         (-?>> (read-header in)
           (read-content in)
-          (pcall decode))]
-    result))
+          decode)]
+    (or ?result ?err)))
 
 (λ write [out msg]
   "Serializes and writes a JSON-RPC message to the given output stream"

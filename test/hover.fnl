@@ -1,7 +1,7 @@
 (local faith (require :faith))
 (local {: view} (require :fennel))
 (local {: create-client-with-files} (require :test.utils))
-(local {: null} (require :fennel-ls.json.json))
+(local {: null} (require :dkjson))
 
 (fn check [file-contents ?response-string]
   (let [{: client : uri : cursor} (create-client-with-files file-contents)

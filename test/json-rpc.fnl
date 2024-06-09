@@ -1,5 +1,5 @@
 (local faith (require :faith))
-(local stringio (require :test.pl.stringio))
+(local stringio (require :pl.stringio))
 (local json-rpc (require :fennel-ls.json-rpc))
 
 (fn test-read []

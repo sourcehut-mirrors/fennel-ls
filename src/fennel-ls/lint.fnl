@@ -9,9 +9,10 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local {:scopes {:global {: specials}}}
   (require :fennel.compiler))
 
-(local diagnostic-mt {:__json_exclude_keys {:quickfix true}})
-(fn diagnostic [server]
-  (setmetatable server diagnostic-mt))
+(local dkjson (require :dkjson))
+(local diagnostic-mt {:__tojson (fn [self state] (dkjson.encode (. self :self) state)) :__index #(. $1 :self $2)})
+(fn diagnostic [self quickfix]
+  (setmetatable {: self : quickfix} diagnostic-mt))
 
 (local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1 "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1 "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
 (fn special? [item]
@@ -37,9 +38,9 @@ the `file.diagnostics` field, filling it with diagnostics."
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
        :code 301
-       :codeDescription "unused-definition"
-       :quickfix #[{:range (message.ast->range symbol)
-                    :newText (.. "_" (tostring symbol))}]})))
+       :codeDescription "unused-definition"}
+      #[{:range (message.ast->range server file symbol)
+         :newText (.. "_" (tostring symbol))}])))
 
 (λ unknown-module-field [server file]
   "any multisym whose definition can't be found through a (require) call"
@@ -89,12 +90,12 @@ the `file.diagnostics` field, filling it with diagnostics."
                         (.. " Use a loop when you have a dynamic number of arguments to (" (tostring op) ")")))
          :severity message.severity.WARN
          :code 304
-         :codeDescription "bad-unpack"
-         :quickfix (if (and (= (length call) 2)
-                            (= (length (. call 2)) 2)
-                            (sym? op ".."))
-                     #[{:range (message.ast->range server file call)
-                        :newText (.. "(table.concat " (view (. call 2 2)) ")")}])}))))
+         :codeDescription "bad-unpack"}
+        (if (and (= (length call) 2)
+                 (= (length (. call 2)) 2)
+                 (sym? op ".."))
+          #[{:range (message.ast->range server file call)
+             :newText (.. "(table.concat " (view (. call 2 2)) ")")}])))))
 
 (λ var-never-set [server file symbol definition]
   (if (and definition.var? (not definition.var-set) (. file.lexical symbol))
@@ -117,9 +118,9 @@ the `file.diagnostics` field, filling it with diagnostics."
          :message (.. "write " (view identity) " instead of (" (tostring op) ")")
          :severity message.severity.WARN
          :code 306
-         :codeDescription "op-with-no-arguments"
-         :quickfix #[{:range (message.ast->range server file call)
-                      :newText (view identity)}]}))))
+         :codeDescription "op-with-no-arguments"}
+        #[{:range (message.ast->range server file call)
+           :newText (view identity)}]))))
 
 (λ multival-in-middle-of-call [server file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do
