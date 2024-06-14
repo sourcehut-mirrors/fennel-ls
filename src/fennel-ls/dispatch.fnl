@@ -25,11 +25,11 @@ In general, this involves:
         (.. "\"" method "\" is not in the request-handlers table")
         id))))
 
-(λ handle-response [server send id result]
+(λ handle-response [_server _send _id _result]
   ;; I don't care about responses yet
   nil)
 
-(λ handle-bad-response [server send id err]
+(λ handle-bad-response [_server _send _id err]
   ;; Handle a message indicating an error. Right now, it just crashes the server.
   (error (.. "Client sent fennel-ls an error: " err.code)))
 

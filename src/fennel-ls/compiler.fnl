@@ -148,7 +148,7 @@ identifiers are declared / referenced in which places."
             (if (. references symbol)
               (tset (. references symbol :target) :var-set true))))))
 
-    (λ destructure [to from scope {:declaration ?declaration? : symtype &as opts}]
+    (λ destructure [to from scope {:declaration ?declaration? :symtype _ &as opts}]
       ;; I really don't understand symtype
       ;; I think I need an explanation
       (if ?declaration?
@@ -195,10 +195,10 @@ identifiers are declared / referenced in which places."
       ;; handle the definitions of a function
       (define-function-name ast scope))
 
-    (λ compile-for [ast scope binding]
+    (λ compile-for [_ast scope binding]
        (define nil* binding scope))
 
-    (λ compile-each [ast scope bindings]
+    (λ compile-each [_ast scope bindings]
       (each [_ binding (ipairs bindings)]
         (define nil* binding scope)))
 
@@ -225,7 +225,7 @@ identifiers are declared / referenced in which places."
           ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
           (where method-call (= (type method-call) :string) (method-call:find ":"))
           (reference head scope :read)
-          ;; NOTE HACK TODO this should be removed once fennel makes if statements work like normal
+          ;; NOTE this should be removed once fennel makes if statements work like normal
           (where :if)
           (let [len (length ast)]
             (table.insert defer #(tset ast (+ len 1) nil))))))
@@ -280,7 +280,7 @@ identifiers are declared / referenced in which places."
           (call-me-to-reset-the-compiler)
           (error "__NOT_AN_ERROR"))))
 
-    (λ on-parse-error [msg filename line byte _source call-me-to-reset-the-compiler]
+    (λ on-parse-error [msg _filename line byte _source call-me-to-reset-the-compiler]
       (let [line (if (= line "?") 1 line)
             range (line+byte->range server file line byte)]
         (table.insert diagnostics

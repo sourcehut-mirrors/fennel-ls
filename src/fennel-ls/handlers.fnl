@@ -18,7 +18,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local requests [])
 (local notifications [])
 
-(λ requests.initialize [server send params]
+(λ requests.initialize [server _send params]
   (config.initialize server params)
   (let [capabilities
         {:positionEncoding server.position-encoding
@@ -69,7 +69,7 @@ Every time the client sends a message, it gets handled by a function in the corr
     {: capabilities
      :serverInfo {:name "fennel-ls" :version "0.1.0"}}))
 
-(λ requests.textDocument/definition [server send {: position :textDocument {: uri}}]
+(λ requests.textDocument/definition [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
@@ -85,9 +85,9 @@ Every time the client sends a message, it gets handled by a function in the corr
         (message.range-and-uri server result.file (or result.binding result.definition)))
       (catch _ nil))))
 
-(λ requests.textDocument/references [server send {: position
-                                                  :textDocument {: uri}
-                                                  :context {:includeDeclaration ?include-declaration?}}]
+(λ requests.textDocument/references [server _send {: position
+                                                   :textDocument {: uri}
+                                                   :context {:includeDeclaration ?include-declaration?}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
@@ -104,7 +104,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         result)
       (catch _ nil))))
 
-(λ requests.textDocument/hover [server send {: position :textDocument {: uri}}]
+(λ requests.textDocument/hover [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
@@ -136,7 +136,7 @@ Every time the client sends a message, it gets handled by a function in the corr
     def (formatter.completion-item-format name def)
     _ {:label name}))
 
-(λ scope-completion [server file byte ?symbol parents]
+(λ scope-completion [server file _byte ?symbol parents]
   (let [scope (or (accumulate [result nil
                                _ parent (ipairs parents)
                                &until result]
@@ -183,7 +183,7 @@ Every time the client sends a message, it gets handled by a function in the corr
           (formatter.completion-item-format label info)))
       _ nil)))
 
-(λ requests.textDocument/completion [server send {: position :textDocument {: uri}}]
+(λ requests.textDocument/completion [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)
         (?symbol parents) (analyzer.find-symbol file.ast byte)]
@@ -215,7 +215,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 
 
-(λ requests.textDocument/rename [server send {: position :textDocument {: uri} :newName new-name}]
+(λ requests.textDocument/rename [server _send {: position :textDocument {: uri} :newName new-name}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
@@ -253,7 +253,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (and (pos<= range-1.start range-2.end)
        (pos<= range-2.start range-1.end)))
 
-(λ requests.textDocument/codeAction [server send {: range :textDocument {: uri} &as params}]
+(λ requests.textDocument/codeAction [server _send {: range :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)]
     (icollect [_ diagnostic (ipairs file.diagnostics)]
       (if (and (overlap? diagnostic.range range)
@@ -267,31 +267,31 @@ Every time the client sends a message, it gets handled by a function in the corr
   (lint.check server file)
   (send (message.diagnostics file)))
 
-(λ notifications.textDocument/didOpen [server send {:textDocument {: languageId : text : uri}}]
+(λ notifications.textDocument/didOpen [server send {:textDocument {: text : uri}}]
   (local file (files.set-uri-contents server uri text))
   (lint.check server file)
   (send (message.diagnostics file))
   (set file.open? true))
 
-(λ notifications.textDocument/didSave [server send {:textDocument {: uri}}]
+(λ notifications.textDocument/didSave [_server _send _server]
   ;; TODO be careful about which modules need to be recomputed, and also eagerly flush existing files
   (set fennel.macro-loaded []))
 
-(λ notifications.textDocument/didClose [server send {:textDocument {: uri}}]
+(λ notifications.textDocument/didClose [server _send {:textDocument {: uri}}]
   (local file (files.get-by-uri server uri))
   (set file.open? false)
   (set fennel.macro-loaded [])
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (files.flush-uri server uri))
 
-(λ notifications.workspace/didChangeConfiguration [server send {: settings}]
+(λ notifications.workspace/didChangeConfiguration [server _send {: settings}]
   (config.write-configuration server (?. settings :fennel-ls)))
 
-(λ requests.shutdown [server send]
+(λ requests.shutdown [_server _send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"
   nil)
 
-(λ notifications.exit [server]
+(λ notifications.exit [_server]
   "This is the real shutdown request, we can quit now"
   (os.exit 0))
 
