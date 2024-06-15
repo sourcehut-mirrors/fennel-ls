@@ -5,8 +5,8 @@ packages:
   - lua5.2
   - lua5.3
   - lua5.4
-  - luajit2
-sources:
+  - luajit
+sources
   - https://git.sr.ht/~xerool/fennel-ls
 tasks:
   - build: |
