@@ -47,7 +47,7 @@ selfcheck:
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
-test:
+test: $(EXE)
 	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
 ci:
