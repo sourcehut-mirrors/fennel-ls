@@ -148,12 +148,13 @@ identifiers are declared / referenced in which places."
             (if (. references symbol)
               (tset (. references symbol :target) :var-set true))))))
 
-    (λ destructure [to from scope {:declaration ?declaration? :symtype _ &as opts}]
+    (λ destructure [to from scope {:declaration ?declaration? : symtype &as opts}]
       ;; I really don't understand symtype
       ;; I think I need an explanation
-      (if ?declaration?
-        (define to from scope opts)
-        (mutate to from scope)))
+      (when (not= symtype :pv)
+        (if ?declaration?
+          (define to from scope opts)
+          (mutate to from scope))))
 
     (λ add-field [ast multisym scope]
       "the multisym has the main name and the root name"
