@@ -24,4 +24,5 @@
    :test.lint
    :test.code-action
    :test.rename
-   :test.misc])
+   :test.misc
+   :test.check])
