@@ -31,10 +31,10 @@
 
 (λ main-loop [in out]
   (local send (partial json-rpc.write out))
-  (local state [])
+  (local server {})
   (while true
     (let [msg (json-rpc.read in)]
-      (dispatch.handle state send msg))))
+      (dispatch.handle server send msg))))
 
 (λ main []
   (case arg

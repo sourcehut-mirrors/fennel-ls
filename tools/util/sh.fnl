@@ -15,6 +15,6 @@
                             "'")))
                   " ")]
     (print (.. "running command: " command))
-    (os.execute command)))
+    (assert (os.execute command))))
 
 {: sh}

@@ -18,7 +18,7 @@ in the \"server\" object."
                       (let [body (file:read :*a)]
                         (file:close)
                         body)
-                      (error (.. "failed to open file" uri)))))]
+                      (error (.. "failed to open file " uri)))))]
     {: uri : text}))
 
 (λ get-by-uri [server uri]

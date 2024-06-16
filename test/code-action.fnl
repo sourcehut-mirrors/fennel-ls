@@ -36,6 +36,11 @@
          "(let [x 0]
             (print x))"))
 
+(fn test-fix-unused-definition []
+  (check "(local x==== 10)"
+         "unused-definition"
+         "(local _x 10)"))
+
 ; (fn test-fix-method-function []
 ;   (check "(local x {})
 ;           (fn x:y [a b c]
@@ -45,4 +50,5 @@
 ;           (fn x.y [client a b c]
 ;             (print client a b c))"))
 
-{: test-fix-op-no-arguments}
+{: test-fix-op-no-arguments
+ : test-fix-unused-definition}
