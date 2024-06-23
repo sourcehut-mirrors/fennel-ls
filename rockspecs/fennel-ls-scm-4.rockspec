@@ -17,6 +17,7 @@ dependencies = {
 }
 build_dependencies = {
     "fennel == 1.4.2",
+    "luarocks-build-fennel",
 }
 test_dependencies = {
     "faith >= 0.1.2",
