@@ -1,5 +1,7 @@
 LUA ?= lua
-FENNEL=$(LUA) fennel
+# If ./fennel is present, use `lua fennel` to run the locally vendored fennel
+# otherwise
+FENNEL=$(if $(wildcard fennel),$(LUA) fennel,fennel)
 EXE=fennel-ls
 
 SRC=$(wildcard src/*.fnl)
@@ -13,9 +15,7 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
 FENNELFLAGS=--add-package-path "src/?.lua;deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
-FENNELFLAGS+=--skip-include fennel.compiler
-EXTRA_FENNELFLAGS ?=
-FENNELFLAGS+= $(EXTRA_FENNELFLAGS)
+REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
 .PHONY: all clean test repl install docs install-deps ci selfcheck
 
@@ -23,7 +23,7 @@ all: $(EXE)
 
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
-	$(FENNEL) $(FENNELFLAGS) --require-as-include --compile src/fennel-ls.fnl >> $@
+	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_SETTINGS) --require-as-include --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
 repl:
@@ -41,14 +41,14 @@ deps:
 rm-deps:
 	rm -rf fennel deps/
 
-selfcheck:
-	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --check $(SRC)
+selflint:
+	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(SRC)
 
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
 test: $(EXE)
-	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
+	$(FENNEL) $(FENNELFLAGS) test/init.fnl
 
 ci:
 	$(MAKE) test LUA=lua5.1
