@@ -57,5 +57,15 @@ ci:
 	$(MAKE) test LUA=lua5.4
 	$(MAKE) test LUA=luajit
 
+	# dependencies
+	mv deps old-deps
+	mv fennel old-fennel
+	$(MAKE) deps
+	diff -r deps old-deps
+	diff -r fennel old-fennel
+
+	# luarocks
+	luarocks install rockspecs/fennel-ls-scm-4.rockspec --dev --tree my-test-tree
+
 clean:
 	rm -f $(EXE)

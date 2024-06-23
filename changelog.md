@@ -1,16 +1,27 @@
 # Changelog
 
 ### Features
-* Better results when syntax errors are present.
+* Better results when syntax errors are present
+* Docs for each Lua version: 5.1 through 5.4
+* Docs for TIC-80
+
+### Changes
+* --check is now --lint
 
 ### Bug Fixes
 * Solved a case where there were duplicate completion candidates
-* Special workaround for Eglot to be able to complete multisyms.
+* Special workaround for Eglot to be able to complete multisyms
     To be honest, this isn't even Eglot's fault; the LSP specification leaves it ambiguous
     [Eglot's issue](https://github.com/joaotavora/eglot/issues/402)
     [LSP's issue](https://github.com/microsoft/language-server-protocol/issues/648)
     [fennel-mode can't fix it on their end](https://git.sr.ht/~technomancy/fennel-mode/commit/188ee04e86792cd4bce75d52b9603cc833b63b48)
 
+### Misc
+* Switch json libraries from rxi/json.lua to dkjson
+* Lots of refactoring and renaming things
+* You can now build fennel-ls with no vendored dependencies if you want
+* Building is more reproducible now! `tools/get-deps.fnl` will reproducibly get all the deps, instead of you needing to trust me
+* faith updated to 0.2.0
 
 ## 0.1.2
 
