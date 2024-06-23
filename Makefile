@@ -60,7 +60,7 @@ ci:
 	# dependencies
 	mv deps old-deps
 	mv fennel old-fennel
-	$(MAKE) deps
+	$(MAKE) FENNEL=old-fennel deps
 	diff -r deps old-deps
 	diff -r fennel old-fennel
 
