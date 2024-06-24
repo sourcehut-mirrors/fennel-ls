@@ -57,7 +57,7 @@ ci:
 	$(MAKE) test LUA=lua5.4
 	$(MAKE) test LUA=luajit
 
-	# dependencies
+	# Make sure the dependency files are correct
 	mv deps old-deps
 	mv fennel old-fennel
 	$(MAKE) FENNEL=./old-fennel deps
@@ -67,7 +67,7 @@ ci:
 	rm -f old-fennel
 
 	# test that luarocks builds properly
-	sudo apt install luarocks
+	DEBIAN_FRONTEND=noninteractive sudo apt install luarocks
 	luarocks install rockspecs/fennel-ls-scm-4.rockspec --dev --local
 
 clean:
