@@ -145,11 +145,12 @@ except that it sets a new message handler `msgh`.")
             `(let [,a ,b] ,c))
           (bind x print |x)"
          #($:find "```fnl\n(print ...)\n```" 1 true))
-  ; (check "(macro foo [a b c]
-  ;           \"docstring!\"
-  ;           `(,a ,b ,c))
-  ;         (fo|o print :hello :world)"
-  ;        "```fnl\n(macro foo [a b c] ...)\n```\ndocstring!")
+
+  (check "(macro foo [a b c]
+            \"docstring!\"
+            `(,a ,b ,c))
+          (fo|o print :hello :world)"
+         "```fnl\n(foo a b c)\n```\ndocstring!")
   nil)
 
 (fn test-reader []

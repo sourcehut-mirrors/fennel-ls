@@ -64,6 +64,7 @@ identifiers are declared / referenced in which places."
         definitions   {} ; symbol -> definition
         diagnostics   {} ; [diagnostic]
         references    {} ; symbol -> references
+        macro-refs    {} ; symbol -> macro
         scopes        {} ; ast -> scope
         calls         {} ; all calls in the macro-expanded code -> true
         lexical       {} ; all lists, tables, and symbols in the original source
@@ -211,7 +212,7 @@ identifiers are declared / referenced in which places."
       (tset scopes ast scope))
 
     (λ call [ast scope]
-      "every list that is a call to a special or macro or function"
+      "every list that is a call to a special or function"
       (tset calls ast true)
       (tset scopes ast scope)
       ;; Most calls aren't interesting, but here's the list of the ones that are:
@@ -230,6 +231,17 @@ identifiers are declared / referenced in which places."
           (where :if)
           (let [len (length ast)]
             (table.insert defer #(tset ast (+ len 1) nil))))))
+
+    (fn macroexpand [ast _transformed scope]
+      "every list that is a call to a macro"
+      (let [macro-id (. ast 1)
+            macro-fn (accumulate [t scope.macros
+                                  _ part (ipairs (utils.multi-sym-split macro-id))]
+                             (if (= (type t) :table)
+                               (. t part)))]
+        (when (= (type macro-fn) :function)
+          (assert (sym? macro-id) "macros should be syms")
+          (tset macro-refs macro-id macro-fn))))
 
     (λ attempt-to-recover! [msg ?ast]
       (or (= 1 (msg:find "unknown identifier"))
@@ -300,6 +312,9 @@ identifiers are declared / referenced in which places."
     (each [_ v (ipairs (utils.split-spaces server.configuration.extra-globals))]
       (table.insert allowed-globals v))
 
+    (fn parse-ast [parser]
+      (icollect [ok ast parser &until (not ok)] ast))
+
     ;; TODO clean up this code. It's awful now that there is error handling
     (let [macro-file? (= (file.text:sub 1 24) ";; fennel-ls: macro-file")
           plugin
@@ -308,7 +323,7 @@ identifiers are declared / referenced in which places."
            : symbol-to-expression
            : call
            : destructure
-           ;; : macroexpand
+           : macroexpand
            ;; :fn    fn-hook
            ;; :do    there's a do hook
            ;; :chunk I don't know what this one is
@@ -322,6 +337,7 @@ identifiers are declared / referenced in which places."
           opts {:filename file.uri
                 :plugins [plugin]
                 :allowedGlobals allowed-globals
+                :useMetadata true
                 :requireAsInclude false
                 : scope}
           filter-errors (fn _filter-errors [component ...]
@@ -339,7 +355,7 @@ identifiers are declared / referenced in which places."
                    (fn _p1 [p2 p3]
                      (filter-errors :parser (xpcall #(p p2 p3) fennel.traceback))))
 
-          ast (icollect [ok ast parser &until (not ok)] ast)]
+          ast (parse-ast parser)]
 
       (λ parsed [ast]
         "runs on every ast tree that was parsed"
@@ -385,6 +401,7 @@ identifiers are declared / referenced in which places."
       (each [_ cmd (ipairs defer)]
         (cmd))
 
+      ;; TODO make this construct an object instead of mutating the file
       (set file.ast ast)
       (set file.calls calls)
       (set file.lexical lexical)
@@ -395,6 +412,7 @@ identifiers are declared / referenced in which places."
       (set file.diagnostics diagnostics)
       (set file.references references)
       (set file.require-calls require-calls)
-      (set file.allowed-globals allowed-globals))))
+      (set file.allowed-globals allowed-globals)
+      (set file.macro-refs macro-refs))))
 
 {: compile}

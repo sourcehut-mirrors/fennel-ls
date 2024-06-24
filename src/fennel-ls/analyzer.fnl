@@ -164,6 +164,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
           nil))))
 
 
+(local {:metadata METADATA} (require :fennel.compiler))
 ;; the options thing is getting out of hand
 (λ search-main [server file symbol opts initialization-opts]
   "Find the definition of a symbol"
@@ -184,7 +185,9 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         _ (case (. file.references symbol)
             ref (search-reference server file ref stack opts)
             _ (case (. file.definitions symbol)
-                def (search-multival server file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)))))))
+                def (search-multival server file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)
+                _ (case (. file.macro-refs symbol)
+                    ref {:binding symbol :metadata (. METADATA ref)})))))))
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
