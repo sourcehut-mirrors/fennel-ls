@@ -3,22 +3,22 @@
 (local {: create-client-with-files} (require :test.utils))
 
 (fn find [diagnostics e]
-  "returns the index of the diagnostic "
-   (accumulate [result nil
-                i d (ipairs diagnostics)
-                &until result]
-     (if (and (or (= e.message nil)
-                  (if (= (type e.message) "function")
-                    (e.message d.message)
-                    (= e.message d.message)))
-              (or (= e.code nil)
-                  (= e.code d.code))
-              (or (= e.range nil)
-                  (and (= e.range.start.line      d.range.start.line)
-                       (= e.range.start.character d.range.start.character)
-                       (= e.range.end.line        d.range.end.line)
-                       (= e.range.end.character   d.range.end.character))))
-       i)))
+  "returns the index of the diagnostic that matches `e`"
+  (accumulate [result nil
+               i d (ipairs diagnostics)
+               &until result]
+    (if (and (or (= e.message nil)
+                 (if (= (type e.message) "function")
+                   (e.message d.message)
+                   (= e.message d.message)))
+             (or (= e.code nil)
+                 (= e.code d.code))
+             (or (= e.range nil)
+                 (and (= e.range.start.line      d.range.start.line)
+                      (= e.range.start.character d.range.start.character)
+                      (= e.range.end.line        d.range.end.line)
+                      (= e.range.end.character   d.range.end.character))))
+      i)))
 
 (fn check [file-contents expected unexpected]
   (let [{: diagnostics} (create-client-with-files file-contents)]

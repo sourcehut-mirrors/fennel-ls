@@ -159,13 +159,14 @@ WARNING: this is only used in the test code, not in the real language server"
         word))))
 
 (fn multi-sym-base [symbol]
+  (local symbol (tostring symbol))
   (if (or (= symbol ".")
           (= symbol "..")
           (= symbol "...")
           (= symbol ":")
           (= symbol "?."))
-    (tostring symbol)
-    (pick-values 1 (: (tostring symbol) :match "[^.:]*"))))
+    symbol
+    (pick-values 1 (symbol:match "[^.:]*"))))
 
 (λ type= [val typ]
   (= (type val) typ))

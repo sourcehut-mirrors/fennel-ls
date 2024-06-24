@@ -48,7 +48,7 @@ install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
 test: $(EXE)
-	$(FENNEL) $(FENNELFLAGS) test/init.fnl
+	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
 ci:
 	$(MAKE) test LUA=lua5.1
@@ -63,9 +63,12 @@ ci:
 	$(MAKE) FENNEL=./old-fennel deps
 	diff -r deps old-deps
 	diff -r fennel old-fennel
+	rm -rf old-deps
+	rm -f old-fennel
 
-	# luarocks
-	luarocks install rockspecs/fennel-ls-scm-4.rockspec --dev --tree my-test-tree
+	# test that luarocks builds properly
+	sudo apt install luarocks
+	luarocks install rockspecs/fennel-ls-scm-4.rockspec --dev --local
 
 clean:
 	rm -f $(EXE)

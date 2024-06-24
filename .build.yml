@@ -6,7 +6,6 @@ packages:
   - lua5.3
   - lua5.4
   - luajit
-  - luarocks
 sources:
   - https://git.sr.ht/~xerool/fennel-ls
 tasks:
