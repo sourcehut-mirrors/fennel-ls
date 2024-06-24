@@ -67,7 +67,7 @@ ci:
 	rm -f old-fennel
 
 	# test that luarocks builds properly
-	DEBIAN_FRONTEND=noninteractive sudo apt install luarocks
+	DEBIAN_FRONTEND=noninteractive sudo apt install -y luarocks
 	luarocks install rockspecs/fennel-ls-scm-4.rockspec --dev --local
 
 clean:
