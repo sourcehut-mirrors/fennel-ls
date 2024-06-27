@@ -12,21 +12,21 @@
   (collect [name value (pairs MACROS)]
     name {:binding name :metadata (. METADATA value)}))
 
-(local versions
-  {:lua51 (require :fennel-ls.docs.lua51)
-   :lua52 (require :fennel-ls.docs.lua52)
-   :lua53 (require :fennel-ls.docs.lua53)
-   :lua54 (require :fennel-ls.docs.lua54)})
+(local lua-versions
+  {:lua51 (require :fennel-ls.docs.generated.lua51)
+   :lua52 (require :fennel-ls.docs.generated.lua52)
+   :lua53 (require :fennel-ls.docs.generated.lua53)
+   :lua54 (require :fennel-ls.docs.generated.lua54)})
 
 (fn get-lua-version [version]
-  (when (not (. versions version))
+  (when (not (. lua-versions version))
     (error (.. "fennel-ls doesn't know about lua version " version "\n"
                "The allowed versions are: "
-               (fennel.view (doto (icollect [key (pairs versions)] key) table.sort)))))
-  (. versions version))
+               (fennel.view (doto (icollect [key (pairs lua-versions)] key) table.sort)))))
+  (. lua-versions version))
 
 (local libraries
-  {:tic80 (require :fennel-ls.docs.tic80)})
+  {:tic80 (require :fennel-ls.docs.generated.tic80)})
 
 (fn get-native-library [library]
   (when (not (. libraries library))
