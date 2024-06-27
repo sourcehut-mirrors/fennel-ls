@@ -17,6 +17,8 @@ BINDIR ?= $(PREFIX)/bin
 FENNELFLAGS=--add-package-path "src/?.lua;deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
+ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
+
 .PHONY: all clean test repl install docs install-deps ci selfcheck
 
 all: $(EXE)
@@ -66,9 +68,11 @@ ci:
 	rm -rf old-deps
 	rm -f old-fennel
 
-	# test that luarocks builds properly
+	# test that luarocks builds and runs
 	DEBIAN_FRONTEND=noninteractive sudo apt install -y luarocks
-	luarocks install rockspecs/fennel-ls-scm-4.rockspec --dev --local
+	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local 
+	eval $(luarocks path)
+	~/.luarocks/bin/fennel-ls --lint
 
 clean:
 	rm -f $(EXE)
