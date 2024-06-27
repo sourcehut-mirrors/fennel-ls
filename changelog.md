@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.1.3
+
 ### Features
 * Updated to fennel 1.5.0
 * Better results when syntax errors are present
