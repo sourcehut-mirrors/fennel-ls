@@ -319,7 +319,7 @@ identifiers are declared / referenced in which places."
     (let [macro-file? (= (file.text:sub 1 24) ";; fennel-ls: macro-file")
           plugin
           {:name "fennel-ls"
-           :versions ["1.4.1" "1.4.2" "1.5.0"]
+           :versions ["1.4.1" "1.4.2" "1.5.0" "1.5.1"]
            : symbol-to-expression
            : call
            : destructure

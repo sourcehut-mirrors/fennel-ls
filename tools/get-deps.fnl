@@ -5,7 +5,7 @@
     (sh :git :clone :-c :advice.detachedHead=false :--depth=1 :--branch tag url location)
     (sh :git :clone :-c :advice.detachedHead=false :--depth=1 url location)))
 
-(local fennel-version "1.4.2")
+(local fennel-version "1.5.0")
 (local faith-version "0.2.0")
 (local penlight-version "1.14.0")
 (local dkjson-version "2.7")

@@ -1,6 +1,7 @@
 # Changelog
 
 ### Features
+* Updated to fennel 1.5.0
 * Better results when syntax errors are present
 * Docs for each Lua version: 5.1 through 5.4
 * Docs for TIC-80
