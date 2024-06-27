@@ -79,6 +79,7 @@ fennel-ls default settings:
   "fennel-ls": {
     "fennel-path": "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl",
     "macro-path": "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl",
+    "version": "lua54",
     "checks": {
       "unused-definition": true,
       "unknown-module-field": true,
@@ -88,12 +89,17 @@ fennel-ls default settings:
       "op-with-no-arguments": true,
       "multival-in-middle-of-call": true
     },
+    "native-libraries": []
     "extra-globals": ""
   }
 }
 ```
 
 extra-globals: Space separated list of allowed global identifiers; in addition to a set of predefined lua globals.
+
+version: one of lua51, lua52, lua53, or lua54.
+
+native-libraries: either [] or ["tic80"] for now. This setting controls which extra documentation fennel-ls can load in to your environment.
 
 Your editor can send these settings using one of these two methods:
 * The client sends an `initialize` request with the structure `{initializationOptions: {"fennel-ls": {...}}, ...}`
