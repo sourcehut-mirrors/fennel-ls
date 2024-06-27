@@ -71,8 +71,8 @@ ci:
 	# test that luarocks builds and runs
 	DEBIAN_FRONTEND=noninteractive sudo apt install -y luarocks
 	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local 
-	eval $(luarocks path)
-	~/.luarocks/bin/fennel-ls --lint
+	eval "$$(luarocks path)"; \
+	fennel-ls --lint
 
 clean:
 	rm -f $(EXE)
