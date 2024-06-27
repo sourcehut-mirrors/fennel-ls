@@ -1,8 +1,9 @@
 package = "fennel-ls"
 rockspec_format = "3.0"
-version = "scm-6"
+version = "0.1.3-3"
 source = {
-    url = "git+https://git.sr.ht/~xerool/fennel-ls"
+    url = "https://git.sr.ht/~xerool/fennel-ls/archive/0.1.3.tar.gz",
+    dir = 'fennel-ls-0.1.3',
 }
 description = {
     summary = "A language server that analyzes Fennel, a lisp that compiles to Lua",
