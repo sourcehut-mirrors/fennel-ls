@@ -103,12 +103,15 @@ identifiers are declared / referenced in which places."
         (if (sym? binding)
             (action binding ?definition keys keys.multival)
             (list? binding)
-            (let [nested? (not= depth 0)]
-              (if nested? (error (.. "I didn't expect to find a nested multival destructure in " (view binding) " at " (view keys))))
-              (each [i child (ipairs binding)]
-                (set keys.multival i)
-                (recurse child keys (+ depth 1))
-                (set keys.multival nil)))
+            (let [set-target? (sym? (. binding 1) ".")]
+              (if set-target?
+                  (action binding ?definition keys keys.multival)
+                  (not= depth 0)
+                  (error (.. "I didn't expect to find a nested multival destructure in " (view binding) " at " (view keys)))
+                  (each [i child (ipairs binding)]
+                    (set keys.multival i)
+                    (recurse child keys (+ depth 1))
+                    (set keys.multival nil))))
             (table? binding)
             (accumulate [prev nil
                          key child (iter binding)]
@@ -129,22 +132,23 @@ identifiers are declared / referenced in which places."
     (λ define [?definition binding scope ?opts]
       (for-each-binding-in binding ?definition
         (fn [symbol ?definition keys ?multival]
-          (let [definition
-                {:binding symbol
-                 :definition ?definition
-                 :referenced-by (or (?. definitions symbol :referenced-by) [])
-                 :keys (if (. keys 1)
-                         (icollect [_ v (ipairs keys)] v))
-                 :multival ?multival
-                 :var? (?. ?opts :isvar)
-                 : file}]
-            (tset (. definitions-by-scope scope) (tostring symbol) definition)
-            (tset definitions symbol definition)))))
+          (when (not (or (list? symbol) (multisym? symbol)))
+            (let [definition
+                  {:binding symbol
+                   :definition ?definition
+                   :referenced-by (or (?. definitions symbol :referenced-by) [])
+                   :keys (if (. keys 1)
+                           (icollect [_ v (ipairs keys)] v))
+                   :multival ?multival
+                   :var? (?. ?opts :isvar)
+                   : file}]
+              (tset (. definitions-by-scope scope) (tostring symbol) definition)
+              (tset definitions symbol definition))))))
 
-    (λ mutate [_?definition binding scope]
-      (for-each-binding-in binding _?definition
+    (λ mutate [?definition binding scope]
+      (for-each-binding-in binding ?definition
         (fn [symbol _?definition _keys]
-          (when (not (multisym? symbol))
+          (when (not (or (list? symbol) (multisym? symbol)))
             (reference symbol scope :write)
             (if (. references symbol)
               (tset (. references symbol :target) :var-set true))))))

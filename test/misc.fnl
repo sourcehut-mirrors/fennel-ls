@@ -40,6 +40,7 @@
                              (λ test {} nil)
                              (λ {} nil")
   (create-client-with-files "(fn foo []\n  #\n  (print :test))")
+  (create-client-with-files "(let [map {}] (set (. map (tostring :a)) :b))")
   nil)
 
 (fn test-split-spaces []
