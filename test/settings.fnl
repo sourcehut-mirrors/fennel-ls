@@ -6,9 +6,8 @@
         (create-client
           {:modname.fnl "{:this-is-in-modname {:this :one :isnt :on :the :path}}"
            :modname/modname/modname/modname.fnl "(fn ==this-is-in-modname== [] nil) {: this-is-in-modname}"
-           :main.fnl "(local {: this-is-in-mod|name} (require :modname))"}
-          {:settings {:fennel-ls {:fennel-path "./?/?/?/?.fnl"}}})
-
+           :main.fnl "(local {: this-is-in-mod|name} (require :modname))"
+           :flsproject.fnl "{:fennel-path \"./?/?/?/?.fnl\"}"})
         [response] (client:definition uri cursor)]
     (faith.= location response.result
       "error message")))
@@ -30,8 +29,10 @@
   ;;   (local client (doto [] ({:settings {:fennel-ls {:fennel-path "./?/?/?/?.fnl"}}))))
 
 (fn test-extra-globals []
-  (let [{:diagnostics good} (create-client "(foo-100 bar :baz)" {:settings {:fennel-ls {:extra-globals "foo-100 bar"}}})
-        {:diagnostics bad} (create-client "(foo-100 bar :baz)")]
+  (let [{:diagnostics good} (create-client {:main.fnl "(foo-100 bar :baz)"
+                                            :flsproject.fnl "{:extra-globals \"foo-100 bar\"}"})
+        {:diagnostics bad} (create-client {:main.fnl "(foo-100 bar :baz)"
+                                           :flsproject.fnl "{}"})]
     (faith.= [] good)
     (faith.not= [] bad))
   nil)
@@ -43,28 +44,23 @@
   ;;   (local client (doto [] (setup-server {:fennel-ls {:diagnostics {:E202 "warning"}}})))))
 
 (fn test-lints []
-  (let [{:diagnostics good} (create-client "(local x 10)" {:settings {:fennel-ls {:checks {:unused-definition false}}}})
-        {:diagnostics bad} (create-client "(local x 10)")]
+  (let [{:diagnostics good} (create-client {:main.fnl "(local x 10)"
+                                            :flsproject.fnl "{:checks {:unused-definition false}}"})
+        {:diagnostics bad} (create-client {:main.fnl "(local x 10)"
+                                           :flsproject.fnl "{}"})]
     (faith.= [] good)
     (faith.not= [] bad))
   nil)
 
-(fn test-initialization-options []
-  (let [initialization-options {:fennel-ls {:checks {:unused-definition false}}}
-        {: diagnostics} (create-client "(local x 10)" {: initialization-options})]
-    (faith.= [] diagnostics))
-  nil)
-
 (fn test-native-libaries []
-  (let [{:diagnostics bad} (create-client "(print btn)"
-                             {:settings {}})
-        {:diagnostics good} (create-client "(print btn)"
-                              {:settings {:fennel-ls {:native-libraries [:tic80]}}})]
+  (let [{:diagnostics bad} (create-client {:main.fnl "(print btn)"
+                                           :flsproject.fnl "{}"})
+        {:diagnostics good} (create-client {:main.fnl "(print btn)"
+                                            :flsproject.fnl "{:native-libraries [:tic80]}"})]
     (faith.not= [] bad)
     (faith.= [] good)))
 
 {: test-path
  : test-extra-globals
  : test-lints
- : test-initialization-options
  : test-native-libaries}

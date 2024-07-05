@@ -81,8 +81,6 @@
                                  :jsonrpc "2.0"
                                  :method "initialize"
                                  : params})
-          _ (when opts.settings
-              (client:did-change-configuration opts.settings))
           [{:params {: diagnostics}}] (client:open-file! uri text)]
         {: client
          : server

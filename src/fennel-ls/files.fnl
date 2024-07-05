@@ -11,31 +11,29 @@ in the \"server\" object."
 (local {: compile} (require :fennel-ls.compiler))
 
 (λ read-file [server uri]
-  (let [text (case (?. server.preload uri)
-               preload preload
-               _ (let [file (io.open (utils.uri->path uri))]
-                    (if file
-                      (let [body (file:read :*a)]
-                        (file:close)
-                        body)
-                      (error (.. "failed to open file " uri)))))]
-    {: uri : text}))
+  (case (?. server.preload uri)
+    preload {: uri :text preload}
+    _ (case (io.open (utils.uri->path uri) "r")
+        file (let [text (file:read :*a)]
+               (file:close)
+               {: uri : text}))))
 
 (λ get-by-uri [server uri]
   (or (. server.files uri)
-      (let [file (read-file server uri)]
-        (compile server file)
-        (tset server.files uri file)
-        file)))
+      (case (read-file server uri)
+        file (do
+               (compile server file)
+               (tset server.files uri file)
+               file))))
 
 (λ get-by-module [server module]
   ;; check the cache
   (case (. server.modules module)
     uri
     (or (get-by-uri server uri)
-      ;; if the cached uri isn't found, clear the cache and try again
-      (do (tset server.modules module nil)
-          (get-by-module server module)))
+        ;; if the cached uri isn't found, clear the cache and try again
+        (do (tset server.modules module nil)
+            (get-by-module server module)))
     nil
     (case (searcher.lookup server module)
       uri
@@ -67,4 +65,5 @@ in the \"server\" object."
 {: flush-uri
  : get-by-module
  : get-by-uri
- : set-uri-contents}
+ : set-uri-contents
+ : read-file}

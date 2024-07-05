@@ -284,9 +284,6 @@ Every time the client sends a message, it gets handled by a function in the corr
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (files.flush-uri server uri))
 
-(λ notifications.workspace/didChangeConfiguration [server _send {: settings}]
-  (config.write-configuration server (?. settings :fennel-ls)))
-
 (λ requests.shutdown [_server _send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"
   nil)

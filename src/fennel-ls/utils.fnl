@@ -3,6 +3,8 @@ A collection of utility functions. Many of these convert data between a
 Language-Server-Protocol representation and a Lua representation.
 These functions are all pure functions, which makes me happy."
 
+(local fennel (require :fennel))
+
 (λ next-line [str ?from]
   "Find the start of the next line from a given byte offset, or from the start of the string."
   (let [from (or ?from 1)]
@@ -94,7 +96,8 @@ These functions are all pure functions, which makes me happy."
 (λ uri->path [uri]
   "Strips the \"file://\" prefix from a uri to turn it into a path. Throws an error if it is not a path uri"
   (local prefix "file://")
-  (assert (startswith uri prefix) "encountered a URI that is not a file???")
+  (when (not (startswith uri prefix))
+    (error (.. "encountered URI " (fennel.view uri) " that does not start with \"file://\"")))
   (string.sub uri (+ (length prefix) 1)))
 
 (λ path->uri [path]
@@ -185,6 +188,28 @@ WARNING: this is only used in the test code, not in the real language server"
   (icollect [m (str:gmatch "[^ ]+")]
     m))
 
+(local path-sep (package.config:sub 1 1))
+
+(λ absolute-path? [path]
+  (or
+    ;; windows
+    (-> path
+     (: :sub 2 3)
+     (: :match ":\\"))
+    ;; modern society
+    (= (path:sub 1 1) "/")))
+
+(λ path-join [path suffix]
+  (-> (.. path path-sep suffix)
+    ;; delete duplicate
+    ;; windows
+    (: :gsub "%.\\" "")
+    (: :gsub "\\+" "\\")
+    ;; modern society
+    (: :gsub "%./" "")
+    (: :gsub "/+" "/")
+    (->> (pick-values 1))))
+
 {: uri->path
  : path->uri
  : pos->position
@@ -197,4 +222,7 @@ WARNING: this is only used in the test code, not in the real language server"
  : get-ast-info
  : uniq-by
  : type=
- : split-spaces}
+ : split-spaces
+ : absolute-path?
+ : path-join
+ : path-sep}

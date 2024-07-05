@@ -25,11 +25,6 @@
         :version 1
         : text}})))
 
-(fn did-change-configuration [self settings]
-  (dispatch.handle* self.server
-    (message.create-notification :workspace/didChangeConfiguration
-      {: settings})))
-
 (fn pretend-this-file-exists! [self name text]
   (tset self.server.preload name text))
 
@@ -75,7 +70,6 @@
 (local client-mt
   {:__index {: open-file!
              : pretend-this-file-exists!
-             : did-change-configuration
              : completion
              : definition
              : hover
