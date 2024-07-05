@@ -38,7 +38,7 @@ I suspect this file may be gone after a bit of refactoring."
     (table.concat result ";")))
 
 (fn file-exists? [server uri]
-   (or (. server.preload uri)
+   (or (?. server.preload uri)
        (case (io.open (utils.uri->path uri))
          f (do (f:close) true))))
 
