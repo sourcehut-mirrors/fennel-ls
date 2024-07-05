@@ -1,5 +1,5 @@
 (local faith (require :faith))
-(local {: create-client-with-files
+(local {: create-client
         : position-past-end-of-text} (require :test.utils))
 (local {: view} (require :fennel))
 
@@ -42,8 +42,8 @@
                    (and (= (type e.textEdit) :function)) (e.textEdit c.textEdit))))
       i)))
 
-(fn check [file-contents expected unexpected ?client-options]
-  (let [{: client : uri : cursor : text} (create-client-with-files file-contents ?client-options)
+(fn check [file-contents expected unexpected ?client-opts]
+  (let [{: client : uri : cursor : text} (create-client file-contents ?client-opts)
         [{:result ?result}] (client:completion uri
                               (or cursor
                                   (position-past-end-of-text text)))
@@ -241,15 +241,7 @@
     [])
   nil)
 
-(local eglot {:params {:capabilities {:general {:positionEncodings [:utf-8]}}
-                       :clientInfo {:name "Eglot" :version "1 million"}
-                       :initializationOptions {}
-                       :processId 1000
-                       :rootPath "/home/my-cool-user/my-cool-project/"
-                       :rootUri "file:///home/my-cool-user/my-cool-project/"
-                       :trace "off"
-                       :workspaceFolders [{:name "/home/my-cool-user/my-cool-projects/"
-                                           :uri "file:///home/my-cool-user/my-cool-project/"}]}})
+(local eglot {:client-info {:name "Eglot" :version "1 million"}})
 
 (fn test-eglot-fields []
   "tests for handling Eglot specially"

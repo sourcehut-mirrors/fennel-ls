@@ -1,10 +1,10 @@
 (local faith (require :faith))
-(local {: create-client-with-files} (require :test.utils))
+(local {: create-client} (require :test.utils))
 (local {: null} (require :dkjson))
 (local {: apply-edits} (require :fennel-ls.utils))
 
 (fn check [file-content new-name expected-file-content]
-  (let [{: client : uri : cursor : text : encoding} (create-client-with-files file-content)
+  (let [{: client : uri : cursor : text : encoding} (create-client file-content)
         [{: result}] (client:rename uri cursor new-name)]
     (if (= null result)
       (faith.= expected-file-content text)

@@ -1,10 +1,10 @@
 (local faith (require :faith))
-(local {: create-client-with-files} (require :test.utils))
+(local {: create-client} (require :test.utils))
 (local {: null} (require :dkjson))
 (local {: view} (require :fennel))
 
 (fn check [file-contents]
-  (let [{: client : uri : cursor :locations [location]} (create-client-with-files file-contents)
+  (let [{: client : uri : cursor :locations [location]} (create-client file-contents)
         [message] (client:definition uri cursor)]
     (if location
       (faith.= location message.result

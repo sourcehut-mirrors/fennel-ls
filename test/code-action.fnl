@@ -1,12 +1,12 @@
 (local faith (require :faith))
 (local {: view} (require :fennel))
-(local {: create-client-with-files} (require :test.utils))
+(local {: create-client} (require :test.utils))
 (local {: apply-edits} (require :fennel-ls.utils))
 
-(create-client-with-files "(print :hi)")
+(create-client "(print :hi)")
 
 (fn check [file-contents action-I-want-to-take desired-file-contents]
-  (let [{: client : uri :locations [range] : encoding : text} (create-client-with-files file-contents)
+  (let [{: client : uri :locations [range] : encoding : text} (create-client file-contents)
         [{:result responses}] (client:code-action uri range.range)
         action (accumulate [result nil
                             _ action (ipairs responses) &until result]
@@ -21,7 +21,7 @@
           edited-text (apply-edits text edits encoding)]
       (faith.= desired-file-contents edited-text))))
 (fn check-negative [file-contents action-not-suggested]
-  (let [{: client : uri :locations [range]} (create-client-with-files file-contents)
+  (let [{: client : uri :locations [range]} (create-client file-contents)
         [{:result responses}] (client:code-action uri range.range)]
     (each [_ action (ipairs responses)]
       (assert (not= action.title action-not-suggested)

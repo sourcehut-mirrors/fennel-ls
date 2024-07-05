@@ -11,7 +11,7 @@ in the \"server\" object."
 (local {: compile} (require :fennel-ls.compiler))
 
 (λ read-file [server uri]
-  (let [text (case (. server.preload uri)
+  (let [text (case (?. server.preload uri)
                preload preload
                _ (let [file (io.open (utils.uri->path uri))]
                     (if file

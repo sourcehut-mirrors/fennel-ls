@@ -1,45 +1,46 @@
 (local faith (require :faith))
-(local {: ROOT-URI
-        : ROOT-PATH
-        : create-client} (require :test.utils.client))
-(local {: get-markup} (require :test.utils))
-
-(fn params-with-encodings [encodings]
-  {:clientInfo {:name "my mock client" :version "9000"}
-   :rootPath ROOT-PATH
-   :rootUri ROOT-URI
-   :workspaceFolders [{:name "foo" :uri ROOT-URI}]
-   :capabilities {:general {:positionEncodings encodings}}
-   :trace "off"})
+(local {: create-client : NIL} (require :test.utils))
 
 (fn test-offset-encoding []
-  (let [(client _ [response])
-        (create-client {:params (params-with-encodings [:utf-16])})
-        _ (faith.= :utf-16 (. response :result :capabilities :positionEncoding))
-        {: text : cursor :ranges [{: start : end}]} (get-markup "(let [==𐐀𐐀== 100] 𐐀𐐀|)" :utf-16)
-        _ (client:open-file! "foo.fnl" text)
-        [response] (client:definition "foo.fnl" cursor)]
-      (faith.= start response.result.range.start)
-      (faith.= end response.result.range.end))
+  (let [{: client
+         : cursor
+         : uri
+         : encoding
+         :locations [{:range {: start : end}}]
+         : initialize-response} (create-client "(let [==𐐀𐐀== 100] 𐐀𐐀|)"
+                                  {:position-encodings [:utf-16]
+                                   :markup-encoding :utf-16})
+        [response] (client:definition uri cursor)]
+    (faith.= :utf-16 encoding)
+    (faith.= :utf-16 (. initialize-response 1 :result :capabilities :positionEncoding))
+    (faith.= cursor {:line 0 :character 20})
+    (faith.= start response.result.range.start)
+    (faith.= end response.result.range.end))
 
-  (let [(client _ [response])
-        (create-client {:params (params-with-encodings [:utf-16 :utf-8])})
-        _ (faith.= :utf-8 (. response :result :capabilities :positionEncoding))
-        {: text : cursor :ranges [{: start : end}]} (get-markup "(let [==𐐀𐐀== 100] 𐐀𐐀|)" :utf-8)
-        _ (client:open-file! "foo.fnl" text)
-        [response] (client:definition "foo.fnl" cursor)]
+  (let [{: client
+         : cursor
+         : uri
+         : encoding
+         :locations [{:range {: start : end}}]
+         : initialize-response} (create-client "(let [==𐐀𐐀== 100] 𐐀𐐀|)"
+                                   {:position-encodings [:utf-8]
+                                    :markup-encoding :utf-8})
+        [response] (client:definition uri cursor)]
+      (faith.= :utf-8 encoding)
+      (faith.= :utf-8 (. initialize-response 1 :result :capabilities :positionEncoding))
+      (faith.= cursor {:line 0 :character 28})
       (faith.= start response.result.range.start)
       (faith.= end response.result.range.end))
 
   ;; utf-16 is the fallback
-  (let [(_ _ [response]) (create-client {:params (params-with-encodings nil)})]
-    (faith.= :utf-16 (. response :result :capabilities :positionEncoding)))
+  (let [{: initialize-response} (create-client "" {:position-encodings NIL})]
+    (faith.= :utf-16 (. initialize-response 1 :result :capabilities :positionEncoding)))
 
-  (let [(_ _ [response]) (create-client {:params (params-with-encodings [:random-encoding])})]
-    (faith.= :utf-16 (. response :result :capabilities :positionEncoding)))
+  (let [{: initialize-response} (create-client "" {:position-encodings [:some-unknown-encoding]})]
+    (faith.= :utf-16 (. initialize-response 1 :result :capabilities :positionEncoding)))
 
-  (let [(_ _ [response]) (create-client {:params (params-with-encodings [:utf-8 :utf-16])})]
-    (faith.= :utf-8 (. response :result :capabilities :positionEncoding)))
+  (let [{: initialize-response} (create-client "" {:position-encodings [:utf-8 :utf-16]})]
+    (faith.= :utf-8 (. initialize-response 1 :result :capabilities :positionEncoding)))
 
   nil)
 

@@ -12,34 +12,6 @@
 
 (local default-encoding :utf-8)
 
-(local mt {})
-(fn create-client [?opts ?provide-root-uri]
-  (let [server []
-        params (or (?. ?opts :params)
-                   {:capabilities {:general {:positionEncodings [default-encoding]}}
-                    :clientInfo {:name "Neovim" :version "0.7.2"}
-                    :initializationOptions {}
-                    :processId 16245
-                    :rootPath (if ?provide-root-uri ROOT-PATH)
-                    :rootUri (if ?provide-root-uri ROOT-URI)
-                    :trace "off"
-                    :workspaceFolders (if ?provide-root-uri
-                                        [{:name ROOT-PATH
-                                          :uri ROOT-URI}])})
-        initialize {:id 1
-                    :jsonrpc "2.0"
-                    :method "initialize"
-                    : params}
-        initialize-response (dispatch.handle* server initialize)
-        client (doto {: server :prev-id 1} (setmetatable mt))]
-    (case (?. ?opts :settings)
-      settings
-      (dispatch.handle* server
-        {:jsonrpc "2.0"
-         :method :workspace/didChangeConfiguration
-         :params {: settings}}))
-    (values client server initialize-response)))
-
 (fn next-id! [self]
   (set self.prev-id (+ self.prev-id 1))
   self.prev-id)
@@ -52,6 +24,11 @@
         :languageId "fennel"
         :version 1
         : text}})))
+
+(fn did-change-configuration [self settings]
+  (dispatch.handle* self.server
+    (message.create-notification :workspace/didChangeConfiguration
+      {: settings})))
 
 (fn pretend-this-file-exists! [self name text]
   (tset self.server.preload name text))
@@ -95,17 +72,18 @@
       :textDocument {:uri file}
       :context {:diagnostics []}})))
 
-(set mt.__index
-     {: open-file!
-      : pretend-this-file-exists!
-      : completion
-      : definition
-      : hover
-      : references
-      : rename
-      : code-action})
+(local client-mt
+  {:__index {: open-file!
+             : pretend-this-file-exists!
+             : did-change-configuration
+             : completion
+             : definition
+             : hover
+             : references
+             : rename
+             : code-action}})
 
-{: create-client
+{: client-mt
  : default-encoding
  : ROOT-URI
  : ROOT-PATH}

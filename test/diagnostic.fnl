@@ -1,6 +1,6 @@
 (local faith (require :faith))
 (local {: view} (require :fennel))
-(local {: create-client-with-files} (require :test.utils))
+(local {: create-client} (require :test.utils))
 
 (fn find [diagnostics e]
   "returns the index of the diagnostic that matches `e`"
@@ -21,7 +21,7 @@
       i)))
 
 (fn check [file-contents expected unexpected]
-  (let [{: diagnostics} (create-client-with-files file-contents)]
+  (let [{: diagnostics} (create-client file-contents)]
     (each [_ e (ipairs unexpected)]
       (let [i (find diagnostics e)]
         (faith.= nil i (.. "Lint matching " (view e) "\n"

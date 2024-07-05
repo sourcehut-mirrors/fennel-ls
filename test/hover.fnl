@@ -1,10 +1,10 @@
 (local faith (require :faith))
 (local {: view} (require :fennel))
-(local {: create-client-with-files} (require :test.utils))
+(local {: create-client} (require :test.utils))
 (local {: null} (require :dkjson))
 
 (fn check [file-contents ?response-string]
-  (let [{: client : uri : cursor} (create-client-with-files file-contents)
+  (let [{: client : uri : cursor} (create-client file-contents)
         [message] (client:hover uri cursor)]
     (if (= (type ?response-string) :string)
       (faith.= ?response-string (?. message :result :contents :value)

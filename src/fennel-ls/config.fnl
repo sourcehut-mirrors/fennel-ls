@@ -64,7 +64,6 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 
 (λ initialize [server params]
   (set server.files {})
-  (set server.preload {})
   (set server.modules {})
   (set server.root-uri params.rootUri)
   (set server.position-encoding (choose-position-encoding params))
