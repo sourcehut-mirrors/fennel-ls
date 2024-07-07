@@ -313,8 +313,9 @@ identifiers are declared / referenced in which places."
           (error "__NOT_AN_ERROR"))))
 
     (local allowed-globals (docs.get-all-globals server))
-    (each [_ v (ipairs (utils.split-spaces server.configuration.extra-globals))]
-      (table.insert allowed-globals v))
+    (icollect [extra-global (server.configuration.extra-globals:gmatch "[^ ]+")
+               &into allowed-globals]
+      extra-global)
 
     (fn parse-ast [parser]
       (icollect [ok ast parser &until (not ok)] ast))

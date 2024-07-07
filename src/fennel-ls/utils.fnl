@@ -176,22 +176,13 @@ WARNING: this is only used in the test code, not in the real language server"
     symbol
     (pick-values 1 (symbol:match "[^.:]*"))))
 
-(λ type= [val typ]
-  (= (type val) typ))
-
 (λ uniq-by [list key-fn]
-  (let [result []
-        seen {}]
-    (each [_ new-item (ipairs list)]
+  (let [seen {}]
+    (icollect [_ new-item (ipairs list)]
       (let [key (key-fn new-item)]
         (when (not (. seen key))
           (tset seen key true)
-          (table.insert result new-item))))
-    result))
-
-(λ split-spaces [str]
-  (icollect [m (str:gmatch "[^ ]+")]
-    m))
+          new-item)))))
 
 (local path-sep (package.config:sub 1 1))
 
@@ -226,8 +217,6 @@ WARNING: this is only used in the test code, not in the real language server"
  : multi-sym-base
  : get-ast-info
  : uniq-by
- : type=
- : split-spaces
  : absolute-path?
  : path-join
  : path-sep

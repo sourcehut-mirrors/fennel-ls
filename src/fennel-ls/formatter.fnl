@@ -5,7 +5,6 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 
 (local {: sym?
         : view} (require :fennel))
-(local {: type=} (require :fennel-ls.utils))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
@@ -57,26 +56,26 @@ fntype is one of fn or λ or lambda"
       body
       (fn? fntype)
       (sym? name)
-      (type= arglist :table)
-      (type= docstring :string))
+      (= (type arglist) :table)
+      (= (type docstring) :string))
     {: fntype : name : arglist : docstring}
     ;; docstring
     (where [fntype arglist docstring body]
       body
       (fn? fntype)
-      (type= arglist :table)
-      (type= docstring :string))
+      (= (type arglist) :table)
+      (= (type docstring) :string))
     {: fntype : arglist : docstring}
     ;; name
     (where [fntype name arglist]
       (fn? fntype)
       (sym? name)
-      (type= arglist :table))
+      (= (type arglist) :table))
     {: fntype : name : arglist}
     ;; none
     (where [fntype arglist]
       (fn? fntype)
-      (type= arglist :table))
+      (= (type arglist) :table))
     {: fntype : arglist}))
 
 (λ hover-format [result]

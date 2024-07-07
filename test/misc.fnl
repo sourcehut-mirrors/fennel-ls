@@ -43,15 +43,6 @@
   (create-client "(let [map {}] (set (. map (tostring :a)) :b))")
   nil)
 
-(fn test-split-spaces []
-  (faith.= [] (utils.split-spaces ""))
-  (faith.= ["foo"] (utils.split-spaces "foo"))
-  (faith.= ["foo"] (utils.split-spaces "  foo "))
-  (faith.= ["foo-bar" "bar" "baz"] (utils.split-spaces "foo-bar bar baz"))
-  (faith.= ["foo-bar" "bar" "baz"] (utils.split-spaces " foo-bar  bar baz  "))
-  nil)
-
 {: test-multi-sym-split
  : test-find-symbol
- : test-failure
- : test-split-spaces}
+ : test-failure}
