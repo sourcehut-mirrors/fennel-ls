@@ -70,7 +70,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   (local [ok? _err result] [(pcall (fennel.parser text uri))])
   (if ok? result))
 
-(λ make-configuration-2 [server]
+(λ load-config [server]
   "This is where we can put anything that needs to react to config changes"
   
   (make-configuration
@@ -78,14 +78,18 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
       (-?> (files.read-file server (utils.path->uri (utils.path-join (utils.uri->path server.root-uri) "flsproject.fnl")))
            try-parsing))))
 
+(λ reload [server]
+  (set server.configuration (load-config server)))
+
 (λ initialize [server params]
   (set server.files {})
   (set server.modules {})
   (set server.root-uri params.rootUri)
   (set server.position-encoding (choose-position-encoding params))
-  (set server.configuration (make-configuration-2 server))
+  (reload server)
   ;; Eglot does completions differently than every other client I've seen so far, in that it considers foo.bar to be one "symbol".
   ;; If the user types `foo.b`, every other client accepts `bar` as a completion, bun eglot wants the full `foo.bar` symbol.
   (set server.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
 
-{: initialize}
+{: initialize
+ : reload}

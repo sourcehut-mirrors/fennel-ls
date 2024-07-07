@@ -93,6 +93,11 @@ These functions are all pure functions, which makes me happy."
   (let [len (length pre)]
     (= (str:sub 1 len) pre)))
 
+(λ endswith [str post]
+  (let [len (length post)]
+    (or (= post "")
+        (= post (str:sub (- len))))))
+
 (λ uri->path [uri]
   "Strips the \"file://\" prefix from a uri to turn it into a path. Throws an error if it is not a path uri"
   (local prefix "file://")
@@ -225,4 +230,5 @@ WARNING: this is only used in the test code, not in the real language server"
  : split-spaces
  : absolute-path?
  : path-join
- : path-sep}
+ : path-sep
+ : endswith}

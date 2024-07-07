@@ -273,8 +273,11 @@ Every time the client sends a message, it gets handled by a function in the corr
   (send (message.diagnostics file))
   (set file.open? true))
 
-(λ notifications.textDocument/didSave [_server _send _server]
-  ;; TODO be careful about which modules need to be recomputed, and also eagerly flush existing files
+(λ notifications.textDocument/didSave [server send {: uri}]
+  (when (utils.endswith uri "flsproject.fnl")
+    (config.reload server))
+
+  ;; TODO recompute for files when macro is changed
   (set fennel.macro-loaded []))
 
 (λ notifications.textDocument/didClose [server _send {:textDocument {: uri}}]
