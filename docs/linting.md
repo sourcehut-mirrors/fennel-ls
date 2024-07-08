@@ -1,4 +1,6 @@
-# Creating a new lint
+# How to add a new lint
+
+## Creating a new lint
 To start, you can set up all the plumbing:
 
 1. Go into `src/fennel-ls/lint.fnl` and create a new function.
@@ -10,7 +12,7 @@ To start, you can set up all the plumbing:
 3. Enable your lint! In `src/fennel-ls/state.fnl`, find the
    `default-configuration` variable, and turn your check on by default.
 
-# Writing your lint
+## Writing your lint
 Now, the fun part: writing your lint function.
 
 The goal is to check whether the given arguments should emit a warning, and
@@ -20,7 +22,7 @@ what message to show. The current loops in `check` go over every:
 
 More loops might have been added since I wrote this document.
 
-## Input arguments
+### Input arguments
 All lints give you `self` and `file`. They're mostly useful to pass to other
 functions.
 * `self` is the table that represents the language server. It carries metadata
@@ -35,7 +37,7 @@ macroexpansion. Make sure that the AST you're checking is inside of
 the user won't be able to see or edit the code your lint is warning about.
 
 The next arguments depend on which loop the lint is in:
-### If your lint is linting definitions:
+#### If your lint is linting definitions:
 * `symbol` is the symbol being bound. It is just a regular fennel sym.
 * `definition` is a table full of information about what is being bound:
   * `definition.binding` is the symbol again.
@@ -66,11 +68,11 @@ the definitions will be:
 {:definition `(my-expression) :binding `y :multival 2 :keys [:foo :bar]}
 ```
 
-### If your lint is linting calls (to functions or specials, not macros)
+#### If your lint is linting calls (to functions or specials, not macros)
 * `head` is the symbol that is being called. It is the same as `(. call 1)`.
 * `call` is the list that represents the call.
 
-## Output:
+### Output:
 Your lint function should return `nil` if there's nothing to report, or
 return a diagnostic object representing your lint message.
 
@@ -92,5 +94,5 @@ The return value should have these fields:
   tests that only check for the presence or absence of a lint.
 * `codeDescription`: Use the name of your function.
 
-## Testing:
+### Testing:
 I will think about this later. :)
