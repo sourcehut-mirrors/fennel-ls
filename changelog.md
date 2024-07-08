@@ -1,5 +1,15 @@
 # Changelog
 
+### Features
+* Settings file: `flsproject.fnl`. Settings are now editor agnostic.
+
+### Bug Fixes
+* (set (. x y) z) wasn't being analyzed properly.
+* (local {: unknown-field} (require :module)) lint warns about the unknown field when accessed via destructuring.
+
+### Changes
+* Test code has been refactored
+
 ## 0.1.3
 
 ### Features
