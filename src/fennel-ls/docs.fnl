@@ -26,31 +26,30 @@
   (. lua-versions version))
 
 (local libraries
-  {:tic80 (require :fennel-ls.docs.generated.tic80)})
+  {:tic-80 (require :fennel-ls.docs.generated.tic80)})
 
-(fn get-native-library [library]
+(fn get-library [library]
   (when (not (. libraries library))
-    (error (.. "fennel-ls doesn't know about native library " library "\n"
+    (error (.. "fennel-ls doesn't know about library " library "\n"
                "The builtin libraries are: "
                (fennel.view (doto (icollect [key (pairs libraries)] key) table.sort)))))
   (. libraries library))
 
 (fn get-all-globals [server]
   (let [result []]
-    (each [_ library (ipairs server.configuration.native-libraries)]
-      (icollect [name (pairs (get-native-library library)) &into result]
-        name))
-    (icollect [name (pairs (get-lua-version server.configuration.version)) &into result]
+    (each [library enabled? (pairs server.configuration.libraries)]
+      (when enabled?
+        (icollect [name (pairs (get-library library)) &into result]
+          name)))
+    (icollect [name (pairs (get-lua-version server.configuration.lua-version)) &into result]
       name)))
 
 (fn get-global [server global-name]
   (or
-    (accumulate [result nil
-                 _ library (ipairs server.configuration.native-libraries)
-                 &until result]
-      (. (get-native-library library)
-         global-name))
-    (. (get-lua-version server.configuration.version)
+    (and server.configuration.libraries.tic-80
+         (. (get-library :tic-80)
+            global-name))
+    (. (get-lua-version server.configuration.lua-version)
        global-name)))
 
 (fn get-builtin [_server builtin-name]

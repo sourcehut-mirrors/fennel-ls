@@ -38,14 +38,14 @@
   nil)
 
   ;; (it "can turn off strict globals"
-  ;;   (local client (doto [] (setup-server {:fennel-ls {:checks {:globals false}}}))))
+  ;;   (local client (doto [] (setup-server {:fennel-ls {:lints {:globals false}}}))))
 
   ;; (it "can treat globals as a warning instead of an error"
   ;;   (local client (doto [] (setup-server {:fennel-ls {:diagnostics {:E202 "warning"}}})))))
 
 (fn test-lints []
   (let [{:diagnostics good} (create-client {:main.fnl "(local x 10)"
-                                            :flsproject.fnl "{:checks {:unused-definition false}}"})
+                                            :flsproject.fnl "{:lints {:unused-definition false}}"})
         {:diagnostics bad} (create-client {:main.fnl "(local x 10)"
                                            :flsproject.fnl "{}"})]
     (faith.= [] good)
@@ -56,7 +56,7 @@
   (let [{:diagnostics bad} (create-client {:main.fnl "(print btn)"
                                            :flsproject.fnl "{}"})
         {:diagnostics good} (create-client {:main.fnl "(print btn)"
-                                            :flsproject.fnl "{:native-libraries [:tic80]}"})]
+                                            :flsproject.fnl "{:libraries {:tic-80 true}}"})]
     (faith.not= [] bad)
     (faith.= [] good)))
 

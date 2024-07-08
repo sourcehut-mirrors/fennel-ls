@@ -141,21 +141,21 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (λ check [server file]
   "fill up the file.diagnostics table with linting things"
-  (let [checks server.configuration.checks
+  (let [lints server.configuration.lints
         diagnostics file.diagnostics]
 
     ;; definition lints
     (each [symbol definition (pairs file.definitions)]
-      (if checks.unused-definition (table.insert diagnostics (unused-definition server file symbol definition)))
-      (if checks.var-never-set     (table.insert diagnostics (var-never-set     server file symbol definition))))
+      (if lints.unused-definition (table.insert diagnostics (unused-definition server file symbol definition)))
+      (if lints.var-never-set     (table.insert diagnostics (var-never-set     server file symbol definition))))
 
     ;; call lints
     ;; all non-macro calls. This only covers specials and function calls.
     (each [[head &as call] (pairs file.calls)]
       (when head
-        (if checks.bad-unpack           (table.insert diagnostics (bad-unpack           server file head call)))
-        (if checks.unnecessary-method   (table.insert diagnostics (unnecessary-method   server file head call)))
-        (if checks.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments server file head call)))
+        (if lints.bad-unpack           (table.insert diagnostics (bad-unpack           server file head call)))
+        (if lints.unnecessary-method   (table.insert diagnostics (unnecessary-method   server file head call)))
+        (if lints.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments server file head call)))
 
         ;; argument lints
         ;; every argument to a special or a function call
@@ -163,15 +163,15 @@ the `file.diagnostics` field, filling it with diagnostics."
         ;; I'll wait till we have more lints in here to see if it needs to change.
         (for [index 2 (length call)]
           (let [arg (. call index)]
-            (if checks.multival-in-middle-of-call (table.insert diagnostics (multival-in-middle-of-call server file head call arg index)))))))
+            (if lints.multival-in-middle-of-call (table.insert diagnostics (multival-in-middle-of-call server file head call arg index)))))))
 
-    (if checks.unknown-module-field
+    (if lints.unknown-module-field
       (unknown-module-field server file))))
-    ;; (if checks.unnecessary-values
+    ;; (if lints.unnecessary-values
     ;;   (unnecessary-values file)))
-    ;; (if checks.unnecessary-do)
+    ;; (if lints.unnecessary-do)
     ;;   (unnecessary-do file)))
-    ;; (if checks.unnecessary-unary-op))
+    ;; (if lints.unnecessary-unary-op))
     ;;   (unnecessary-values file)))
 
 {: check}

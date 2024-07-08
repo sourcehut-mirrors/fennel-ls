@@ -19,15 +19,15 @@ There are no global settings. They're all stored in the `server` object.
 (local default-configuration
   {:fennel-path (option "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl")
    :macro-path (option "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl")
-   :version (option "lua54")
-   :checks {:unused-definition (option true)
-            :unknown-module-field (option true)
-            :unnecessary-method (option true)
-            :bad-unpack (option true)
-            :var-never-set (option true)
-            :op-with-no-arguments (option true)
-            :multival-in-middle-of-call (option true)}
-   :native-libraries (option [])
+   :lua-version (option "lua54")
+   :lints {:unused-definition (option true)
+           :unknown-module-field (option true)
+           :unnecessary-method (option true)
+           :bad-unpack (option true)
+           :var-never-set (option true)
+           :op-with-no-arguments (option true)
+           :multival-in-middle-of-call (option true)}
+   :libraries {:tic-80 (option false)}
    :extra-globals (option "")})
 
 (fn make-configuration-from-template [default ?user ?parent]
