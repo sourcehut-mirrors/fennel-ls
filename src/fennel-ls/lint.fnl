@@ -42,18 +42,27 @@ the `file.diagnostics` field, filling it with diagnostics."
       #[{:range (message.ast->range server file symbol)
          :newText (.. "_" (tostring symbol))}])))
 
+(fn module-field-helper [server file symbol ?ast stack]
+  "if ?ast is a module field that isn't known, return a diagnostic"
+  (let [opts {}
+        item (analyzer.search-ast server file ?ast stack opts)]
+    (if (and (not item) opts.searched-through-require-with-stack-size-1)
+      {:range (message.ast->range server file symbol)
+       :message (.. "unknown field: " (tostring symbol))
+       :severity message.severity.WARN
+       :code 302
+       :codeDescription "unknown-module-field"})))
+
 (λ unknown-module-field [server file]
   "any multisym whose definition can't be found through a (require) call"
   (icollect [symbol (pairs file.references) &into file.diagnostics]
     (if (. (utils.multi-sym-split symbol) 2)
-      (let [opts {}
-            item (analyzer.search-ast server file symbol [] opts)]
-        (if (and (not item) opts.searched-through-require-with-stack-size-1)
-          {:range (message.ast->range server file symbol)
-           :message (.. "unknown field: " (tostring symbol))
-           :severity message.severity.WARN
-           :code 302
-           :codeDescription "unknown-module-field"})))))
+      (module-field-helper server file symbol symbol [])))
+
+  (icollect [symbol binding (pairs file.definitions) &into file.diagnostics]
+    (if binding.keys
+      (module-field-helper server file symbol binding.definition (fcollect [i (length binding.keys) 1 -1]
+                                                                   (. binding.keys i))))))
 
 (λ unnecessary-method [server file colon call]
   "a call to the : builtin that could just be a multisym"

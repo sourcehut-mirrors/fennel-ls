@@ -2,7 +2,7 @@
 (local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
 
-(λ check [filenames]
+(λ lint [filenames]
   "non-interactive mode that gets executed from CLI with --lint.
    runs lints on each file, then formats and prints them"
   (local files (require :fennel-ls.files))
@@ -38,7 +38,7 @@
 
 (λ main []
   (case arg
-    ["--lint" & filenames] (check filenames)
+    ["--lint" & filenames] (lint filenames)
     (where (or ["--server"] [nil])) (main-loop (io.input)
                                                (io.output))
     _args (do (io.stderr:write "USAGE: fennel-ls [--lint file] [--server]\n")

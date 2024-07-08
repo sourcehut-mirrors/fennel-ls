@@ -61,7 +61,7 @@ identifiers are declared / referenced in which places."
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
-        definitions   {} ; symbol -> definition
+        definitions   {} ; symbol -> binding
         diagnostics   {} ; [diagnostic]
         references    {} ; symbol -> references
         macro-refs    {} ; symbol -> macro
