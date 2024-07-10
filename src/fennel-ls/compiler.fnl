@@ -56,7 +56,6 @@ identifiers are declared / referenced in which places."
         position (utils.pos->position file.text line byte server.position-encoding)]
     {:start position :end position}))
 
-
 (λ compile [{:configuration {: macro-path} :root-uri ?root-uri &as server} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:

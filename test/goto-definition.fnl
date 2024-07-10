@@ -14,7 +14,7 @@
 
 ;; "|" is the cursor
 ;; "==" is the definition that should be found
-(fn test-basics []
+(fn test-local []
   (check "(fn ==x== []) x|")
 
   (check "(local ==x== 10)
@@ -77,7 +77,7 @@
   (check "==(fn foo| [] nil)==")
   nil)
 
-(fn test-indirection []
+(fn test-fields []
   (check "(fn ==target== [] nil)
           (local obstacle {: target})
           (obstacle.tar|get)")
@@ -131,6 +131,19 @@
           (local (a b) (values {:x y : y} {: x : y}))
           (print b.x| a)")
 
+  (check "(local a {:b {:c =={:d #\"hi\"}==}})
+          (a.b.|c.d)")
+
+  (check "(local a {:b {:c =={:d #\"hi\"}==}})
+          (a.b.c|.d)")
+
+  ;; finds fn declarations
+  (check "(local M {})
+          (fn ==M.my-function== [] nil)
+          (M.my-function|)")
+  nil)
+
+(fn test-thru-require []
   (check
     {:foo.fnl "(fn ==target== []
                  nil)
@@ -175,23 +188,22 @@
   ;    :main.fnl "(local {: target} (require :f|oo))
   ;               (target)"}))
 
-  (check "(local a {:b {:c =={:d #\"hi\"}==}})
-          (a.b.|c.d)")
-
-  (check "(local a {:b {:c =={:d #\"hi\"}==}})
-          (a.b.c|.d)")
-
-
-
   nil)
 
+; (fn test-macro []
+;   (check "(macro ==my-macro== [] `nil)
+;           (my-mac|ro)")
+;   (check {:m.fnl ";; fennel-ls: macro-file
+;                   (fn ==my-macro== [] `nil)
+;                   {: my-macro}"
+;           :main.fnl "(import-macros m :m)
+;                      (m.my-macro|)"}))
 
 (fn test-no-crash []
-
   (check "(macro cool [a b] `(let [,b 10] ,a))\n(cool |x ==x==)")
   (check "(macro cool [a b] `(let [,b 10] ,a))\n(cool x x|)")
-
-  (check "|#$..."))
+  (check "|#$...")
+  nil)
 
 ; ;; (it "can go to a destructured function argument")
 ; ;; (it "can go through more than one file")
@@ -202,13 +214,13 @@
 ; ;; (it "can follow import-macros (namespaced)")
 ; ;; (it "can go to the definition in a lua file")
 ; ;; (it "finds (set a.b) definitions")
-; (it "finds (fn a.b [] ...) declarations"
 ; ;; (it "finds (tset a :b) definitions")
 ; ;; (it "finds (setmetatable a {:__index {:b def}) definitions")
 ; ;; (it "finds definitions into a function (fn foo [] (local x 10) {: x}) (let [result (foo)] (print result.x)) finds result.x")
 ; ;; (it "finds definitions through a function (fn foo [{: y}] {:x y}) (let [result (foo {:y {}})] (print result.x)) finds result.x")
 ; ;; (it "finds through setmetatable with an :__index function")
 
-{: test-basics
- : test-indirection
+{: test-local
+ : test-fields
+ : test-thru-require
  : test-no-crash}

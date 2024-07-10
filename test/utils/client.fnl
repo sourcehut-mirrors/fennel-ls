@@ -1,11 +1,7 @@
 (local dispatch (require :fennel-ls.dispatch))
 (local message (require :fennel-ls.message))
 
-(local ROOT-PATH
-  (-> (io.popen "pwd")
-      (: :read :*a)
-      (: :sub 1 -2) ;; take off newline
-      (.. "/test/test-project")))
+(local ROOT-PATH "/path/to/test/project")
 
 (local ROOT-URI
   (.. "file://" ROOT-PATH))
