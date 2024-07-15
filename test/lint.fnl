@@ -110,6 +110,9 @@
                      field.unknown"}
          []
          [{:code 302}])
+  (check "package.loaded.mymodule io.stderr.write"
+         []
+         [{:code 302}])
   nil)
 
 (fn test-unnecessary-colon []

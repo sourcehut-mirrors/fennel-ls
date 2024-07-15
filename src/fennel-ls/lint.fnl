@@ -46,7 +46,9 @@ the `file.diagnostics` field, filling it with diagnostics."
   "if ?ast is a module field that isn't known, return a diagnostic"
   (let [opts {}
         item (analyzer.search-ast server file ?ast stack opts)]
-    (if (and (not item) opts.searched-through-require-with-stack-size-1)
+    (if (and (not item)
+             opts.searched-through-require-with-stack-size-1
+             (not opts.searched-through-require-indeterminate))
       {:range (message.ast->range server file symbol)
        :message (.. "unknown field: " (tostring symbol))
        :severity message.severity.WARN

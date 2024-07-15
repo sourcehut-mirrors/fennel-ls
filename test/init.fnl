@@ -3,7 +3,8 @@
 
 (case (os.getenv "FAITH_TEST")
   target (let [(module function) (target:match "([^ ]+) ([^ ]+)")]
-            (xpcall (. (require module) function) #(print ($:tostring target))))
+           (tset package.loaded module {function (. (require module) function)})
+           (faith.run [module]))
   _ (faith.run
       [:test.json-rpc
        :test.string-processing

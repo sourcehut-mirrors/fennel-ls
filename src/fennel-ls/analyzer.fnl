@@ -65,14 +65,16 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-document [server document stack opts]
-  (when (and (not= (tostring (?. document :binding)) :_G)
-             (= (length stack) 1))
+  (when (not= (tostring (?. document :binding)) :_G)
     (set opts.searched-through-require-with-stack-size-1 true))
   (if (= 0 (length stack))
     document
     (and document.fields
          (. document.fields (. stack (length stack))))
-    (search-document server (. document.fields (table.remove stack)) stack opts)))
+    (search-document server (. document.fields (table.remove stack)) stack opts)
+    (not document.fields)
+    (do
+      (set opts.searched-through-require-indeterminate true))))
 
 (λ search-val [server file ?ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"
