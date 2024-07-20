@@ -6,7 +6,7 @@ EXE=fennel-ls
 
 SRC=$(wildcard src/*.fnl)
 SRC+=$(wildcard src/fennel-ls/*.fnl)
-SRC+=$(wildcard src/fennel-ls/docs/*.fnl)
+ALL_SRC=$(SRC) $(wildcard src/fennel-ls/docs/*.fnl)
 
 BUILD_DIR=./build
 
@@ -19,11 +19,11 @@ REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
 ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
 
-.PHONY: all clean test repl install docs install-deps ci selfcheck
+.PHONY: all clean test repl install docs install-deps ci selflint count
 
 all: $(EXE)
 
-$(EXE): $(SRC)
+$(EXE): $(ALL_SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
 	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_SETTINGS) --require-as-include --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
@@ -44,7 +44,10 @@ rm-deps:
 	rm -rf fennel deps/
 
 selflint:
-	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(SRC)
+	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(ALL_SRC)
+
+count:
+	cloc $(SRC)
 
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
