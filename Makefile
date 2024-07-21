@@ -4,9 +4,7 @@ LUA ?= lua
 FENNEL=$(if $(wildcard fennel),$(LUA) fennel,fennel)
 EXE=fennel-ls
 
-SRC=$(wildcard src/*.fnl)
-SRC+=$(wildcard src/fennel-ls/*.fnl)
-ALL_SRC=$(SRC) $(wildcard src/fennel-ls/docs/*.fnl)
+SRC:=$(shell find src -name "*.fnl")
 
 BUILD_DIR=./build
 
@@ -23,7 +21,7 @@ ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm
 
 all: $(EXE)
 
-$(EXE): $(ALL_SRC)
+$(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
 	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_SETTINGS) --require-as-include --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
@@ -44,10 +42,10 @@ rm-deps:
 	rm -rf fennel deps/
 
 selflint:
-	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(ALL_SRC)
+	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(SRC)
 
 count:
-	cloc $(SRC)
+	cloc $(shell find src -name "*.fnl" | grep -v "generated")
 
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
