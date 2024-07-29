@@ -273,7 +273,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (send (message.diagnostics file))
   (set file.open? true))
 
-(λ notifications.textDocument/didSave [server _send {: uri}]
+(λ notifications.textDocument/didSave [server _send {:textDocument {: uri}}]
   (when (utils.endswith uri "flsproject.fnl")
     (config.reload server))
 
