@@ -1,5 +1,6 @@
 (local faith (require :faith))
 (local {: create-client} (require :test.utils))
+(local fennel (require :fennel))
 
 (fn test-path []
   (let [{: client : uri : cursor :locations [location]}
@@ -60,7 +61,18 @@
     (faith.not= [] bad)
     (faith.= [] good)))
 
+(fn test-editing-settings []
+  (let [{: client : uri} (create-client {:main.fnl ""
+                                         :flsproject.fnl "{}"})
+        uri (uri:gsub "main" "flsproject")]
+    (client:pretend-this-file-exists! uri "{:extra-globals \"my-new-global\"}")
+    (client:did-save uri)
+    (faith.= "my-new-global" client.server.configuration.extra-globals)
+    (local _ nil))
+  nil)
+
 {: test-path
  : test-extra-globals
  : test-lints
- : test-native-libaries}
+ : test-native-libaries
+ : test-editing-settings}

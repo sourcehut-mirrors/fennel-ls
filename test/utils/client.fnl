@@ -63,6 +63,12 @@
       :textDocument {:uri file}
       :context {:diagnostics []}})))
 
+(fn did-save [self file]
+  (dispatch.handle* self.server
+    (message.create-notification :textDocument/didSave
+     {:textDocument {:uri file}})))
+
+
 (local client-mt
   {:__index {: open-file!
              : pretend-this-file-exists!
@@ -71,7 +77,8 @@
              : hover
              : references
              : rename
-             : code-action}})
+             : code-action
+             : did-save}})
 
 {: client-mt
  : default-encoding
