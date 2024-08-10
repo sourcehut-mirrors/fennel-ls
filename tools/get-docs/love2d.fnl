@@ -21,7 +21,9 @@
         {}
         (faccumulate [result {} i 1 arg-count]
           (collect [k v (pairs (. args i)) &into result]
-            (values k v))))))
+            (if (?. result k)
+                (values k (merge v (. result k)))
+                (values k v)))))))
 
 (fn fn-arguments->names [arguments]
   "Given an array of arguments, return all names as an array."
@@ -55,10 +57,13 @@
     (when ?docstring (set lsp-value.metadata.fnl/docstring ?docstring))
     lsp-value))
 
-(fn get-love-functions [love-docs-tbl]
+; TODO - This function takes the functions object directly, then it can be used
+; for any high-level object.
+
+(fn get-love-functions [docs-tbl]
   "Takes the LÖVE-API documentation table and generates a list of the
    library-level functions suitable for the Fennel LSP."
-  (collect [_i value (ipairs love-docs-tbl.functions)]
+  (collect [_i value (ipairs docs-tbl)]
     (let [{: name : description} value
           ?variants (?. value :variants)
           first-variant (if ?variants
@@ -76,7 +81,8 @@
         love-doc-string (.. "LÖVE is a framework for making "
                             "2D games in the Lua programming language.")
         love-docs (build-lsp-value :love nil love-doc-string)
-        love-functions {:fields (get-love-functions love-docs-tbl)}]
-    (stringify-table {:love (merge love-docs love-functions)})))
+        love-functions {:fields (get-love-functions love-docs-tbl.functions)}
+        love-callbacks {:fields (get-love-functions love-docs-tbl.callbacks)}]
+    (stringify-table {:love (merge love-docs love-functions love-callbacks)})))
 
 {: convert}
