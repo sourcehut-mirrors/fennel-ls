@@ -34,7 +34,7 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
         (.. "(" (tostring binding) ")")
         (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")")))
     "\n"
-    metadata.fnl/docstring))
+    (or metadata.fnl/docstring "")))
 
 (λ fn? [symbol]
   (if (sym? symbol)
