@@ -389,7 +389,7 @@ identifiers are declared / referenced in which places."
 
       (parsed ast lexical)
 
-      ;; This is bad; we mutate fennel.macro-path
+      ;; This is bad; we have to mutate fennel.macro-path to use fennel's native macro loader
       (let [old-macro-path fennel.macro-path]
         (when ?root-uri
           (set fennel.macro-path

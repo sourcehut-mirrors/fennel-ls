@@ -151,6 +151,11 @@ except that it sets a new message handler `msgh`.")
             `(,a ,b ,c))
           (fo|o print :hello :world)"
          "```fnl\n(foo a b c)\n```\ndocstring!")
+  ; (check {:main.fnl "(import-macros cool :cool)
+  ;                    (coo|l.=)"
+  ;         :cool.fnl ";; fennel-ls: macro-file
+  ;                    {:= (λ [...] ...)}"}
+  ;        "```fnl\n{:= (λ [...] ...)}\n```")
   nil)
 
 (fn test-reader []
