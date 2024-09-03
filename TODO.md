@@ -17,6 +17,12 @@ refactor brainstorm:
 
 - [ ] diagnostic code actions
 
+- [ ] Hovering over a table should show the actual values, not just the AST
+  - [ ] {: foo} shorthand in fennel.view
+  - [ ] Add a summary to first line of table hovers.
+
+- [ ] make hovers look like (fn table.insert [t ?i v] ...)
+
 Here is my feature wishlist. I don't expect to ever get all of this done, but these are the sort of enhancements I am thinking about.
 - [X] Able to connect to a client
 - [X] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
@@ -83,6 +89,9 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
     - [ ] Type Checking
 - [X] Hover over a symbol for documentation
+
+
+
 - [ ] Signature help
     - [ ] respond to signature help queries
     - [ ] hide or grey out the `self` in an `a:b` multisym call
