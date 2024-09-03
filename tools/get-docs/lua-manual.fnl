@@ -52,6 +52,7 @@
           (: :gsub "\"<code>(.-)</code>\"" "`\"%1\"`")
           (: :gsub "\'<code>(.-)</code>\'" "`\"%1\"`")
           (: :gsub "<code>(.-)</code>" "`%1`")
+          ;; supremum to unicode
           (: :gsub "<sup>x</sup>" "ˣ")
           (: :gsub "<sup>e</sup>" "ᵉ")
           (: :gsub "<sup>y</sup>" "ʸ")
@@ -75,7 +76,7 @@
           (: :gsub "</?ul>" ""))
         ;; check to ensure that all the tags have been defeated
         tag (str:match "<[^>]+>[^>]+>")]
-    (when tag (error (.. tag "\n" str)))
+    (when tag (error (.. "unhandled tag:" tag "\n" str)))
     (-> str
       ;; trim whitespace
       (: :match "^%s*(.-)%s*$")
