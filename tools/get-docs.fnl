@@ -27,9 +27,9 @@
 (fn main []
   (sh :mkdir :-p :build/)
   (sh :mkdir :-p :src/fennel-ls/docs/generated/)
-  (let [{:convert lua-manual} (require :tools.get-docs.lua-manual)
-        {:convert tic80-manual} (require :tools.get-docs.tic80)
-        {:convert download-and-convert-love2d-manual!} (require :tools.get-docs.love2d)]
+  (let [generate-love2d-docs? (case arg [:--generate-love2d] true _ false)
+        {:convert lua-manual} (require :tools.get-docs.lua-manual)
+        {:convert tic80-manual} (require :tools.get-docs.tic80)]
     (derive-docs-from-url "https://www.lua.org/manual/5.1/manual.html"
                           :lua51.fnl lua-manual)
     (derive-docs-from-url "https://www.lua.org/manual/5.2/manual.html"
@@ -39,8 +39,11 @@
     (derive-docs-from-url "https://www.lua.org/manual/5.4/manual.html"
                           :lua54.fnl lua-manual)
     (derive-docs-from-url "https://tic80.com/learn" :tic80.fnl tic80-manual)
-    (write-doc-file! :love2d.fnl
-                     "https://github.com/love2d-community/love-api/"
-                     (download-and-convert-love2d-manual!))))
+    (when generate-love2d-docs?
+      (let [{:convert download-and-convert-love2d-manual!} (require :tools.get-docs.love2d)]
+        (print "generating Love2D docs...")
+        (write-doc-file! :love2d.fnl
+                         "https://github.com/love2d-community/love-api/"
+                         (download-and-convert-love2d-manual!))))))
 
 (main)
