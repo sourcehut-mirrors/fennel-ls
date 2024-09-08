@@ -1,4 +1,4 @@
-(local fennel (require :deps.fennel))
+(local fennel (require :fennel))
 (local {:clone git-clone} (require :tools.util.git))
 
 (local love-api-build-directory :build/love-api)

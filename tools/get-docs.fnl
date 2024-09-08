@@ -1,7 +1,6 @@
 "Script to generate /src/fennel-ls/docs/lua54.fnl and friends automatically"
 
 (local {: sh} (require :tools.util.sh))
-(local fennel (require :deps.fennel))
 
 (fn curl-cached [url]
   (let [filename (.. "build/" (url:gsub "[/:]" "_"))
