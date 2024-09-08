@@ -21,6 +21,17 @@ $ make rm-docs
 $ make docs
 ```
 
+## Including LÖVE documentation
+Due to license incompatibility between fennel-ls and the official LÖVE
+documentation, this repository cannot include the LÖVE documentation by
+default. It must be generated manually.
+
+This can be done by passing a flag to the `docs` target.
+
+```sh
+$ make docs GET_DOCS_FLAGS=--generate-love2d
+```
+
 ## Vendored Dependencies
 The vendored dependencies are very easy to solve. You delete the dependency
 files by running `make rm-deps`.

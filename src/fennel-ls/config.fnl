@@ -27,7 +27,7 @@ There are no global settings. They're all stored in the `server` object.
            :var-never-set (option true)
            :op-with-no-arguments (option true)
            :multival-in-middle-of-call (option true)}
-   :libraries {:tic-80 (option false)}
+   :libraries {:love2d (option false) :tic-80 (option false)}
    :extra-globals (option "")})
 
 (fn make-configuration-from-template [default ?user ?parent]
@@ -72,7 +72,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 
 (λ load-config [server]
   "This is where we can put anything that needs to react to config changes"
-  
+
   (make-configuration
     (when server.root-uri
       (-?> (files.read-file server (utils.path->uri (utils.path-join (utils.uri->path server.root-uri) "flsproject.fnl")))

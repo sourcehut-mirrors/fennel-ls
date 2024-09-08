@@ -30,7 +30,7 @@ repl:
 	$(FENNEL) $(FENNELFLAGS)
 
 docs:
-	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl
+	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl $(GET_DOCS_FLAGS)
 
 rm-docs:
 	rm -rf src/fennel-ls/docs/

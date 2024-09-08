@@ -28,6 +28,10 @@
 (local libraries
   {:tic-80 (require :fennel-ls.docs.generated.tic80)})
 
+;; can't just pcall require because we want to trigger require-as-include
+(case (pcall #(require :fennel-ls.docs.generated.love2d))
+  (true love2d) (set libraries.love2d love2d))
+
 (fn get-library [library]
   (when (not (. libraries library))
     (error (.. "fennel-ls doesn't know about library " library "\n"
@@ -44,13 +48,14 @@
     (icollect [name (pairs (get-lua-version server.configuration.lua-version)) &into result]
       name)))
 
+(fn get-library-global [server global-name]
+  (accumulate [g nil library-name enabled? (pairs server.configuration.libraries)
+               &until g]
+    (and enabled? (. (get-library library-name) global-name))))
+
 (fn get-global [server global-name]
-  (or
-    (and server.configuration.libraries.tic-80
-         (. (get-library :tic-80)
-            global-name))
-    (. (get-lua-version server.configuration.lua-version)
-       global-name)))
+  (or (get-library-global server global-name)
+      (. (get-lua-version server.configuration.lua-version) global-name)))
 
 (fn get-builtin [_server builtin-name]
   (or (. specials builtin-name)

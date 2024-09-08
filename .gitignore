@@ -2,3 +2,4 @@
 /result
 /lua*.html
 /build
+/src/fennel-ls/docs/generated/love2d.fnl
