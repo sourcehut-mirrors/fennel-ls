@@ -4,12 +4,12 @@
 (local fennel (require :deps.fennel))
 
 (fn curl-cached [url]
-  (let [filename (.. :build/ (url:gsub "[/:]" "_"))
+  (let [filename (.. "build/" (url:gsub "[/:]" "_"))
         file (io.open filename :r)]
     (if file
         file
         (do
-          (sh :curl url [">"] filename)
+          (sh "curl" url [">"] filename)
           (io.open filename :r)))))
 
 (fn write-doc-file! [out-filename doc-src doc-tbl]
@@ -25,20 +25,16 @@
                               (file:read :*a)))))
 
 (fn main []
-  (sh :mkdir :-p :build/)
-  (sh :mkdir :-p :src/fennel-ls/docs/generated/)
-  (let [generate-love2d-docs? (case arg [:--generate-love2d] true _ false)
+  (sh :mkdir :-p "build/")
+  (sh :mkdir :-p "src/fennel-ls/docs/generated/")
+  (let [generate-love2d-docs? (case arg ["--generate-love2d"] true _ false)
         {:convert lua-manual} (require :tools.get-docs.lua-manual)
-        {:convert tic80-manual} (require :tools.get-docs.tic80)]
-    (derive-docs-from-url "https://www.lua.org/manual/5.1/manual.html"
-                          :lua51.fnl lua-manual)
-    (derive-docs-from-url "https://www.lua.org/manual/5.2/manual.html"
-                          :lua52.fnl lua-manual)
-    (derive-docs-from-url "https://www.lua.org/manual/5.3/manual.html"
-                          :lua53.fnl lua-manual)
-    (derive-docs-from-url "https://www.lua.org/manual/5.4/manual.html"
-                          :lua54.fnl lua-manual)
-    (derive-docs-from-url "https://tic80.com/learn" :tic80.fnl tic80-manual)
+        {:convert tic-manual} (require :tools.get-docs.tic80)]
+    (derive-docs-from-url "https://www.lua.org/manual/5.1/manual.html" "lua51.fnl" lua-manual)
+    (derive-docs-from-url "https://www.lua.org/manual/5.2/manual.html" "lua52.fnl" lua-manual)
+    (derive-docs-from-url "https://www.lua.org/manual/5.3/manual.html" "lua53.fnl" lua-manual)
+    (derive-docs-from-url "https://www.lua.org/manual/5.4/manual.html" "lua54.fnl" lua-manual)
+    (derive-docs-from-url "https://tic80.com/learn" :tic80.fnl tic-manual)
     (when generate-love2d-docs?
       (let [{:convert download-and-convert-love2d-manual!} (require :tools.get-docs.love2d)]
         (write-doc-file! :love2d.fnl
