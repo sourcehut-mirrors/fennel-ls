@@ -41,7 +41,6 @@
     (derive-docs-from-url "https://tic80.com/learn" :tic80.fnl tic80-manual)
     (when generate-love2d-docs?
       (let [{:convert download-and-convert-love2d-manual!} (require :tools.get-docs.love2d)]
-        (print "generating Love2D docs...")
         (write-doc-file! :love2d.fnl
                          "https://github.com/love2d-community/love-api/"
                          (download-and-convert-love2d-manual!))))))
