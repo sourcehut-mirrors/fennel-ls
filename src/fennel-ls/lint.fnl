@@ -2,7 +2,7 @@
 Provides the function (check server file), which goes through a file and mutates
 the `file.diagnostics` field, filling it with diagnostics."
 
-(local {: sym? : list? : table? : view} (require :fennel))
+(local {: sym? : list? : table? : view &as fennel} (require :fennel))
 (local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
@@ -80,6 +80,48 @@ the `file.diagnostics` field, filling it with diagnostics."
          :severity message.severity.WARN
          :code 303
          :codeDescription "unnecessary-method"}))))
+
+(λ unnecessary-tset [server file head call]
+  (if (and (sym? head :tset) (sym? (. call 2))
+           (= :string (type (. call 3))) (. file.lexical call))
+      (diagnostic {:range (message.ast->range server file call)
+                   :message (string.format "unnecessary %s" head)
+                   :severity message.severity.WARN
+                   :code 309
+                   :codeDescription "unnecessary-tset"}
+                  #[{:range (message.ast->range server file call)
+                     :newText (string.format "(set %s.%s %s)"
+                                             (. call 2) (. call 3)
+                                             (view (. call 4)))}])))
+
+(λ unnecessary-do-values [server file head call]
+  (if (and (or (sym? head :do) (sym? head :values))
+           (= nil (. call 3)) (. file.lexical call))
+      (diagnostic {:range (message.ast->range server file call)
+                   :message (string.format "unnecessary %s" head)
+                   :severity message.severity.WARN
+                   :code 310
+                   :codeDescription "unnecessary-do-values"}
+                  #[{:range (message.ast->range server file call)
+                     :newText (view (. call 2))}])))
+
+(local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
+                           (values form body-form?)))
+
+(λ redundant-do [server file head call]
+  (let [last-body (. call (length call))]
+    (if (and (. implicit-do-forms (tostring head)) (. file.lexical call)
+             (list? last-body) (sym? (. last-body 1) :do))
+        (diagnostic {:range (message.ast->range server file last-body)
+                     :message "redundant do"
+                     :severity message.severity.WARN
+                     :code 311
+                     :codeDescription "redundant-do"}
+                    #[{:range (message.ast->range server file last-body)
+                       :newText (table.concat
+                                 (fcollect [i 2 (length last-body)]
+                                   (view (. last-body i)))
+                                 " ")}]))))
 
 (λ bad-unpack [server file op call]
   "an unpack call leading into an operator"
@@ -185,6 +227,9 @@ the `file.diagnostics` field, filling it with diagnostics."
       (when head
         (if lints.bad-unpack           (table.insert diagnostics (bad-unpack           server file head call)))
         (if lints.unnecessary-method   (table.insert diagnostics (unnecessary-method   server file head call)))
+        (if lints.unnecessary-do       (table.insert diagnostics (unnecessary-do-values server file head call)))
+        (if lints.unnecessary-tset     (table.insert diagnostics (unnecessary-tset     server file head call)))
+        (if lints.redundant-do         (table.insert diagnostics (redundant-do         server file head call)))
         (if lints.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments server file head call)))
 
         ;; argument lints

@@ -177,6 +177,47 @@
          [] [{:code 307}])
   nil)
 
+(fn test-unnecessary-tset []
+  ;; valid, if you're targeting older Fennels
+  (check "(local [tbl key] [{} :k]) (tset tbl key 249)" [] [{}])
+  ;; never a good use of tset
+  (check "(local tbl {}) (tset tbl :key 9)"
+         [{:code 309
+           :codeDescription "unnecessary-tset"
+           :message "unnecessary tset"
+           :range {:start {:character 15 :line 0}
+                   :end {:character 32 :line 0}}}] []))
+
+(fn test-unnecessary-do []
+  ;; multi-arg do
+  (check "(do (print :x) 11)" [] [{}])
+  ;; unnecessary do
+  (check "(do 9)" [{:message "unnecessary do"
+                    :code 310
+                    :codeDescription "unnecessary-do-values"
+                    :range {:start {:character 0 :line 0}
+                            :end {:character 6 :line 0}}}] [])
+  ;; unnecessary values
+  (check "(print :hey (values :lol))"
+         [{:code 310
+           :codeDescription "unnecessary-do-values"
+           :message "unnecessary values"
+           :range {:start {:character 12 :line 0}
+                   :end {:character 25 :line 0}}}]
+         []))
+
+(fn test-redundant-do []
+  ;; good do
+  (check "(case 134 x (do (print :x x) 11))" [] [{}])
+  ;; unnecessary one
+  (set _G.dbg true)
+  (check "(let [x 29] (do (print 9) x))"
+         [{:code 311
+           :codeDescription "redundant-do"
+           :message "redundant do"
+           :range {:start {:character 12 :line 0}
+                   :end {:character 28 :line 0}}}] []))
+
 (fn test-match-should-case []
   ;; OK: most basic pinning
   (check "(let [x 99] (match 99 x :yep!))" [] [{}])
@@ -207,16 +248,12 @@
                    :end {:character 6 :line 0}}}] []))
 
 ;; TODO lints:
-;; unnecessary (do) in body position
 ;; duplicate keys in kv table
-;; (tset <sym> <str>) --> (set <sym>.<str>)
-;; (tset <sym> <any>) --> (set (. <sym> <any>))
+;; (tset <sym> <any>) --> (set (. <sym> <any>)) (might be wanted for compat?)
 ;; {&as x} and [&as x] pattern with no other matches
 ;; Unused variables / fields (maybe difficult)
 ;; discarding results to various calls, such as unpack, values, etc
-;; unnecessary `do`/`values` with only one inner form
 ;; `pairs` or `ipairs` call in a (for) binding table
-;; mark when unification is happening on a `match` pattern (may be difficult)
 ;; steal as many lints as possible from cargo
 ;; unnecessary parens around single multival destructure
 
@@ -226,6 +263,9 @@
  : test-ampersand
  : test-unknown-module-field
  : test-unnecessary-colon
+ : test-unnecessary-tset
+ : test-unnecessary-do
+ : test-redundant-do
  : test-unset-var
  : test-match-should-case
  : test-unpack-into-op
