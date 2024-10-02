@@ -23,6 +23,7 @@ There are no global settings. They're all stored in the `server` object.
    :lints {:unused-definition (option true)
            :unknown-module-field (option true)
            :unnecessary-method (option true)
+           :match-should-case (option true)
            :bad-unpack (option true)
            :var-never-set (option true)
            :op-with-no-arguments (option true)

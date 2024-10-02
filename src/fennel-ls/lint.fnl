@@ -2,7 +2,7 @@
 Provides the function (check server file), which goes through a file and mutates
 the `file.diagnostics` field, filling it with diagnostics."
 
-(local {: sym? : list? : view} (require :fennel))
+(local {: sym? : list? : table? : view} (require :fennel))
 (local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
@@ -133,6 +133,25 @@ the `file.diagnostics` field, filling it with diagnostics."
         #[{:range (message.ast->range server file call)
            :newText (view identity)}]))))
 
+(λ match-reference? [ast references]
+  (if (sym? ast) (?. references ast :target)
+      (or (table? ast) (list? ast))
+      (accumulate [ref false _ subast (pairs ast) &until ref]
+        (match-reference? subast references))))
+
+(λ match-should-case [server {: references &as file} ast]
+  (when (and (list? ast)
+             (sym? (. ast 1) :match)
+             (not (faccumulate [ref false i 3 (length ast) 2 &until ref]
+                    (match-reference? (. ast i) references))))
+    (diagnostic {:range (message.ast->range server file (. ast 1))
+                 :message "no pinned patterns; use case instead of match"
+                 :severity message.severity.WARN
+                 :code 308
+                 :codeDescription "match-should-case"}
+                #[{:range (message.ast->range server file (. ast 1))
+                   :newText "case"}])))
+
 (λ multival-in-middle-of-call [server file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do
   something with multiple values. However, multiple values will get
@@ -175,6 +194,9 @@ the `file.diagnostics` field, filling it with diagnostics."
         (for [index 2 (length call)]
           (let [arg (. call index)]
             (if lints.multival-in-middle-of-call (table.insert diagnostics (multival-in-middle-of-call server file head call arg index)))))))
+
+    (each [ast (pairs file.lexical)]
+      (if lints.match-should-case (table.insert diagnostics (match-should-case server file ast))))
 
     (if lints.unknown-module-field
       (unknown-module-field server file))))

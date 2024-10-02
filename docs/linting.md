@@ -9,7 +9,7 @@ To start, you can set up all the plumbing:
     * Choose which `each` loop to put your function in, so your lint can be
       applied to right thing.
     * add `(if checks.<your-check> (table.insert diagnostics (<your-check> self file <the rest of the args>)))`
-3. Enable your lint! In `src/fennel-ls/state.fnl`, find the
+3. Enable your lint! In `src/fennel-ls/config.fnl`, find the
    `default-configuration` variable, and turn your check on by default.
 
 ## Writing your lint
@@ -19,19 +19,22 @@ The goal is to check whether the given arguments should emit a warning, and
 what message to show. The current loops in `check` go over every:
 * definition (Every time a new variable is bound)
 * call (Every time the user calls a function or a special. Macros don't count.)
+* lexical (Every source-tracked AST node in the whole file, before macro expansion.
+  Symbols, lists, tables, and varargs will be here; numbers, strings, booleans,
+  and nil will not.)
 
 More loops might have been added since I wrote this document.
 
 ### Input arguments
-All lints give you `self` and `file`. They're mostly useful to pass to other
+All lints give you `server` and `file`. They're mostly useful to pass to other
 functions.
-* `self` is the table that represents the language server. It carries metadata
+* `server` is the table that represents the language server. It carries metadata
   and stuff around. You probably don't need to use it directly.
 * `file` is an object that represents a .fnl file. It has some useful fields.
   Check out what fields it has by looking at the end of `compiler.fnl`.
 
-`file.lexical` stores the value `true` for every single list, table, or symbo
-that appears in the original file AST, and `nil` for things generated via
+`file.lexical` stores the value `true` for every single list, table, or symbol
+that appears in the original file AST, but not things generated via
 macroexpansion. Make sure that the AST you're checking is inside of
 `file.lexical`; otherwise, your lint may not be actionable or relevant, because
 the user won't be able to see or edit the code your lint is warning about.
@@ -71,6 +74,9 @@ the definitions will be:
 #### If your lint is linting calls (to functions or specials, not macros)
 * `head` is the symbol that is being called. It is the same as `(. call 1)`.
 * `call` is the list that represents the call.
+
+#### If your lint is linting lexical nodes
+* `ast` is the AST node
 
 ### Output:
 Your lint function should return `nil` if there's nothing to report, or

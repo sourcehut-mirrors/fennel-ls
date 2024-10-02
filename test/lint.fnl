@@ -177,6 +177,35 @@
          [] [{:code 307}])
   nil)
 
+(fn test-match-should-case []
+  ;; OK: most basic pinning
+  (check "(let [x 99] (match 99 x :yep!))" [] [{}])
+  ;; pinning inside where clause
+  (check "(let [x 99]
+            (match 98
+              y (print y)
+              (where x (= 0 (math.fmod x 2))) (print x)))" [] [{}])
+  ;; OK: nested pinning
+  (check "(let [x 99]
+            (match [{:x 32}]
+              [{: x}] (print x)))" [] [{}])
+  ;; OK: values pattern
+  (check "(let [x 99]
+            (match 49
+              (x _ 9) (print :values-ref)))" [] [{}])
+  ;; warn: basic no pinning
+  (check "(match 91 z (print :yeah2 z))"
+         [{:message "no pinned patterns; use case instead of match"
+           :code 308
+           :range {:start {:character 1 :line 0}
+                   :end {:character 6 :line 0}}}] [])
+  ;; warn: nested no pinning
+  (check "(match [32] [lol] (print :nested-no-pin lol))"
+         [{:message "no pinned patterns; use case instead of match"
+           :code 308
+           :range {:start {:character 1 :line 0}
+                   :end {:character 6 :line 0}}}] []))
+
 ;; TODO lints:
 ;; unnecessary (do) in body position
 ;; duplicate keys in kv table
@@ -198,5 +227,6 @@
  : test-unknown-module-field
  : test-unnecessary-colon
  : test-unset-var
+ : test-match-should-case
  : test-unpack-into-op
  : test-unpack-in-middle}
