@@ -4,10 +4,13 @@
 (set debug.getinfo (or fennel.getinfo debug.getinfo))
 (set debug.traceback (or fennel.traceback debug.traceback))
 
-(case (os.getenv "FAITH_TEST")
-  target (let [(module function) (target:match "([^ ]+) ([^ ]+)")]
-           (tset package.loaded module {function (. (require module) function)})
-           (faith.run [module]))
+(case (string.match (or (os.getenv "FAITH_TEST") "")
+                    "([^ ]+) ?([^ ]*)")
+  (module "") (faith.run [module])
+  (module function) (do
+                      (tset package.loaded module
+                            {function (. (require module) function)})
+                      (faith.run [module]))
   _ (faith.run
       [:test.json-rpc
        :test.string-processing

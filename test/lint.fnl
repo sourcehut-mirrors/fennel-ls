@@ -20,9 +20,9 @@
                        (= e.range.end.character   d.range.end.character))))
        i)))
 
-(fn check [file-contents expected unexpected]
+(fn check [file-contents expected ?unexpected]
   (let [{: diagnostics} (create-client file-contents)]
-    (each [_ e (ipairs unexpected)]
+    (each [_ e (ipairs (or ?unexpected []))]
       (let [i (find diagnostics e)]
         (faith.= nil i (.. "Lint matching " (view e) "\n"
                            "from:    " (view file-contents) "\n"
@@ -36,52 +36,51 @@
                                            :escape-newlines? true})))
         (table.remove diagnostics i)))))
 
+(fn assert-ok [file-contents]
+  (let [{: diagnostics} (create-client file-contents)]
+    (faith.= nil (next diagnostics) (view diagnostics))))
+
 (fn test-unused []
   (check "(local x 10)"
          [{:message "unused definition: x"
            :code 301
            :range {:start {:character 7 :line 0}
-                   :end   {:character 8 :line 0}}}] [])
+                   :end   {:character 8 :line 0}}}])
   (check "(fn x [])"
          [{:message "unused definition: x"
            :code 301
            :range {:start {:character 4 :line 0}
-                   :end   {:character 5 :line 0}}}] [])
+                   :end   {:character 5 :line 0}}}])
   (check "(let [(x y) (values 1 2)] x)"
          [{:code 301
            :range {:start {:character 9  :line 0}
-                   :end   {:character 10 :line 0}}}] [])
+                   :end   {:character 10 :line 0}}}])
   ;; setting a var without reading
   (check "(var x 1) (set x 2) (set [x] [3])"
           [{:code 301
             :range {:start {:character 5 :line 0}
-                    :end   {:character 6 :line 0}}}] [])
+                    :end   {:character 6 :line 0}}}])
   ;; setting a field without reading is okay
-  (check "(fn [a b] (set a.x 10) (fn b.f []))" [] [{}])
-  (check "(case {:b 1} (where (or {:a x} {:b x})) x)" [] [{}])
+  (assert-ok "(fn [a b] (set a.x 10) (fn b.f []))")
+  (assert-ok "(case {:b 1} (where (or {:a x} {:b x})) x)")
 
-  (check "(fn foo [a] nil) (foo)" [{:message "unused definition: a"}] [])
-  (check "(λ foo [a] nil) (foo)" [{:message "unused definition: a"}] [])
-  (check "(lambda foo [a] nil) (foo)" [{:message "unused definition: a"}] [])
+  (check "(fn foo [a] nil) (foo)" [{:message "unused definition: a"}])
+  (check "(λ foo [a] nil) (foo)" [{:message "unused definition: a"}])
+  (check "(lambda foo [a] nil) (foo)" [{:message "unused definition: a"}])
 
   nil)
 
 (fn test-ampersand []
-  (check "(let [[x & y] [1 2 3]]
-            (print x (. y 1) (. y 2)))"
-         [] [{:message "unused definition: &"} {}])
-  (check "(let [{1 x & y} [1 2 3]]
-            (print x (. y 2) (. y 3)))"
-         [] [{:message "unused definition: &"} {}])
-  (check "(let [[x &as y] [1 2 3]]
-            (print x (. y 2) (. y 3)))"
-         [] [{:message "unused definition: &as"} {}])
-  (check "(let [{1 x &as y} [1 2 3]]
-            (print x (. y 2) (. y 3)))"
-         [] [{:message "unused definition: &as"} {}])
-  (check "(fn [x & more]
-            (print x more))"
-         [] [{:message "unused definition: &"} {}])
+  (assert-ok "(let [[x & y] [1 2 3]]
+                (print x (. y 1) (. y 2)))")
+  (assert-ok "(let [{1 x & y} [1 2 3]]
+                (print x (. y 2) (. y 3)))")
+  (assert-ok "(let [[x &as y] [1 2 3]]
+                (print x (. y 2) (. y 3)))")
+  (assert-ok "(let [{1 x &as y} [1 2 3]]
+                (print x (. y 2) (. y 3)))")
+  (assert-ok "(fn [x & more]
+                (print x more))")
   nil)
 
 (fn test-unknown-module-field []
@@ -120,45 +119,39 @@
          [{:message "unnecessary : call: use (x:find)"
            :code 303
            :range {:start {:character 15 :line 0}
-                   :end   {:character 29 :line 0}}}] [])
+                   :end   {:character 29 :line 0}}}])
 
   ;; no warning from macros
-  (check "(let [x :haha y :find] (-> x (: y :a))
-          (let [x :haha] (-> x (: :find :a))"
-         [] [{:code 303}])
+  (assert-ok "(let [x :haha y :find] (-> x (: y :a))
+                (let [x :haha] (-> x (: :find :a))))")
 
   ;; no warning when its an expression, or when string has spaces
-  (check "(let [x :haha]
-            (: x \"bar baz\") (: x 1) (: x x))"
-         [] [{:code 303}])
+  (assert-ok "(let [x :haha]
+                (: x \"bar baz\") (: x 1) (: x x))")
   nil)
 
 (fn test-unpack-into-op []
   (check "(+ (unpack [1 2 3]))"
-         [{:code 304}] [])
+         [{:code 304}])
 
   (check "(.. (table.unpack [\"hello\" \"world\"]))"
-         [{:code 304 :message #($:find "table.concat")}] [])
-
-  (check "(* (table.unpack [\"hello\" \"world\"]))"
-         [{:code 304 :message #(not ($:find "table%.concat"))}]
          [{:code 304 :message #($:find "table.concat")}])
 
+  (check "(* (table.unpack [\"hello\" \"world\"]))"
+         [{:code 304 :message #(not ($:find "table%.concat"))}])
+
   ;; only when lexical
-  (check "(-> [1 2 3] unpack +)"
-         [] [{:code 304}])
+  (assert-ok "(-> [1 2 3] table.unpack +)")
   nil)
 
 (fn test-unset-var []
   (check "(var x nil) (print x)"
          [{:code 305
            :range {:start {:character 5 :line 0}
-                   :end   {:character 6 :line 0}}}] [])
+                   :end   {:character 6 :line 0}}}])
 
-  (check "(var x 1) (set x 2) (print x)"
-         [] [{}])
-  (check "(local x 10) (?. x)"
-         [] [{:code 305}])
+  (assert-ok "(var x 1) (set x 2) (print x)")
+  (assert-ok "(local x 10) (?. x)")
   nil)
 
 ;; missing test for 306
@@ -167,85 +160,84 @@
   (check "(+ 1 2 3 (values 4 5) 6)"
          [{:code 307
            :range {:start {:line 0 :character 9}
-                   :end   {:line 0 :character 21}}}]
-         [])
+                   :end   {:line 0 :character 21}}}])
 
   ;; not in a statement, should be covered by another lint
-  (check "(let [x 10] (values 4 5) x)"
-         [] [{:code 307}])
-  (check "(do (values 4 5) (_G.unpack 6 7) (table.unpack 8 9) 10)"
-         [] [{:code 307}])
+  (assert-ok "(let [x 10] (values 4 5) x)")
+  (assert-ok "(do (values 4 5) (_G.unpack 6 7) (table.unpack 8 9) 10)")
   nil)
 
 (fn test-unnecessary-tset []
   ;; valid, if you're targeting older Fennels
-  (check "(local [tbl key] [{} :k]) (tset tbl key 249)" [] [{}])
+  (assert-ok "(local [tbl key] [{} :k]) (tset tbl key 249)")
   ;; never a good use of tset
   (check "(local tbl {}) (tset tbl :key 9)"
          [{:code 309
            :codeDescription "unnecessary-tset"
            :message "unnecessary tset"
            :range {:start {:character 15 :line 0}
-                   :end {:character 32 :line 0}}}] []))
+                   :end {:character 32 :line 0}}}])
+  nil)
 
 (fn test-unnecessary-do []
   ;; multi-arg do
-  (check "(do (print :x) 11)" [] [{}])
+  (assert-ok "(do (print :x) 11)")
   ;; unnecessary do
   (check "(do 9)" [{:message "unnecessary do"
                     :code 310
                     :codeDescription "unnecessary-do-values"
                     :range {:start {:character 0 :line 0}
-                            :end {:character 6 :line 0}}}] [])
+                            :end {:character 6 :line 0}}}])
   ;; unnecessary values
   (check "(print :hey (values :lol))"
          [{:code 310
            :codeDescription "unnecessary-do-values"
            :message "unnecessary values"
            :range {:start {:character 12 :line 0}
-                   :end {:character 25 :line 0}}}]
-         []))
+                   :end {:character 25 :line 0}}}])
+  nil)
 
 (fn test-redundant-do []
   ;; good do
-  (check "(case 134 x (do (print :x x) 11))" [] [{}])
+  (assert-ok "(case 134 x (do (print :x x) 11))")
   ;; unnecessary one
-  (set _G.dbg true)
   (check "(let [x 29] (do (print 9) x))"
          [{:code 311
            :codeDescription "redundant-do"
            :message "redundant do"
            :range {:start {:character 12 :line 0}
-                   :end {:character 28 :line 0}}}] []))
+                   :end {:character 28 :line 0}}}])
+  nil)
 
 (fn test-match-should-case []
-  ;; OK: most basic pinning
-  (check "(let [x 99] (match 99 x :yep!))" [] [{}])
+  ;; most basic pinning
+  (assert-ok "(let [x 99] (match 99 x :yep!))")
   ;; pinning inside where clause
-  (check "(let [x 99]
-            (match 98
-              y (print y)
-              (where x (= 0 (math.fmod x 2))) (print x)))" [] [{}])
-  ;; OK: nested pinning
-  (check "(let [x 99]
+  (assert-ok "(let [x 99]
+                (match 98
+                  y (print y)
+                  (where x (= 0 (math.fmod x 2))) (print x)))")
+  ;; nested pinning
+  (assert-ok "(let [x 99]
             (match [{:x 32}]
               [{: x}] (print x)))" [] [{}])
-  ;; OK: values pattern
-  (check "(let [x 99]
-            (match 49
-              (x _ 9) (print :values-ref)))" [] [{}])
+  ;; values pattern
+  (assert-ok "(let [x 99]
+                (match 49
+                  (x _ 9) (print :values-ref)))")
   ;; warn: basic no pinning
   (check "(match 91 z (print :yeah2 z))"
          [{:message "no pinned patterns; use case instead of match"
            :code 308
            :range {:start {:character 1 :line 0}
-                   :end {:character 6 :line 0}}}] [])
+                   :end {:character 6 :line 0}}}])
   ;; warn: nested no pinning
   (check "(match [32] [lol] (print :nested-no-pin lol))"
          [{:message "no pinned patterns; use case instead of match"
            :code 308
            :range {:start {:character 1 :line 0}
-                   :end {:character 6 :line 0}}}] []))
+                   :end {:character 6 :line 0}}}])
+  nil)
 
 ;; TODO lints:
 ;; duplicate keys in kv table
@@ -269,4 +261,5 @@
  : test-unset-var
  : test-match-should-case
  : test-unpack-into-op
- : test-unpack-in-middle}
+ : test-unpack-in-middle
+ }

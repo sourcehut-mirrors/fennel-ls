@@ -50,6 +50,8 @@ count:
 install: $(EXE)
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
 
+# to run one module: make test FAITH_TEST=test.lint
+# to run one test: make test FAITH_TEST="test.lint test-unset-var"
 test: $(EXE)
 	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
