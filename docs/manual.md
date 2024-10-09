@@ -50,6 +50,24 @@ require("mason-lspconfig").setup {
 }
 ```
 
+### Sublime Text
+prerequisites: You have installed the [fennel-ls binary](#fennel-ls-language-server-binary) and the [LSP Sublime Text package](https://packagecontrol.io/packages/LSP) from Package Control.
+
+You can configure the LSP plugin to use fennel-ls directly by editing your `Packages/User/LSP.sublime-settings` file, which can be opened via "Preferences > Package Settings > LSP > Settings" from the menu or with the Preferences: LSP Settings command from the Command Palette. 
+
+You should add an entry to the top-level `"clients"` object (creating it if it doesn't exist), with this configuration:
+```json
+"clients": {
+    "fennel-ls": {
+        "enabled": true,
+        "selector": "source.fennel",
+        "command": ["fennel-ls"]
+    }
+}
+```
+
+If you run into problems, check the [LSP Client Configuration reference](https://lsp.sublimetext.io/client_configuration/) and double-check the location of fennel-ls on the $PATH is visible to Sublime Text.
+
 ### Other editors
 It should be possible to set up for other text editors, but the instructions
 depend on which editor you use. Generally you need to tell your editor:
