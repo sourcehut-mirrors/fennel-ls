@@ -14,15 +14,14 @@ Luckily, I'm testing with Neovim, so I can pretend these problems don't exist fo
   "Reads the header of a JSON-RPC message"
   (let [header (or ?header {})]
     (case (in:read)
-      "\r" header ;; hit an empty line, I'm done reading
-      nil nil ;; hit end of stream, return nil
-      ;; reading an actual line
-      header-line
-      (let [sep (string.find header-line ": ")
-            k (string.sub header-line 1 (- sep 1))
-            v (string.sub header-line (+ sep 2) -2)] ;; trim off the \r
-        (tset header k v)
-        (read-header in header)))))
+      nil nil ;; I've hit end of stream, return nil instead of a header
+      line (case (line:match "^(.-)\r$") ;; strip trailing \r
+             "" header ;; base case. empty line marks end of header
+             line (let [(k v) (line:match "^(.-): (.-)$")]
+                    (if (not (and k v))
+                      (error "fennel-ls encountered a malformed json-rpc header: \"" line "\""))
+                    (tset header k v)
+                    (read-header in header))))))
 
 (λ read-n [in len ?buffer]
   "read a string of exactly `len` characters from the `in` stream.
