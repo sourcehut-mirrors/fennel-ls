@@ -25,6 +25,10 @@ the `file.diagnostics` field, filling it with diagnostics."
        (. ops (tostring item))
        item))
 
+(fn could-be-rewritten-as-sym? [str]
+  (and (= :string (type str))
+       (not (str:find "[^!$%*+/0-9<=>?A-Z\\^_a-z|\128-\255-]"))))
+
 (λ unused-definition [server file symbol definition]
   "local variable that is defined but not used"
   (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
@@ -72,9 +76,7 @@ the `file.diagnostics` field, filling it with diagnostics."
            (sym? (. call 2))
            (. file.lexical call))
     (let [method (. call 3)]
-      (if (and (= :string (type method))
-               (not (method:find "^[0-9]"))
-               (not (method:find "[^!$%*+-/0-9<=>?A-Z\\^_a-z|\128-\255]")))
+      (if (could-be-rewritten-as-sym? method)
         {:range (message.ast->range server file call)
          :message (.. "unnecessary : call: use (" (tostring (. call 2)) ":" method ")")
          :severity message.severity.WARN
@@ -82,8 +84,10 @@ the `file.diagnostics` field, filling it with diagnostics."
          :codeDescription "unnecessary-method"}))))
 
 (λ unnecessary-tset [server file head call]
-  (if (and (sym? head :tset) (sym? (. call 2))
-           (= :string (type (. call 3))) (. file.lexical call))
+  (if (and (sym? head :tset)
+           (sym? (. call 2))
+           (could-be-rewritten-as-sym? (. call 3))
+           (. file.lexical call))
       (diagnostic {:range (message.ast->range server file call)
                    :message (string.format "unnecessary %s" head)
                    :severity message.severity.WARN
