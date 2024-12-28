@@ -211,7 +211,7 @@ the `file.diagnostics` field, filling it with diagnostics."
      :code 307
      :codeDescription "bad-unpack"}))
 
-(λ check [server file]
+(λ add-lint-diagnostics [server file]
   "fill up the file.diagnostics table with linting things"
   (let [lints server.configuration.lints
         diagnostics file.diagnostics]
@@ -252,4 +252,4 @@ the `file.diagnostics` field, filling it with diagnostics."
     ;; (if lints.unnecessary-unary-op))
     ;;   (unnecessary-values file)))
 
-{: check}
+{: add-lint-diagnostics}

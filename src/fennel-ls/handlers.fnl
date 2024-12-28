@@ -264,12 +264,12 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
   (local file (files.get-by-uri server uri))
   (files.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))
-  (lint.check server file)
+  (lint.add-lint-diagnostics server file)
   (send (message.diagnostics file)))
 
 (λ notifications.textDocument/didOpen [server send {:textDocument {: text : uri}}]
   (local file (files.set-uri-contents server uri text))
-  (lint.check server file)
+  (lint.add-lint-diagnostics server file)
   (send (message.diagnostics file))
   (set file.open? true))
 

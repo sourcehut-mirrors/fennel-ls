@@ -18,7 +18,7 @@
     (var should-err? false)
     (each [_ filename (ipairs filenames)]
       (let [file (files.get-by-uri server (.. "file://" filename))]
-        (lint.check server file)
+        (lint.add-lint-diagnostics server file)
         (each [_ {: message :range {: start}} (ipairs file.diagnostics)]
           (print (: "%s:%s:%s: %s" :format filename
                     ;; LSP line numbers are zero-indexed, but Emacs and Vim both use
