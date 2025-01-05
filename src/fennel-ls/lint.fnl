@@ -89,20 +89,20 @@ the `file.diagnostics` field, filling it with diagnostics."
            (could-be-rewritten-as-sym? (. call 3))
            (. file.lexical call))
       (diagnostic {:range (message.ast->range server file call)
-                   :message (string.format "unnecessary %s" head)
+                   :message (.. "unnecessary " (tostring head))
                    :severity message.severity.WARN
                    :code 309
                    :codeDescription "unnecessary-tset"}
                   #[{:range (message.ast->range server file call)
                      :newText (string.format "(set %s.%s %s)"
-                                             (. call 2) (. call 3)
+                                             (tostring (. call 2)) (. call 3)
                                              (view (. call 4)))}])))
 
 (λ unnecessary-do-values [server file head call]
   (if (and (or (sym? head :do) (sym? head :values))
            (= nil (. call 3)) (. file.lexical call))
       (diagnostic {:range (message.ast->range server file call)
-                   :message (string.format "unnecessary %s" head)
+                   :message (.. "unnecessary " (tostring head))
                    :severity message.severity.WARN
                    :code 310
                    :codeDescription "unnecessary-do-values"}
