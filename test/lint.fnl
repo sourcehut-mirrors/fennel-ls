@@ -55,6 +55,8 @@
          [{:code 301
            :range {:start {:character 9  :line 0}
                    :end   {:character 10 :line 0}}}])
+  (check "(case [1 1 2 3 5 8] [a a] (print :first-two-equal))" [{:code 301}])
+  (assert-ok "(case [1 1 2 3 5 8] [a_ a_] (print :first-two-equal))")
   ;; setting a var without reading
   (check "(var x 1) (set x 2) (set [x] [3])"
           [{:code 301
@@ -248,7 +250,7 @@
 ;; duplicate keys in kv table
 ;; (tset <sym> <any>) --> (set (. <sym> <any>)) (might be wanted for compat?)
 ;; {&as x} and [&as x] pattern with no other matches
-;; Unused variables / fields (maybe difficult)
+;; Unused fields (maybe difficult)
 ;; discarding results to various calls, such as unpack, values, etc
 ;; `pairs` or `ipairs` call in a (for) binding table
 ;; steal as many lints as possible from cargo

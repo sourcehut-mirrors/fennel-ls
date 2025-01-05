@@ -13,6 +13,9 @@ $ make
 ```
 will create a bleeding-edge latest git `fennel-ls` binary for you.
 
+Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
+a systemwide install.
+
 #### Arch Linux
 I think `fennel-ls` and `fennel-ls-git` may be in the AUR.
 
@@ -128,10 +131,20 @@ Goto Reference  | [X]    | [ ]    | [ ]             | [ ]          | [ ]      | 
 
 Fennel-ls can report all fennel compiler errors, plus a few custom lints.
 
+Unused locals will be flagged unless they begin or end with an underscore. If
+you have a local that is unused in your code but necessary for pattern matching
+purposes, it's recommended to put an underscore at the end. For example:
+
+```fennel
+(case [1 1 2 3 5 8]
+  [a_ a_] (print "First two elements are equal"))
+```
+
 ## CLI Usage
 ```sh
 fennel-ls --lint my-file.fnl f2.fnl # prints diagnostics for the files given
 ```
 
-This will analyze the given files, and print out all compiler errors and lints, without launching a server.
+This will analyze the given files, and print out all compiler errors and lints,
+without launching a server. A successful exit code indicates no problems found.
 

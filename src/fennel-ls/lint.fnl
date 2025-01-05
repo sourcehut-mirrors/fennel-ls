@@ -32,6 +32,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 (λ unused-definition [server file symbol definition]
   "local variable that is defined but not used"
   (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
+               (= "_" (: (tostring symbol) :sub -1 -1))
                (accumulate [reference false
                             _ ref (ipairs definition.referenced-by)
                             &until reference]
@@ -249,11 +250,5 @@ the `file.diagnostics` field, filling it with diagnostics."
 
     (if lints.unknown-module-field
       (unknown-module-field server file))))
-    ;; (if lints.unnecessary-values
-    ;;   (unnecessary-values file)))
-    ;; (if lints.unnecessary-do)
-    ;;   (unnecessary-do file)))
-    ;; (if lints.unnecessary-unary-op))
-    ;;   (unnecessary-values file)))
 
 {: add-lint-diagnostics}
