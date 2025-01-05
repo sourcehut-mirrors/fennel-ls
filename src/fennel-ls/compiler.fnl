@@ -390,14 +390,20 @@ identifiers are declared / referenced in which places."
       (parsed ast lexical)
 
       ;; This is bad; we have to mutate fennel.macro-path to use fennel's native macro loader
-      (let [old-macro-path fennel.macro-path]
+      (let [old-macro-path fennel.macro-path
+            print* _G.print]
+
         (when ?root-uri
           (set fennel.macro-path
                (searcher.add-workspaces-to-path macro-path [?root-uri])))
 
+        ;; don't allow macros to print during compilation
+        (set _G.print #nil)
         ;; compile
         (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
-          (filter-errors :compiler (xpcall #(fennel.compile form opts) fennel.traceback)))
+          (filter-errors :compiler (xpcall #(fennel.compile form opts)
+                                           fennel.traceback)))
+        (set _G.print print*)
 
         (when ?root-uri
           (set fennel.macro-path old-macro-path)))
