@@ -26,7 +26,7 @@ the `file.diagnostics` field, filling it with diagnostics."
        item))
 
 (fn could-be-rewritten-as-sym? [str]
-  (and (= :string (type str))
+  (and (= :string (type str)) (not (str:find "^%d"))
        (not (str:find "[^!$%*+/0-9<=>?A-Z\\^_a-z|\128-\255-]"))))
 
 (λ unused-definition [server file symbol definition]

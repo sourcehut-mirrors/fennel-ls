@@ -73,8 +73,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
          (. document.fields (. stack (length stack))))
     (search-document server (. document.fields (table.remove stack)) stack opts)
     (not document.fields)
-    (do
-      (set opts.searched-through-require-indeterminate true))))
+    (set opts.searched-through-require-indeterminate true)))
 
 (λ search-val [server file ?ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"

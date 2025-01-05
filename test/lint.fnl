@@ -179,7 +179,7 @@
                    :end {:character 32 :line 0}}}])
   ;; Lint only triggers on keys that can be written as a sym
   (check "(local tbl {}) (tset tbl \"hello-world\" 249)" [{:code 309}])
-  (check "(local tbl {}) (tset tbl \"01234567\" 249)" [{:code 309}])
+  (assert-ok "(local tbl {}) (tset tbl \"01234567\" 249)")
   (assert-ok "(local tbl {}) (tset tbl \"hello world\" 1)")
   (assert-ok "(local tbl {}) (tset tbl \"0123.4567\" 1)")
   nil)
