@@ -3,3 +3,5 @@
 /lua*.html
 /build
 /src/fennel-ls/docs/generated/love2d.fnl
+/scratch.fnl
+/scratch-macros.fnl

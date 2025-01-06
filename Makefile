@@ -72,8 +72,7 @@ ci:
 	rm -f old-fennel
 
 	# test that luarocks builds and runs
-	DEBIAN_FRONTEND=noninteractive sudo apt install -y luarocks
-	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local 
+	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local
 	eval "$$(luarocks path)"; \
 	fennel-ls --lint
 
