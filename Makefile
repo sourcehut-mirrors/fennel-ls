@@ -6,18 +6,17 @@ EXE=fennel-ls
 
 SRC:=$(shell find src -name "*.fnl")
 
-BUILD_DIR=./build
-
 DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 
-FENNELFLAGS=--add-package-path "src/?.lua;deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
+FENNELFLAGS=--add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
 ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
 
-.PHONY: all clean test repl install docs install-deps ci selflint count
+.PHONY: all clean test repl install docs install-deps ci selflint \
+	rm-docs rm-deps count
 
 all: $(EXE)
 

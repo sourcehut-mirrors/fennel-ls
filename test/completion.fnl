@@ -199,7 +199,7 @@
      {:label #(= nil $)}])
 
   (check "(let [x (fn x [a b c]
-                    \"\"\"docstring\"\"\"
+                    \"docstring\"
                      nil)
                 t {: x}]
             (t."
