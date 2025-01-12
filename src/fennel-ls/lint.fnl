@@ -2,7 +2,8 @@
 Provides the function (check server file), which goes through a file and mutates
 the `file.diagnostics` field, filling it with diagnostics."
 
-(local {: sym? : list? : table? : view &as fennel} (require :fennel))
+(local {: sym? : list? : table? : view
+        : sym : list &as fennel} (require :fennel))
 (local {:scopes {:global {: specials}}} (require :fennel.compiler))
 (local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
@@ -193,6 +194,21 @@ the `file.diagnostics` field, filling it with diagnostics."
         #[{:range (message.ast->range server file call)
            :newText (view identity)}]))))
 
+(λ no-decreasing-comparison [server file op call]
+  (if (or (sym? op :>) (sym? op :>=))
+      (diagnostic
+       {:range  (message.ast->range server file call)
+        :message "Use increasing operator instead of decreasing"
+        :severity message.severity.WARN
+        :code 312
+        :codeDescription "no-decreasing-comparison"}
+       #[{:range (message.ast->range server file call)
+          :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
+                         reversed (fcollect [i (length call) 2 -1
+                                             &into (list (sym new))]
+                                    (. call i))]
+                     (view reversed))}])))
+
 (λ match-reference? [ast references]
   (if (sym? ast) (?. references ast :target)
       (or (table? ast) (list? ast))
@@ -246,12 +262,20 @@ the `file.diagnostics` field, filling it with diagnostics."
     ;; all non-macro calls. This only covers specials and function calls.
     (each [[head &as call] (pairs file.calls)]
       (when head
-        (when lints.bad-unpack           (table.insert diagnostics (bad-unpack           server file head call)))
-        (when lints.unnecessary-method   (table.insert diagnostics (unnecessary-method   server file head call)))
-        (when lints.unnecessary-do       (table.insert diagnostics (unnecessary-do-values server file head call)))
-        (when lints.unnecessary-tset     (table.insert diagnostics (unnecessary-tset     server file head call)))
-        (when lints.redundant-do         (table.insert diagnostics (redundant-do         server file head call)))
-        (when lints.op-with-no-arguments (table.insert diagnostics (op-with-no-arguments server file head call)))
+        (when lints.bad-unpack
+          (table.insert diagnostics (bad-unpack server file head call)))
+        (when lints.unnecessary-method
+          (table.insert diagnostics (unnecessary-method server file head call)))
+        (when lints.unnecessary-do
+          (table.insert diagnostics (unnecessary-do-values server file head call)))
+        (when lints.unnecessary-tset
+          (table.insert diagnostics (unnecessary-tset server file head call)))
+        (when lints.redundant-do
+          (table.insert diagnostics (redundant-do server file head call)))
+        (when lints.op-with-no-arguments
+          (table.insert diagnostics (op-with-no-arguments server file head call)))
+        (when lints.no-decreasing-comparison
+          (table.insert diagnostics (no-decreasing-comparison server file head call)))
 
         ;; argument lints
         ;; every argument to a special or a function call

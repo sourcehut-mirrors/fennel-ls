@@ -30,7 +30,8 @@ There are no global settings. They're all stored in the `server` object.
            :bad-unpack (option true)
            :var-never-set (option true)
            :op-with-no-arguments (option true)
-           :multival-in-middle-of-call (option true)}
+           :multival-in-middle-of-call (option true)
+           :no-decreasing-comparison (option false)}
    :libraries {:love2d (option false) :tic-80 (option false)}
    :extra-globals (option "")})
 
