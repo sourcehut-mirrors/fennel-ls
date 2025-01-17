@@ -42,7 +42,7 @@ This code tells eglot to connect fennel-ls to your fennel-mode buffers.
 prerequisites: You have installed the [fennel-ls binary](#fennel-ls-language-server-binary).
 If you're using neovim+lspconfig, use this snippet:
 ```lua
-require("lspconfig").fennel_ls.setup()
+require("lspconfig").fennel_ls.setup({})
 ```
 
 If you're also using mason and you want to install fennel-ls that way, you can
