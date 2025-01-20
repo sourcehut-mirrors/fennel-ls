@@ -42,6 +42,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (local utils (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
+(local {: view} (require :fennel))
 
 (local get-ast-info utils.get-ast-info)
 
@@ -146,11 +147,19 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (where (or :fn :lambda :λ))
         (if (and (= multival 1) (= 0 (length stack)))
           {:definition call : file}) ;; BASE CASE !!
-        ;; TODO expand-macros
 
         _
-        (if (and (= multival 1) (= 0 (length stack)))
-          {:definition call : file}))))) ;; BASE CASE!!
+        (case (. file.macro-calls call)
+          macroexpanded (search-multival server file macroexpanded stack multival opts)
+          _ (case (search-val server file (. call 1) [] {})
+              (where {: definition : file}
+                     (list? definition)
+                     (let [head (. definition 1)]
+                       (or (sym? head :fn)
+                           (sym? head :lambda)
+                           (sym? head :λ))))
+
+              (search-multival server file (. definition (length definition)) stack multival opts)))))))
 
 (set search-multival
   (λ [server file ?ast stack multival opts]

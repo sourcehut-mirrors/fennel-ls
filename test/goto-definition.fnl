@@ -205,22 +205,46 @@
   (check "|#$...")
   nil)
 
+(fn test-thru-function-return []
+  (check {:button.fnl "(fn new []
+                          {:options =={}==})
+                       {: new}"
+          :main.fnl "(let [button (require :button)
+                           b (button.new)]
+                       b.options|"})
+  (check "(fn foo [] (values {} =={}== {}))
+          (local (x y| z) (foo))")
+  (check "(fn foo [] [{} =={}== {}])
+          (local [x y| z] (foo))")
+  nil)
+(fn test-macro []
+  "Macros are mostly unsupported for now.
+  Fennel-ls can understand the expansion of macros, because it mostly operates
+  on the post-expansion version of the AST."
+  ;; Can see the expansion of a macro
+  (check "(macro hello [x y z] y)
+          (local x| (hello {} =={}== {}))")
+  ;; ;; Can see the macro itself
+  ;; (check "==(macro hello [x y z] y)==
+  ;;         (local x (hello| {} {} {})")
+
+  nil)
+
 ; ;; (it "can go to a destructured function argument")
-; ;; (it "can go through more than one file")
 ; ;; (it "will give up instead of freezing on recursive requires")
 ; ;; (it "will give up instead of freezing on recursive tables constructed with (set)")
-; ;; (it "finds the definition of in-file macros")
 ; ;; (it "can follow import-macros (destructuring)")
 ; ;; (it "can follow import-macros (namespaced)")
 ; ;; (it "can go to the definition in a lua file")
 ; ;; (it "finds (set a.b) definitions")
 ; ;; (it "finds (tset a :b) definitions")
 ; ;; (it "finds (setmetatable a {:__index {:b def}) definitions")
-; ;; (it "finds definitions into a function (fn foo [] (local x 10) {: x}) (let [result (foo)] (print result.x)) finds result.x")
 ; ;; (it "finds definitions through a function (fn foo [{: y}] {:x y}) (let [result (foo {:y {}})] (print result.x)) finds result.x")
 ; ;; (it "finds through setmetatable with an :__index function")
 
 {: test-local
  : test-fields
  : test-thru-require
+ : test-thru-function-return
+ : test-macro
  : test-no-crash}

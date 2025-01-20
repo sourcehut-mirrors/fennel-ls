@@ -67,7 +67,8 @@ identifiers are declared / referenced in which places."
         scopes        {} ; ast -> scope
         calls         {} ; all calls in the macro-expanded code -> true
         lexical       {} ; all lists, tables, and symbols in the original source
-        require-calls {}] ; the keys are all the calls that start with `require
+        require-calls {} ; the keys are all the calls that start with `require
+        macro-calls   {}]; ast -> expanded
 
     (local defer [])
 
@@ -235,8 +236,9 @@ identifiers are declared / referenced in which places."
           (let [len (length ast)]
             (table.insert defer #(tset ast (+ len 1) nil))))))
 
-    (fn macroexpand [ast _transformed scope]
+    (fn macroexpand [ast transformed scope]
       "every list that is a call to a macro"
+      (tset macro-calls ast transformed)
       (let [macro-id (. ast 1)
             macro-fn (accumulate [t scope.macros
                                   _ part (ipairs (utils.multi-sym-split macro-id))]
@@ -423,6 +425,7 @@ identifiers are declared / referenced in which places."
       (set file.references references)
       (set file.require-calls require-calls)
       (set file.allowed-globals allowed-globals)
-      (set file.macro-refs macro-refs))))
+      (set file.macro-refs macro-refs)
+      (set file.macro-calls macro-calls))))
 
 {: compile}
