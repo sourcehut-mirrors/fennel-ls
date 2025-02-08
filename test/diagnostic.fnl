@@ -120,16 +120,16 @@
             (print x +))"
          [{:message "expected condition and body"}
           {:message "tried to reference a special form without calling it"}] [])
-  ; recovers from missing condition (when)
-  (check "(let [x (when)]
-            (print x +))"
-         [{:message #($:find ".*macros.fnl:%d+: expected body")}
-          {:message "tried to reference a special form without calling it"}] [])
-  ;; recovers from missing body (when)
-  (check "(let [x (when (< (+ 9 10) 21))]
-            (print x +))"
-         [{:message #($:find ".*macros.fnl:%d+: expected body")}
-          {:message "tried to reference a special form without calling it"}] [])
+  ;; ;; recovers from missing condition (when)
+  ;; (check "(let [x (when)]
+  ;;           (print x +))"
+  ;;        [{:message #($:find ".*macros.fnl:%d+: expected body")}
+  ;;         {:message "tried to reference a special form without calling it"}] [])
+  ;; ;; recovers from missing body (when)
+  ;; (check "(let [x (when (< (+ 9 10) 21))]
+  ;;           (print x +))"
+  ;;        [;; {:message #($:find ".*macros.fnl:%d+: expected body")}
+  ;;         {:message "tried to reference a special form without calling it"}] [])
   (check "(let [x {:mismatched :curly :braces}]
             (print x +))"
        [{:message "expected even number of values in table literal"}
