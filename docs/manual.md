@@ -9,6 +9,7 @@ On Linux or Mac OS,
 ```sh
 $ git clone https://git.sr.ht/~xerool/fennel-ls
 $ cd fennel-ls
+$ make docs-love2d # if you plan to use love2d
 $ make
 ```
 will create a bleeding-edge latest git `fennel-ls` binary for you.
@@ -16,16 +17,27 @@ will create a bleeding-edge latest git `fennel-ls` binary for you.
 Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
 a systemwide install.
 
+The default build will not include documentation for [LÖVE](https://love2d.org)
+due to the unfortunate licensing of their documentation. You can opt-in to
+build with these docs anyway with `make docs-love2d` but the resulting build
+may have legal complications when distributed.
+
 #### Arch Linux
 I think `fennel-ls` and `fennel-ls-git` may be in the AUR.
+
+#### NixOS
+If you are using NixOS, you can use the included `/flake.nix` or `/default.nix`.
+
+#### Debian/Ubuntu
+
+Unofficial `.deb` packages are available at
+[https://apt.technomancy.us](https://apt.technomancy.us).
 
 #### Luarocks
 Alternatively, `fennel-ls` is available in LuaRocks. Luarocks is kind of a pain to support though.
 ```sh
 luarocks install fennel-ls
 ```
-#### NixOS
-If you are using NixOS, you can use the included `/flake.nix` or `/default.nix`.
 
 ### Emacs
 prerequisites: You have installed the [fennel-ls binary](#fennel-ls-language-server-binary).
@@ -91,7 +103,7 @@ The default `flsproject.fnl` settings are:
 {:fennel-path "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl"
  :macro-path "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
  :lua-version "lua54"
- :libraries {:love2d false
+ :libraries {:love2d false ; requires building with love2d support
              :tic-80 false}
  :extra-globals ""
  :lints {:unused-definition true

@@ -31,6 +31,9 @@ repl:
 docs:
 	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl $(GET_DOCS_FLAGS)
 
+docs-love2d:
+	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl --generate-love2d
+
 rm-docs:
 	rm -rf src/fennel-ls/docs/
 

@@ -23,6 +23,7 @@
                    (convert (with-open [file (curl-cached url)]
                               (file:read :*a)))))
 
+;; a lot of this should maybe be moved to the makefile?
 (fn main []
   (sh :mkdir :-p "build/")
   (sh :mkdir :-p "src/fennel-ls/docs/generated/")
