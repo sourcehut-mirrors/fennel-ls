@@ -12,7 +12,9 @@ $ cd fennel-ls
 $ make docs-love2d # if you plan to use love2d
 $ make
 ```
-will create a bleeding-edge latest git `fennel-ls` binary for you.
+
+will create a `fennel-ls` executable for you using your default system `lua`;
+use `make LUA=luajit` etc to use a different Lua version.
 
 Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
 a systemwide install.
