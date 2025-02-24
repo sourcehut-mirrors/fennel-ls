@@ -15,8 +15,8 @@ REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
 ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
 
-.PHONY: all clean test repl install docs install-deps ci selflint deps \
-	rm-docs rm-deps count
+.PHONY: all clean test repl install docs docs-love2d install-deps ci selflint \
+	deps rm-docs rm-deps count testall check-deps check-luarocks
 
 all: $(EXE)
 
@@ -57,14 +57,14 @@ install: $(EXE)
 test: $(EXE)
 	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
-ci:
+testall:
 	$(MAKE) test LUA=lua5.1
 	$(MAKE) test LUA=lua5.2
 	$(MAKE) test LUA=lua5.3
 	$(MAKE) test LUA=lua5.4
 	$(MAKE) test LUA=luajit
 
-	# Make sure the dependency files are correct
+check-deps:
 	rm -rf old-deps old-fennel
 	mv deps old-deps
 	mv fennel old-fennel
@@ -73,10 +73,12 @@ ci:
 	diff -r fennel old-fennel
 	rm -rf old-deps old-fennel
 
-	# test that luarocks builds and runs
+check-luarocks:
 	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local
 	eval "$$(luarocks path)"; \
 	fennel-ls --lint
+
+ci: testall check-deps check-luarocks
 
 clean:
 	rm -fr $(EXE) old-deps old-fennel build/
