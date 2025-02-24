@@ -133,13 +133,15 @@
         description (html-to-markdown description)
         name (signature:match "[^() ]+")
         key (name:match "[^.:]+$")
-        ?module (and (name:find "[.:]") (name:match "^[^.:]+"))]
+        ?module (and (name:find "[.:]") (name:match "^[^.:]+"))
+        kind (if (signature:find "[()]") :Function :Variable)]
 
     (values ?module
             key
             {:binding (signature:match "[^() ]+")
              :metadata {:fnl/docstring description
-                        :fnl/arglist signature-list}})))
+                        :fnl/arglist signature-list
+                        :fls/itemKind kind}})))
 
 (fn parse-h2-section [html]
   "parse a section that starts with an h2 tag. These are the main modules."
@@ -169,7 +171,8 @@
     (values module-name
             {:binding module-name
              :fields {}
-             :metadata {:fnl/docstring description}})))
+             :metadata {:fnl/docstring description
+                        :fls/itemKind :Module}})))
 
 (fn parse [input]
  (let [version (input:match "Lua .- Reference Manual")

@@ -109,7 +109,7 @@ fntype is one of fn or λ or lambda"
       {:fntype _} {: label
                    :kind (if (label:find ":") kinds.Method kinds.Function)}
       _ {: label
-         :kind kinds.Variable})
+         :kind (. kinds (?. result :metadata :fls/itemKind))})
     (tset :documentation (hover-format result))))
 
 {: hover-format

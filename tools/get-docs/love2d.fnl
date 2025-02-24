@@ -8,13 +8,14 @@
 ;
 ; UTILS
 ; -----
-(fn build-lsp-value [name ?args ?docstring ?fields]
+(fn build-lsp-value [name ?args ?docstring ?fields ?kind]
   "Takes ... and returns a table to be used with the LSP."
   (let [lsp-value {:binding name}
         ?metadata (or ?args ?docstring)]
     (when ?metadata (set lsp-value.metadata {}))
     (when ?args (set lsp-value.metadata.fnl/arglist ?args))
     (when ?docstring (set lsp-value.metadata.fnl/docstring ?docstring))
+    (when ?kind (set lsp-value.metadata.fls/itemKind ?kind))
     (when ?fields (set lsp-value.fields ?fields))
     lsp-value))
 
@@ -69,7 +70,7 @@
           ?args (?. first-variant :args)
           ?returns (or (?. first-variant :returns) "")
           docstring (.. description ?returns)]
-      (values name (build-lsp-value binding ?args docstring)))))
+      (values name (build-lsp-value binding ?args docstring nil :Function)))))
 
 (fn module-list->lsp-table [modules ?namespace]
   (collect [_i module (ipairs modules)]
@@ -84,7 +85,7 @@
                             {})
           module-keys (if ?modules (module-list->lsp-table ?modules binding) {})
           fields (merge function-keys module-keys)]
-      (values name (build-lsp-value binding nil ?docstring fields)))))
+      (values name (build-lsp-value binding nil ?docstring fields :Module)))))
 
 (fn love-api->lsp-table [love-api]
   (let [root-module {:description (.. "LÖVE is a framework for making 2D "

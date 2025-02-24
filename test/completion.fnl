@@ -71,8 +71,7 @@
       (expected completions))))
 
 (fn test-global []
-  ;; TODO shouldn't this kind be Function?
-  (check "(" [{:label :setmetatable :kind kinds.Variable}] [])
+  (check "(" [{:label :setmetatable :kind kinds.Function}] [])
   (check "(" [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next] [:this-is-not-a-global])
   (check "#nil\n(" [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next] [])
   (check "(if ge" [:getmetatable] [])
