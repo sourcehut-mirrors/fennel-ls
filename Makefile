@@ -15,7 +15,7 @@ REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
 ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
 
-.PHONY: all clean test repl install docs install-deps ci selflint \
+.PHONY: all clean test repl install docs install-deps ci selflint deps \
 	rm-docs rm-deps count
 
 all: $(EXE)
@@ -65,13 +65,13 @@ ci:
 	$(MAKE) test LUA=luajit
 
 	# Make sure the dependency files are correct
+	rm -rf old-deps old-fennel
 	mv deps old-deps
 	mv fennel old-fennel
 	$(MAKE) FENNEL=./old-fennel deps
 	diff -r deps old-deps
 	diff -r fennel old-fennel
-	rm -rf old-deps
-	rm -f old-fennel
+	rm -rf old-deps old-fennel
 
 	# test that luarocks builds and runs
 	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local
@@ -79,4 +79,4 @@ ci:
 	fennel-ls --lint
 
 clean:
-	rm -f $(EXE)
+	rm -fr $(EXE) old-deps old-fennel build/
