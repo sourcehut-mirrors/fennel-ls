@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## UNRELEASED / ???
 
 ### Features
 * Settings file: `flsproject.fnl`. Settings are now editor agnostic.
@@ -10,7 +10,7 @@
 * (set (. x y) z) wasn't being analyzed properly.
 * (local {: unknown-field} (require :module)) lint warns about the unknown field when accessed via destructuring.
 
-## 0.1.3
+## 0.1.3 / 2024-06-27
 
 ### Features
 * Updated to fennel 1.5.0
@@ -36,7 +36,7 @@
 * Building is more reproducible now! `tools/get-deps.fnl` will reproducibly get all the deps, instead of you needing to trust me
 * faith updated to 0.2.0
 
-## 0.1.2
+## 0.1.2 / 2024-03-03
 
 ### Features
 * Completions and docs for `coroutine`, `debug`, `io`, `math`, `os`, `string`, `table`, `utf8` and their fields.
@@ -56,7 +56,7 @@
 * Tests abstract out the filesystem
 * Tests use the "|" character to mark the cursor, instead of manually specifying coordinates
 
-## 0.1.1
+## 0.1.1 / 2024-02-19
 
 ### Features
 * Add [Nix(OS)](https://nixos.org) support
@@ -70,7 +70,7 @@
 * Lots of work to improve multival tracking
 * --check gives a nonzero exit code when lints are found
 
-## 0.1.0
+## 0.1.0 / 2023-12-06
 
 ### Initial Features
 * Completion: works across files, and works with table fields
