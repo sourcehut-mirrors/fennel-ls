@@ -42,7 +42,6 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (local utils (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
-(local {: view} (require :fennel))
 
 (local get-ast-info utils.get-ast-info)
 

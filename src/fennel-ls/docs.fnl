@@ -13,10 +13,10 @@
     name {:binding name :metadata (. METADATA value)}))
 
 (local lua-versions
-  {:lua51 (require :fennel-ls.docs.generated.lua51)
-   :lua52 (require :fennel-ls.docs.generated.lua52)
-   :lua53 (require :fennel-ls.docs.generated.lua53)
-   :lua54 (require :fennel-ls.docs.generated.lua54)})
+       {:lua51 (require :fennel-ls.docs.generated.lua51)
+        :lua52 (require :fennel-ls.docs.generated.lua52)
+        :lua53 (require :fennel-ls.docs.generated.lua53)
+        :lua54 (require :fennel-ls.docs.generated.lua54)})
 
 (fn get-lua-version [version]
   (when (not (. lua-versions version))
@@ -25,6 +25,10 @@
                (fennel.view (doto (icollect [key (pairs lua-versions)] key)
                               table.sort)))))
   (. lua-versions version))
+
+;; work around a mistake in Lua's own manual
+(set lua-versions.lua51.package.fields.config
+     lua-versions.lua52.package.fields.config)
 
 (set lua-versions.intersection
      (collect [k v (pairs lua-versions.lua51)]

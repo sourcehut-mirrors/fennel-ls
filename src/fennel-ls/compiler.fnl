@@ -25,7 +25,7 @@ identifiers are declared / referenced in which places."
 
 (λ ast->macro-ast [ast]
   [(fennel.list (sym :eval-compiler)
-                ((or table.unpack _G.unpack) ast))])
+                ((or (. table :unpack) _G.unpack) ast))])
 
 (λ multisym? [t]
   ;; check if t is a symbol with multiple parts, eg. foo.bar.baz
