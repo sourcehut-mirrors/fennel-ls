@@ -20,8 +20,8 @@
                       (= e.range.end.character   d.range.end.character))))
       i)))
 
-(fn check [file-contents expected unexpected]
-  (let [{: diagnostics} (create-client file-contents)]
+(fn check [file-contents expected unexpected ?opts]
+  (let [{: diagnostics} (create-client file-contents nil ?opts)]
     (each [_ e (ipairs unexpected)]
       (let [i (find diagnostics e)]
         (faith.= nil i (.. "Lint matching " (view e) "\n"
@@ -120,12 +120,12 @@
             (print x +))"
          [{:message "expected condition and body"}
           {:message "tried to reference a special form without calling it"}] [])
-  ;; ;; recovers from missing condition (when)
+  ;; TODO: recovers from missing condition (when)
   ;; (check "(let [x (when)]
   ;;           (print x +))"
   ;;        [{:message #($:find ".*macros.fnl:%d+: expected body")}
   ;;         {:message "tried to reference a special form without calling it"}] [])
-  ;; ;; recovers from missing body (when)
+  ;; TODO: recovers from missing body (when)
   ;; (check "(let [x (when (< (+ 9 10) 21))]
   ;;           (print x +))"
   ;;        [;; {:message #($:find ".*macros.fnl:%d+: expected body")}
@@ -136,7 +136,21 @@
         {:message "tried to reference a special form without calling it"}] [])
   nil)
 
-{: test-compile-error
+(fn test-lua-versions []
+  (check "(local t (unpack []))"
+         [] [{:message "unknown identifier: unpack"}]
+         {:lua-version "lua51"})
+  (check "(local t (unpack []))"
+         [{:message "unknown identifier: unpack"}] []
+         {:lua-version "lua52"})
+  ;; intersection should have only the things present in every version
+  (check "(print (unpack [_VERSION]))"
+         [{:message "unknown identifier: unpack"}]
+         [{:message "unknown identifier: _VERSION"}]
+         {:lua-version "intersection"}))
+
+{: test-lua-versions
+ : test-compile-error
  : test-parse-error
  : test-macro-error
  : test-multiple-errors}

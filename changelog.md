@@ -4,6 +4,7 @@
 
 ### Features
 * Settings file: `flsproject.fnl`. Settings are now editor agnostic.
+* Support `:intersection` as a Lua version; only includes globals present in every Lua.
 
 ### Bug Fixes
 * (set (. x y) z) wasn't being analyzed properly.

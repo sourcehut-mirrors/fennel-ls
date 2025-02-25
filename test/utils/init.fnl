@@ -41,7 +41,7 @@
     (set result.text text)
     result))
 
-(fn create-client [file-contents ?opts]
+(fn create-client [file-contents ?opts ?config]
   ;; TODO big function, split up
   (let [opts (or ?opts {})
         (provide-root-uri file-contents) (if (= (type file-contents) :table)
@@ -81,6 +81,8 @@
                                  :jsonrpc "2.0"
                                  :method "initialize"
                                  : params})
+          _     (each [k v (pairs (or ?config []))]
+                  (tset server.configuration k v))
           [{:params {: diagnostics}}] (client:open-file! uri text)]
         {: client
          : server

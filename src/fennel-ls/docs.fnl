@@ -22,8 +22,13 @@
   (when (not (. lua-versions version))
     (error (.. "fennel-ls doesn't know about lua version " version "\n"
                "The allowed versions are: "
-               (fennel.view (doto (icollect [key (pairs lua-versions)] key) table.sort)))))
+               (fennel.view (doto (icollect [key (pairs lua-versions)] key)
+                              table.sort)))))
   (. lua-versions version))
+
+(set lua-versions.intersection
+     (collect [k v (pairs lua-versions.lua51)]
+       (if (. lua-versions.lua54 k) (values k v))))
 
 (local libraries
   {:tic-80 (require :fennel-ls.docs.generated.tic80)})
