@@ -32,7 +32,7 @@ There are no global settings. They're all stored in the `server` object.
            :op-with-no-arguments (option true)
            :multival-in-middle-of-call (option true)
            :no-decreasing-comparison (option false)}
-   :libraries {:love2d (option false) :tic-80 (option false)}
+   :libraries (option {})
    :extra-globals (option "")})
 
 (fn make-configuration-from-template [default ?user ?parent]

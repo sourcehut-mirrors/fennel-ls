@@ -4,6 +4,11 @@
                           :macros MACROS}}}
   (require :fennel.compiler))
 
+(local docset-ext ".fls")
+(local data-dir (.. (or (os.getenv "XDG_DATA_HOME")
+                      (.. (or (os.getenv "HOME") "") "/.local/share/"))
+                  "/fennel-ls/docsets/"))
+
 (local specials
   (collect [name value (pairs SPECIALS)]
     name {:binding name :metadata (. METADATA value)}))
@@ -40,19 +45,21 @@
      (collect [k v (pairs lua-versions.lua51)]
        (if (. lua-versions.lua54 k) (values k v))))
 
-(local libraries
-  {:tic-80 (require :fennel-ls.docs.generated.tic80)})
+(local libraries {})
 
-;; can't just pcall require because we want to trigger require-as-include
-(case (pcall #(require :fennel-ls.docs.generated.love2d))
-  (true love2d) (set libraries.love2d love2d))
+(λ load-library [name]
+  (let [path (.. data-dir name docset-ext)]
+    (case (io.open path :r)
+      (nil _) (error (string.format "Could not find docset at %s" path))
+      f (let [docs (fennel.load-code (f:read :a) {})]
+          (f:close)
+          (docs)))))
 
-(fn get-library [library]
-  (when (not (. libraries library))
-    (error (.. "fennel-ls doesn't know about library " library "\n"
-               "The builtin libraries are: "
-               (fennel.view (doto (icollect [key (pairs libraries)] key) table.sort)))))
-  (. libraries library))
+(λ get-library [name]
+   (when (not (. libraries name))
+     (let [docs (load-library name)]
+       (tset libraries name docs)))
+   (. libraries name))
 
 (fn get-all-globals [server]
   (let [result []]
