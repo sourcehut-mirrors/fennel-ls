@@ -13,10 +13,16 @@
     name {:binding name :metadata (. METADATA value)}))
 
 (local lua-versions
-       {:lua51 (require :fennel-ls.docs.generated.lua51)
-        :lua52 (require :fennel-ls.docs.generated.lua52)
-        :lua53 (require :fennel-ls.docs.generated.lua53)
-        :lua54 (require :fennel-ls.docs.generated.lua54)})
+       {:lua5.1 (require :fennel-ls.docs.generated.lua51)
+        :lua5.2 (require :fennel-ls.docs.generated.lua52)
+        :lua5.3 (require :fennel-ls.docs.generated.lua53)
+        :lua5.4 (require :fennel-ls.docs.generated.lua54)})
+
+;; aliases
+(set lua-versions.lua51 (. lua-versions "lua5.1"))
+(set lua-versions.lua52 (. lua-versions "lua5.2"))
+(set lua-versions.lua53 (. lua-versions "lua5.3"))
+(set lua-versions.lua54 (. lua-versions "lua5.4"))
 
 (fn get-lua-version [version]
   (when (not (. lua-versions version))

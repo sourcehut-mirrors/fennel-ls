@@ -139,7 +139,10 @@
 (fn test-lua-versions []
   (check "(local t (unpack []))"
          [] [{:message "unknown identifier: unpack"}]
-         {:lua-version "lua51"})
+         {:lua-version "lua5.1"})
+  (check "(local t (unpack []))"
+         [{:message "unknown identifier: unpack"}] []
+         {:lua-version "lua5.2"})
   (check "(local t (unpack []))"
          [{:message "unknown identifier: unpack"}] []
          {:lua-version "lua52"})

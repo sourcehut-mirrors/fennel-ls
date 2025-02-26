@@ -104,7 +104,7 @@ The default `flsproject.fnl` settings are:
 ```fnl
 {:fennel-path "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl"
  :macro-path "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
- :lua-version "lua54"
+ :lua-version "lua5.4"
  :libraries {:love2d false ; requires building with love2d support
              :tic-80 false}
  :extra-globals ""
