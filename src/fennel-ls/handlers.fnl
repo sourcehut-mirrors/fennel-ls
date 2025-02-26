@@ -113,14 +113,22 @@ Every time the client sends a message, it gets handled by a function in the corr
               :range (message.ast->range server file symbol)}
       (catch _ nil))))
 
+(λ make-completion-item [server file name scope]
+  (case (analyzer.search-name-and-scope server file name scope)
+    def (formatter.completion-item-format name def)
+    _ {:label name}))
+
 ;; All of the helper functions for textDocument/completion are here until I
 ;; finish refactoring them, and then they can find a home in analyzer.fnl
-(λ collect-scope [scope typ callback ?target]
+(λ collect-scope [scope typ server file ?target ?default-kind]
   (let [result (or ?target [])]
     (var scope scope)
     (while scope
-      (icollect [i v (pairs (. scope typ)) &into result]
-        (callback i v))
+      (icollect [name (pairs (. scope typ)) &into result]
+        (let [item (make-completion-item server file name scope)]
+          (when (= nil item.kind)
+            (set item.kind ?default-kind))
+          item))
       (set scope scope.parent))
     result))
 
@@ -130,11 +138,6 @@ Every time the client sends a message, it gets handled by a function in the corr
   :Interface 8 :Module 9 :Property 10 :Unit 11 :Value 12 :Enum 13 :Keyword 14
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
-
-(λ make-completion-item [server file name scope]
-  (case (analyzer.search-name-and-scope server file name scope)
-    def (formatter.completion-item-format name def)
-    _ {:label name}))
 
 (λ scope-completion [server file _byte ?symbol parents]
   (let [scope (or (accumulate [result nil
@@ -146,11 +149,11 @@ Every time the client sends a message, it gets handled by a function in the corr
         result []
         in-call-position? (and (fennel.list? ?parent)
                                (= ?symbol (. ?parent 1)))]
-    (collect-scope scope :manglings #(doto (make-completion-item server file $ scope) (tset :kind kinds.Variable)) result)
+    (collect-scope scope :manglings server file result kinds.Variable)
 
     (when in-call-position?
-      (collect-scope scope :macros #(doto (make-completion-item server file $ scope) (tset :kind kinds.Keyword)) result)
-      (collect-scope scope :specials #(doto (make-completion-item server file $ scope) (tset :kind kinds.Operator)) result))
+      (collect-scope scope :macros server file result kinds.Keyword)
+      (collect-scope scope :specials server file result kinds.Operator))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
       (make-completion-item server file k scope))))
 

@@ -72,8 +72,10 @@
 
 (fn test-global []
   (check "(" [{:label :setmetatable :kind kinds.Function}] [])
-  (check "(" [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next] [:this-is-not-a-global])
-  (check "#nil\n(" [:_G :debug :table :io :getmetatable :setmetatable :_VERSION :ipairs :pairs :next] [])
+  (check "(" [:_G :debug :table :io :getmetatable :setmetatable :_VERSION
+              :ipairs :pairs :next] [:this-is-not-a-global])
+  (check "#nil\n(" [:_G :debug :table :io :getmetatable :setmetatable
+                    :_VERSION :ipairs :pairs :next] [])
   (check "(if ge" [:getmetatable] [])
   nil)
 
@@ -174,8 +176,8 @@
 
 (fn test-docs []
   (check "(fn xyzzy [x y z] \"docstring\" nil)\n(xyzz"
-    [{:label :xyzzy :kind kinds.Variable :documentation true}] ;; TODO shouldn't this be kinds.Function
-    [])
+         [{:label :xyzzy :kind kinds.Function :documentation true}]
+         [])
 
   ;; things that aren't present in lua5.4 but are in other versions, I guess??
   (local things-that-are-allowed-to-have-missing-docs
