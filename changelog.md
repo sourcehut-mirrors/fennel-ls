@@ -3,6 +3,12 @@
 ## UNRELEASED / ???
 
 ### Features
+* Support `:lua-version` settings like `"lua5.4"` rather than requiring `"lua54"`.
+* Support `"intersection"` in `:lua-version` for globals present in every Lua version.
+* Show the kind of thing being completed better.
+* Add lints for unnecessary `tset` and `do`.
+* Add lint for replacing `match` with `case` when possible.
+* Ignore unused locals if they end in underscore.
 * Settings file: `flsproject.fnl`. Settings are now editor agnostic.
 * Support `:intersection` as a Lua version; only includes globals present in every Lua.
 
