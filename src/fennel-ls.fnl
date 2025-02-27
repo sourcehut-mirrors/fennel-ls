@@ -1,6 +1,7 @@
 (require :fennel)
 (local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
+(local files (require :fennel-ls.files))
 
 (fn print-diagnostic [filename message ?range]
   (print (: "%s:%s:%s: %s" :format filename
@@ -9,28 +10,31 @@
             (+ (or (?. ?range :start :line) 0) 1)
             (or (?. ?range :start :character) "?") message)))
 
+(fn initialize [server]
+  (let [params {:id 1
+                :jsonrpc "2.0"
+                :method "initialize"
+                :params {:capabilities {:general {:positionEncodings [:utf-8]}}
+                         :clientInfo {:name "fennel-ls"}
+                         :rootUri "file://."}}]
+    (each [_ response (ipairs (dispatch.handle* server params))]
+      (case response
+        {:method "window/showMessage" :params {: message}}
+        (print "WARN:" message)))))
+
 (λ lint [filenames]
   "non-interactive mode that gets executed from CLI with --lint.
    runs lints on each file, then formats and prints them"
-  (local files (require :fennel-ls.files))
-  (local lint (require :fennel-ls.lint))
-  (let [server (doto {}
-                 (dispatch.handle* {:id 1
-                                    :jsonrpc "2.0"
-                                    :method "initialize"
-                                    :params {:capabilities {:general {:positionEncodings [:utf-8]}}
-                                             :clientInfo {:name "fennel-ls"}
-                                             :rootUri "file://."}}))]
+  (let [lint (require :fennel-ls.lint)
+        server (doto {} initialize)]
     (var should-err? false)
     (each [_ filename (ipairs filenames)]
       (let [file (files.get-by-uri server (.. "file://" filename))]
         (lint.add-lint-diagnostics server file)
         (each [_ {: message : range} (ipairs file.diagnostics)]
-          (print-diagnostic filename message range))
-        (if (. file.diagnostics 1)
-          (set should-err? true))))
-    (if should-err?
-      (os.exit 1))))
+          (set should-err? true)
+          (print-diagnostic filename message range))))
+    (os.exit (not should-err?))))
 
 (λ main-loop [in out]
   (local send (partial json-rpc.write out))
