@@ -119,7 +119,7 @@ The default `flsproject.fnl` settings are:
 
 extra-globals: Space separated list of allowed global identifiers; in addition to a set of predefined lua globals.
 
-version: One of lua51, lua52, lua53, or lua54.
+version: One of lua51, lua52, lua53, lua54, intersection, or union.
 
 libraries: This setting controls which extra documentation fennel-ls can load in to your environment. I've only done this for tic-80 for now.
 

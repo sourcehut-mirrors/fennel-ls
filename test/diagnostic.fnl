@@ -150,7 +150,12 @@
   (check "(print (unpack [_VERSION]))"
          [{:message "unknown identifier: unpack"}]
          [{:message "unknown identifier: _VERSION"}]
-         {:lua-version "intersection"}))
+         {:lua-version "intersection"})
+  (check "(warn (unpack [_VERSION]))"
+         []
+         [{:message "unknown identifier: unpack"}
+          {:message "unknown identifier: warn"}]
+         {:lua-version "union"}))
 
 {: test-lua-versions
  : test-compile-error

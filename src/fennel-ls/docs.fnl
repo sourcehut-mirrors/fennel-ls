@@ -21,7 +21,8 @@
        {:lua5.1 (require :fennel-ls.docs.generated.lua51)
         :lua5.2 (require :fennel-ls.docs.generated.lua52)
         :lua5.3 (require :fennel-ls.docs.generated.lua53)
-        :lua5.4 (require :fennel-ls.docs.generated.lua54)})
+        :lua5.4 (require :fennel-ls.docs.generated.lua54)
+        :union {}})
 
 ;; aliases
 (set lua-versions.lua51 (. lua-versions "lua5.1"))
@@ -40,6 +41,10 @@
 ;; work around a mistake in Lua's own manual
 (set lua-versions.lua51.package.fields.config
      lua-versions.lua52.package.fields.config)
+
+(each [_ version (pairs lua-versions)]
+  (each [k v (pairs version)]
+    (set (. lua-versions.union k) v)))
 
 (set lua-versions.intersection
      (collect [k v (pairs lua-versions.lua51)]

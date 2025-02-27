@@ -7,8 +7,6 @@ There are no global settings. They're all stored in the `server` object.
 
 ;; TODO: Settings to set the warning levels of lints
 ;; Setting to allow all globals
-;; Have an option for "union of all lua versions" lua version.
-;; Have an option for "intersection of all lua versions", ie disallow using (unpack) without saying (or table.unpack _G.unpack).
 
 (local files (require :fennel-ls.files))
 (local utils (require :fennel-ls.utils))
