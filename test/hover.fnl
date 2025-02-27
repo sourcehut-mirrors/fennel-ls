@@ -3,8 +3,8 @@
 (local {: create-client} (require :test.utils))
 (local {: null} (require :dkjson))
 
-(fn check [file-contents ?response-string]
-  (let [{: client : uri : cursor} (create-client file-contents)
+(fn check [file-contents ?response-string ?opts]
+  (let [{: client : uri : cursor} (create-client file-contents nil ?opts)
         [message] (client:hover uri cursor)]
     (if (= (type ?response-string) :string)
       (faith.= ?response-string (?. message :result :contents :value)
@@ -178,6 +178,14 @@ except that it sets a new message handler `msgh`.")
          #($:find "```fnl\n(quote x)\n```" 1 true))
   nil)
 
+(fn test-libraries []
+  (check "#(trac|e :hello)"
+         #($:find "a service function")
+         {:libraries {:tic80 true}})
+  (check "(trans|late \"hello\" :en :zh)"
+         #($:find "convert from one lanugage to another")
+         {:libraries {:external true}}))
+
 {: test-literals
  : test-builtins
  : test-globals
@@ -187,4 +195,5 @@ except that it sets a new message handler `msgh`.")
  : test-crash
  : test-multival
  : test-macro
- : test-reader}
+ : test-reader
+ : test-libraries}

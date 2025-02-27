@@ -13,7 +13,8 @@ BINDIR ?= $(PREFIX)/bin
 FENNELFLAGS=--add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
-ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
+ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | \
+	grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
 
 .PHONY: all clean test repl install docs docs-love2d install-deps ci selflint \
 	deps rm-docs rm-deps count testall check-deps check-luarocks
@@ -22,17 +23,30 @@ all: $(EXE)
 
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
-	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_SETTINGS) --require-as-include --compile src/fennel-ls.fnl >> $@
+	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_SETTINGS) --require-as-include \
+		--compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
-repl:
-	$(FENNEL) $(FENNELFLAGS)
+install: $(EXE)
+	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
+
+## Generating docs
 
 docs:
 	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl $(GET_DOCS_FLAGS)
 
-docs-love2d:
+XDG_DATA_HOME ?= $(HOME)/.local/share
+DOCSET_DIR = $(XDG_DATA_HOME)/fennel-ls/docsets/
+
+$(DOCSET_DIR)/love2d.lua: src/fennel-ls/docs/generated/love2d.fnl
+	mkdir -p $(DOCSET_DIR)
+	$(FENNEL) $(FENNELFLAGS) --compile $< > $@
+
+src/fennel-ls/docs/generated/love2d.fnl:
 	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl --generate-love2d
+
+# has to be separate for licensing reasons
+docs-love2d: $(DOCSET_DIR)/love2d.lua
 
 rm-docs:
 	rm -rf src/fennel-ls/docs/
@@ -49,13 +63,13 @@ selflint:
 count:
 	cloc $(shell find src -name "*.fnl" | grep -v "generated")
 
-install: $(EXE)
-	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
+repl:
+	DEV=y $(FENNEL) $(FENNELFLAGS)
 
 # to run one module: make test FAITH_TEST=test.lint
 # to run one test: make test FAITH_TEST="test.lint test-unset-var"
 test: $(EXE)
-	TESTING=1 $(FENNEL) $(FENNELFLAGS) test/init.fnl
+	DEV=y XDG_DATA_HOME=test/data $(FENNEL) $(FENNELFLAGS) test/init.fnl
 
 testall:
 	$(MAKE) test LUA=lua5.1
