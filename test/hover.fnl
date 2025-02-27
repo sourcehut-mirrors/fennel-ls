@@ -184,7 +184,13 @@ except that it sets a new message handler `msgh`.")
          {:libraries {:tic80 true}})
   (check "(trans|late \"hello\" :en :zh)"
          #($:find "convert from one lanugage to another")
-         {:libraries {:external true}}))
+         {:libraries {:external true}})
+  ;; evil docsets should error when you try to use them!
+  (faith.is (case (pcall check "(trans|late \"hello\" :en :zh)"
+                         #($:find "eat your files")
+                         {:libraries {:evil true}})
+              true false
+              _ true)))
 
 {: test-literals
  : test-builtins
