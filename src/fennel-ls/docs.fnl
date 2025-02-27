@@ -31,12 +31,7 @@
 (set lua-versions.lua54 (. lua-versions "lua5.4"))
 
 (fn get-lua-version [version]
-  (when (not (. lua-versions version))
-    (error (.. "fennel-ls doesn't know about lua version " version "\n"
-               "The known versions are: "
-               (fennel.view (doto (icollect [key (pairs lua-versions)] key)
-                              table.sort)))))
-  (. lua-versions version))
+  (or (. lua-versions version) lua-versions.lua54))
 
 ;; work around a mistake in Lua's own manual
 (set lua-versions.lua51.package.fields.config
@@ -57,12 +52,13 @@
 
 (λ load-library [name]
   (let [path (.. data-dir name docset-ext)]
-    (case (io.open path :r)
-      nil (error (string.format "Could not find docset for library %s at %s"
-                                name path))
+    (case (io.open path)
       f (let [docs (fennel.load-code (f:read :a) {})]
           (f:close)
-          (docs)))))
+          (docs))
+      _ {:status :not-found
+         :msg (string.format "Could not find docset for library %s at %s"
+                             name path)})))
 
 (λ get-library [name]
    (when (not (. libraries name))
@@ -97,10 +93,14 @@
 
 (λ validate-config [configuration invalid]
   (when (not (. lua-versions configuration.lua-version))
-    (invalid (.. "unknown lua version: " configuration.lua-version)))
+    (invalid (.. "fennel-ls doesn't know about lua version "
+                 configuration.lua-version
+                 "\nThe known versions are: "
+                 (table.concat (icollect [k (pairs lua-versions)] k) ", "))
+             :WARN))
   (each [library-name (pairs configuration.libraries)]
-    (case (pcall get-library library-name)
-      (nil msg) (invalid msg))))
+    (case (get-library library-name)
+      {:status :not-found : msg} (invalid msg :WARN))))
 
 {: get-global
  : get-builtin
