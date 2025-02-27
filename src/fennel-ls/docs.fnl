@@ -4,7 +4,7 @@
                           :macros MACROS}}}
   (require :fennel.compiler))
 
-(local docset-ext ".fls")
+(local docset-ext ".lua")
 (local data-dir (.. (or (os.getenv "XDG_DATA_HOME")
                       (.. (or (os.getenv "HOME") "") "/.local/share/"))
                   "/fennel-ls/docsets/"))
@@ -45,12 +45,15 @@
      (collect [k v (pairs lua-versions.lua51)]
        (if (. lua-versions.lua54 k) (values k v))))
 
-(local libraries {})
+(local libraries {:tic80 (require :fennel-ls.docs.generated.tic80)})
+
+;; alias
+(set libraries.tic-80 libraries.tic80)
 
 (λ load-library [name]
   (let [path (.. data-dir name docset-ext)]
     (case (io.open path :r)
-      (nil _) (error (string.format "Could not find docset at %s" path))
+      nil (error (string.format "Could not find docset at %s" path))
       f (let [docs (fennel.load-code (f:read :a) {})]
           (f:close)
           (docs)))))
