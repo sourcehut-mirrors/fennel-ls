@@ -49,6 +49,12 @@
       :textDocument {:uri file}
       :context {:includeDeclaration (not (not ?includeDeclaration))}})))
 
+(fn document-highlight [self file position]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :textDocument/documentHighlight
+     {: position
+      :textDocument {:uri file}})))
+
 (fn rename [self file position newName]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/rename
@@ -76,6 +82,7 @@
              : definition
              : hover
              : references
+             : document-highlight
              : rename
              : code-action
              : did-save}})

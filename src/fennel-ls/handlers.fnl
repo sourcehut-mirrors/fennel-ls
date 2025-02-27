@@ -46,7 +46,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :typeDefinitionProvider nil
          ;; :implementationProvider nil
          :referencesProvider {:workDoneProgress false}
-         ;; :documentHighlightProvider nil
+         :documentHighlightProvider {:workDoneProgress false}
          ;; :documentSymbolProvider nil
          :codeActionProvider {:workDoneProgress false}
          ;; :codeLensProvider nil
@@ -96,9 +96,32 @@ Every time the client sends a message, it gets handled by a function in the corr
         (message.range-and-uri server result.file (or result.binding result.definition)))
       (catch _ nil))))
 
+;; DocumentHighlightKind
+(local documentHighlightKind
+       {:Text 1 :Read 2 :Write 3})
+
+(λ requests.textDocument/documentHighlight [server _send {: position
+                                                           :textDocument {: uri}}]
+  (let [file (files.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
+    (case-try (analyzer.find-symbol file.ast byte)
+      symbol
+      (analyzer.find-nearest-definition server file symbol byte)
+      (where definition (not= definition.referenced-by nil))
+      (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
+                     {:range (message.ast->range server definition.file symbol)
+                      :kind documentHighlightKind.Read})]
+          (table.insert result
+            {:range (message.ast->range server definition.file definition.binding)
+             :kind documentHighlightKind.Write})
+
+        ;; TODO don't include duplicates
+        result)
+      (catch _ nil))))
+
 (λ requests.textDocument/references [server _send {: position
-                                                   :textDocument {: uri}
-                                                   :context {:includeDeclaration ?include-declaration?}}]
+                                                    :textDocument {: uri}
+                                                    :context {:includeDeclaration ?include-declaration?}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)

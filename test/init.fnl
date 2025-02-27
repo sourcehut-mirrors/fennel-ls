@@ -21,6 +21,7 @@
        :test.hover
        :test.completion
        :test.references
+       :test.document-highlight
        :test.lint
        :test.code-action
        :test.rename

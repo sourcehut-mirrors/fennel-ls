@@ -51,7 +51,8 @@
         server {:preload (if provide-root-uri {})}
         client (doto {: server :prev-id 1}
                      (setmetatable client-mt))
-        locations []]
+        locations []
+        highlights []]
     ;; NOT main.fnl
     (each [name contents (pairs file-contents)]
       (if (not= name :main.fnl)
@@ -59,13 +60,18 @@
               {: text : ranges} (parse-markup contents opts.markup-encoding)]
           (icollect [_ range (ipairs ranges) &into locations]
             {: range : uri})
+          (icollect [_ range (ipairs ranges) &into highlights]
+            {: range :kind 1})
           (client:pretend-this-file-exists! uri text))))
     ;; main.fnl
     (let [uri (.. ROOT-URI "/" :main.fnl)
           main-file-contents (. file-contents :main.fnl)
           {: text : ranges : cursor} (parse-markup main-file-contents opts.markup-encoding)
-          _ (icollect [_ range (ipairs ranges) &into locations]
-              {: range : uri})
+          _ (do
+              (icollect [_ range (ipairs ranges) &into locations]
+                {: range : uri})
+              (icollect [_ range (ipairs ranges) &into highlights]
+                {: range :kind 1}))
 
           params {:capabilities {:general {:positionEncodings (un-nil (or opts.position-encodings [default-encoding]))}}
                   :clientInfo (un-nil (or opts.client-info {:name "Neovim" :version "0.7.2"}))
@@ -89,6 +95,7 @@
          : diagnostics
          : cursor
          : locations
+         : highlights
          : text
          : uri
          : initialize-response
