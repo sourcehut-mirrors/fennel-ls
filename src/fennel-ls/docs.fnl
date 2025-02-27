@@ -33,7 +33,7 @@
 (fn get-lua-version [version]
   (when (not (. lua-versions version))
     (error (.. "fennel-ls doesn't know about lua version " version "\n"
-               "The allowed versions are: "
+               "The known versions are: "
                (fennel.view (doto (icollect [key (pairs lua-versions)] key)
                               table.sort)))))
   (. lua-versions version))
@@ -58,7 +58,8 @@
 (λ load-library [name]
   (let [path (.. data-dir name docset-ext)]
     (case (io.open path :r)
-      nil (error (string.format "Could not find docset at %s" path))
+      nil (error (string.format "Could not find docset for library %s at %s"
+                                name path))
       f (let [docs (fennel.load-code (f:read :a) {})]
           (f:close)
           (docs)))))
@@ -75,7 +76,8 @@
       (when enabled?
         (icollect [name (pairs (get-library library)) &into result]
           name)))
-    (icollect [name (pairs (get-lua-version server.configuration.lua-version)) &into result]
+    (icollect [name (pairs (get-lua-version server.configuration.lua-version))
+               &into result]
       name)))
 
 (fn get-library-global [server global-name]
@@ -93,6 +95,14 @@
 
 ;; TODO get-module-metadata
 
+(λ validate-config [configuration invalid]
+  (when (not (. lua-versions configuration.lua-version))
+    (invalid (.. "unknown lua version: " configuration.lua-version)))
+  (each [library-name (pairs configuration.libraries)]
+    (case (pcall get-library library-name)
+      (nil msg) (invalid msg))))
+
 {: get-global
  : get-builtin
- : get-all-globals}
+ : get-all-globals
+ : validate-config}

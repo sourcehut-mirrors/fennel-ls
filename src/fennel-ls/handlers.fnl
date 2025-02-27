@@ -18,8 +18,9 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local requests [])
 (local notifications [])
 
-(λ requests.initialize [server _send params]
+(λ requests.initialize [server send params]
   (config.initialize server params)
+  (config.validate server #(send (message.show-message $ (or $2 :ERROR))))
   (let [capabilities
         {:positionEncoding server.position-encoding
          :textDocumentSync {:openClose true :change 2}

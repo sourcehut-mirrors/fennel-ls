@@ -91,6 +91,12 @@ LSP json objects."
     {:uri file.uri
      :diagnostics file.diagnostics}))
 
+(λ show-message [message msg-type]
+  (create-notification
+    "window/showMessage"
+    {:type (. severity msg-type)
+     : message}))
+
 {: create-notification
  : create-request
  : create-response
@@ -99,4 +105,5 @@ LSP json objects."
  : multisym->range
  : range-and-uri
  : diagnostics
- : severity}
+ : severity
+ : show-message}

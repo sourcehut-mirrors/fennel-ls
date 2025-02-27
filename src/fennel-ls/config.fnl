@@ -9,6 +9,7 @@ There are no global settings. They're all stored in the `server` object.
 ;; Setting to allow all globals
 
 (local files (require :fennel-ls.files))
+(local docs (require :fennel-ls.docs))
 (local utils (require :fennel-ls.utils))
 
 (local option-mt {})
@@ -90,9 +91,24 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   (set server.root-uri params.rootUri)
   (set server.position-encoding (choose-position-encoding params))
   (reload server)
-  ;; Eglot does completions differently than every other client I've seen so far, in that it considers foo.bar to be one "symbol".
-  ;; If the user types `foo.b`, every other client accepts `bar` as a completion, bun eglot wants the full `foo.bar` symbol.
+  ;; Eglot does completions differently than every other client I've seen so
+  ;; far, in that it considers foo.bar to be one "symbol".  If the user types
+  ;; `foo.b`, every other client accepts `bar` as a completion, bun eglot wants
+  ;; the full `foo.bar` symbol.
   (set server.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
 
+(λ validate [{: configuration} invalid]
+  (when (not= :string (type configuration.fennel-path))
+    (invalid "fennel-path should be string"))
+  (when (not= :string (type configuration.macro-path))
+    (invalid "macro-path should be string"))
+  (if (not= :table (type configuration.lints))
+      (invalid "lints should be table")
+      (each [lint (pairs configuration.lints)]
+        (when (not (. default-configuration.lints lint))
+          (invalid (.. "unknown lint: " lint) :WARN))))
+  (docs.validate-config configuration invalid))
+
 {: initialize
- : reload}
+ : reload
+ : validate}
