@@ -18,9 +18,19 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local requests [])
 (local notifications [])
 
-(λ requests.initialize [server send params]
+(fn validate-config [server]
+  (set server.queue (or server.queue []))
+  ;; according to the spec it is valid to send showMessage during initialization
+  ;; but eglot will only flash the message briefly before replacing it with
+  ;; another message, and probably other clients will do similarly. so queue
+  ;; up the warnings to send *after* the initialization is complete. cheesy, eh?
+  (config.validate server #(table.insert server.queue
+                                         (message.show-message
+                                          $ (or $2 :ERROR)))))
+
+(λ requests.initialize [server _send params]
   (config.initialize server params)
-  (config.validate server #(send (message.show-message $ (or $2 :ERROR))))
+  (validate-config server)
   (let [capabilities
         {:positionEncoding server.position-encoding
          :textDocumentSync {:openClose true :change 2}
@@ -279,7 +289,8 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ notifications.textDocument/didSave [server _send {:textDocument {: uri}}]
   (when (utils.endswith uri "flsproject.fnl")
-    (config.reload server))
+    (config.reload server)
+    (validate-config server))
 
   ;; TODO recompute for files when macro is changed
   (set fennel.macro-loaded []))

@@ -60,7 +60,9 @@ Takes:
     (str :string)
     (send (message.create-error :ParseError str))
     _
-    (send (message.create-error :BadMessage nil msg.id))))
+    (send (message.create-error :BadMessage nil msg.id)))
+  (while (and server.queue (next server.queue))
+    (send (table.remove server.queue 1))))
 
 (λ handle* [server msg]
   "handles a message, and returns all the responses in a table"
