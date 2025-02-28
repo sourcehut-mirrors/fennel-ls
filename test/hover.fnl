@@ -179,9 +179,6 @@ except that it sets a new message handler `msgh`.")
   nil)
 
 (fn test-libraries []
-  (check "#(trac|e :hello)"
-         #($:find "a service function")
-         {:libraries {:tic80 true}})
   (check "(trans|late \"hello\" :en :zh)"
          #($:find "convert from one lanugage to another")
          {:libraries {:external true}})

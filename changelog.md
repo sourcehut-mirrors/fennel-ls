@@ -3,6 +3,9 @@
 ## UNRELEASED / ???
 
 ### Features
+
+* Support loading external docsets from disk.
+* Extract TIC-80 docs to external docset.
 * Support `:lua-version` settings like `"lua5.4"` rather than requiring `"lua54"`.
 * Support `"union"` in `:lua-version` for globals present in any Lua version.
 * Support `"intersection"` in `:lua-version` for globals present in every Lua version.

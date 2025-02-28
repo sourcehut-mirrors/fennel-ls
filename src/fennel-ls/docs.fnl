@@ -45,10 +45,7 @@
      (collect [k v (pairs lua-versions.lua51)]
        (if (. lua-versions.lua54 k) (values k v))))
 
-(local libraries {:tic80 (require :fennel-ls.docs.generated.tic80)})
-
-;; alias
-(set libraries.tic-80 libraries.tic80)
+(local libraries {})
 
 (λ load-library [name]
   (let [path (.. data-dir name docset-ext)]
@@ -57,8 +54,9 @@
           (f:close)
           (docs))
       _ {:status :not-found
-         :msg (string.format "Could not find docset for library %s at %s"
-                             name path)})))
+         :msg (string.format "Could not find docset for library %s at %s\nSee %s"
+                             name path
+                             "https://wiki.fennel-lang.org/LanguageServer")})))
 
 (λ get-library [name]
    (when (not (. libraries name))

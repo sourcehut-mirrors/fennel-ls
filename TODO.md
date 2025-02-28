@@ -119,9 +119,9 @@ done, but these are the sort of enhancements I am thinking about.
 - [ ] external docsets
     - [X] load external docsets from ~/.local/share/fennel-ls/docsets/
     - [X] warn on missing docset
-    - [ ] document how to download external docsets
+    - [X] document how to download external docsets
     - [ ] document how to create external docsets
-    - [ ] move love2d and tic80 to external docsets (published .... where?)
+    - [X] move love2d and tic80 to external docsets (published .... where?)
     - [ ] automatic downloading of external docsets
         - [ ] some kind of registry built-in?
 

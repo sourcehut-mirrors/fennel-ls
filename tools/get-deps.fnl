@@ -1,4 +1,4 @@
-(local {: sh} (require :tools.util.sh))
+(local {: sh} (require :tools.util))
 
 (fn git-clone [location url tag]
   (if tag

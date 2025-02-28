@@ -32,21 +32,20 @@ install: $(EXE)
 
 ## Generating docs
 
-docs:
-	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl $(GET_DOCS_FLAGS)
+docs: src/fennel-ls/docs/generated/lua51.fnl \
+	src/fennel-ls/docs/generated/lua52.fnl \
+	src/fennel-ls/docs/generated/lua53.fnl \
+	src/fennel-ls/docs/generated/lua54.fnl
 
-XDG_DATA_HOME ?= $(HOME)/.local/share
-DOCSET_DIR = $(XDG_DATA_HOME)/fennel-ls/docsets/
+src/fennel-ls/docs/generated/%.fnl:
+	mkdir -p build/
+	mkdir -p src/fennel-ls/docs/generated/
+	$(FENNEL) $(FENNELFLAGS) tools/generate-lua-docs.fnl ${*} > $@
 
-$(DOCSET_DIR)/love2d.lua: src/fennel-ls/docs/generated/love2d.fnl
-	mkdir -p $(DOCSET_DIR)
-	$(FENNEL) $(FENNELFLAGS) --compile $< > $@
-
-src/fennel-ls/docs/generated/love2d.fnl:
-	$(FENNEL) $(FENNELFLAGS) tools/get-docs.fnl --generate-love2d
-
-# has to be separate for licensing reasons
-docs-love2d: $(DOCSET_DIR)/love2d.lua
+docs-love2d:
+	@echo "This has moved to a separate source. Please see the wiki:"
+	@echo "https://wiki.fennel-lang.org/LanguageServer"
+	@exit 1
 
 rm-docs:
 	rm -rf src/fennel-ls/docs/

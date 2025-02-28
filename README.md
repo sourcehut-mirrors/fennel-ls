@@ -9,6 +9,9 @@ Provides intelligent editing features for fennel files.
 * [Packaging](docs/packaging.md)
 * [Writing your own lint](docs/linting.md)
 
+For information about installing documentation data for 3rd-party libraries
+like love2d or tic80 [see the wiki](https://wiki.fennel-lang.org/LanguageServer).
+
 ## License
 fennel-ls is licensed under the MIT license. See LICENSE for more info.
 This repository also contains files from other projects:

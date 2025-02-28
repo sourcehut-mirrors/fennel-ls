@@ -53,14 +53,6 @@
     (faith.not= [] bad))
   nil)
 
-(fn test-native-libaries []
-  (let [{:diagnostics bad} (create-client {:main.fnl "(print btn)"
-                                           :flsproject.fnl "{}"})
-        {:diagnostics good} (create-client {:main.fnl "(print btn)"
-                                            :flsproject.fnl "{:libraries {:tic-80 true}}"})]
-    (faith.not= [] bad)
-    (faith.= [] good)))
-
 (fn test-editing-settings []
   (let [{: client : uri} (create-client {:main.fnl ""
                                          :flsproject.fnl "{}"})
@@ -74,5 +66,4 @@
 {: test-path
  : test-extra-globals
  : test-lints
- : test-native-libaries
  : test-editing-settings}
