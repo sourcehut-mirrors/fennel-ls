@@ -97,8 +97,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       (catch _ nil))))
 
 ;; DocumentHighlightKind
-(local documentHighlightKind
-       {:Text 1 :Read 2 :Write 3})
+(local documentHighlightKind {:Text 1 :Read 2 :Write 3})
 
 (λ requests.textDocument/documentHighlight [server _send {: position
                                                            :textDocument {: uri}}]
@@ -107,32 +106,30 @@ Every time the client sends a message, it gets handled by a function in the corr
     (case-try (analyzer.find-symbol file.ast byte)
       symbol
       (analyzer.find-nearest-definition server file symbol byte)
-      (where definition (not= definition.referenced-by nil))
-      (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
-                     {:range (message.ast->range server definition.file symbol)
-                      :kind documentHighlightKind.Read})]
-          (table.insert result
-            {:range (message.ast->range server definition.file definition.binding)
-             :kind documentHighlightKind.Write})
-
+      {: referenced-by : file : binding}
+      (icollect [_ {: symbol} (ipairs referenced-by)
+                 &into [{:range (message.ast->range server file binding)
+                         :kind documentHighlightKind.Write}]]
         ;; TODO don't include duplicates
-        result)
+        {:range (message.ast->range server file symbol)
+         :kind documentHighlightKind.Read})
       (catch _ nil))))
 
 (λ requests.textDocument/references [server _send {: position
-                                                    :textDocument {: uri}
-                                                    :context {:includeDeclaration ?include-declaration?}}]
+                                                   :textDocument {: uri}
+                                                   :context {:includeDeclaration
+                                                             include-declaration?}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
       symbol
       (analyzer.find-nearest-definition server file symbol byte)
-      (where definition (not= definition.referenced-by nil))
-      (let [result (icollect [_ {: symbol} (ipairs definition.referenced-by)]
-                     (message.range-and-uri server definition.file symbol))]
-        (if ?include-declaration?
+      {: referenced-by : file : binding}
+      (let [result (icollect [_ {: symbol} (ipairs referenced-by)]
+                     (message.range-and-uri server file symbol))]
+        (when include-declaration?
           (table.insert result
-            (message.range-and-uri server definition.file definition.binding)))
+            (message.range-and-uri server file binding)))
 
         ;; TODO don't include duplicates
         result)
@@ -259,26 +256,27 @@ Every time the client sends a message, it gets handled by a function in the corr
       symbol
       (analyzer.find-nearest-definition server file symbol symbol.bytestart)
       ;; TODO we are assuming that every reference is in the same file
-      (where definition (not= definition.referenced-by nil))
-      (let [usages (icollect [_ {: symbol} (ipairs definition.referenced-by)
-                              &into [{:range (message.multisym->range server definition.file definition.binding 1)
+      {: referenced-by : file : binding}
+      (let [usages (icollect [_ {: symbol} (ipairs referenced-by)
+                              &into [{:range (message.multisym->range
+                                              server file binding 1)
                                       :newText new-name}]]
                      (if (and (. file.lexical symbol)
-                              (not (rawequal symbol definition.binding)))
+                              (not (rawequal symbol binding)))
                        {:newText new-name
-                        :range (message.multisym->range server definition.file symbol 1)}))]
+                        :range (message.multisym->range server file symbol 1)}))]
 
         ;; NOTE: I don't care about encoding here because we just need the relative positions
         (table.sort usages
-          #(> (utils.position->byte definition.file.text $1.range.start :utf-8)
-              (utils.position->byte definition.file.text $2.range.start :utf-8)))
+          #(> (utils.position->byte file.text $1.range.start :utf-8)
+              (utils.position->byte file.text $2.range.start :utf-8)))
         (var prev {})
         (let [usages-dedup (icollect [_ edit (ipairs usages)]
                              (when (or (not= edit.range.start.line prev.line)
                                        (not= edit.range.start.character prev.character))
                                (set prev edit.range.start)
                                edit))]
-          {:changes {definition.file.uri usages-dedup}}))
+          {:changes {file.uri usages-dedup}}))
       (catch _ nil))))
 
 (fn pos<= [pos-1 pos-2]
