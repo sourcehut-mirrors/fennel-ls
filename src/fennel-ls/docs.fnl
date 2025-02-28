@@ -37,6 +37,12 @@
 (set lua-versions.lua51.package.fields.config
      lua-versions.lua52.package.fields.config)
 
+;; deprecated but not removed
+(each [_ f (ipairs [:atan2 :cosh :sinh :tanh :pow :frexp :ldexp])]
+  (set (. lua-versions.lua53.math.fields f) (. lua-versions.lua52.math.fields f)))
+
+(set lua-versions.lua53.bit32 lua-versions.lua52.bit32)
+
 (each [_ version (pairs lua-versions)]
   (each [k v (pairs version)]
     (set (. lua-versions.union k) v)))

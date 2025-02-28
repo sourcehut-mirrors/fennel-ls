@@ -22,6 +22,10 @@ refactor brainstorm:
 Here is my feature wishlist. I don't expect to ever get all of this
 done, but these are the sort of enhancements I am thinking about.
 
+- [ ] Improved global checks
+    - [ ] (or table.unpack _G.unpack) should be allowed on any Lua version
+- [ ] generate man page
+- [ ] load lints from external sources (sandboxed)
 - [X] Able to connect to a client
 - [X] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
 - [ ] People have tried fennel-ls in:
@@ -30,10 +34,6 @@ done, but these are the sort of enhancements I am thinking about.
     - [X] helix
     - [X] vscode (publish an extension)
     - [ ] vim+coc (publish a node thingy)
-- [ ] Improved global checks
-    - [ ] (or table.unpack _G.unpack) should be allowed on any Lua version
-- [ ] generate man page
-- [ ] load lints from external sources (sandboxed)
 - [x] Go-to-definition:
     - [X] literal table constructor
     - [X] table destructuring

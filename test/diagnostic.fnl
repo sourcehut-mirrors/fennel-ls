@@ -155,7 +155,12 @@
          []
          [{:message "unknown identifier: unpack"}
           {:message "unknown identifier: warn"}]
-         {:lua-version "union"}))
+         {:lua-version "union"})
+  ;; deprecated functions still work
+  (check "(print (math.atan2 (tonumber (io.read))))"
+         []
+         [{:message "unknown field: math.atan2"}]
+         {:lua-version "lua5.3"}))
 
 {: test-lua-versions
  : test-compile-error
