@@ -63,7 +63,21 @@
     (local _ nil))
   nil)
 
+(fn test-config-validation []
+  (let [client (create-client {:main.fnl ""
+                               :flsproject.fnl "{:lua-version \"lua5.0\"}"})
+        [_init show] client.initialize-response]
+    (faith.= "window/showMessage" show.method)
+    (faith.match "doesn't know about lua version lua5.0" show.params.message))
+  (let [client (create-client {:main.fnl ""
+                               :flsproject.fnl "{:libraries {:nasilemak true}}"})
+        [_init show] client.initialize-response]
+    (faith.= "window/showMessage" show.method)
+    (faith.match "Could not find docset for library nasilemak"
+                 show.params.message)))
+
 {: test-path
  : test-extra-globals
  : test-lints
+ : test-config-validation
  : test-editing-settings}

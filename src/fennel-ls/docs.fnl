@@ -87,8 +87,6 @@
   (or (. specials builtin-name)
       (. macros* builtin-name)))
 
-;; TODO get-module-metadata
-
 (λ validate-config [configuration invalid]
   (when (not (. lua-versions configuration.lua-version))
     (invalid (.. "fennel-ls doesn't know about lua version "

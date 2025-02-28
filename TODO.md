@@ -102,13 +102,15 @@ done, but these are the sort of enhancements I am thinking about.
     - [ ] fields
     - [ ] go to references of fields when tables are aliased
     - [ ] global search across other files
-- [ ] Options / Configuration
+- [X] Options / Configuration
     - [X] Configure over LSP
     - [X] Configure with some sort of per-project config file
     - [X] fennel/lua path
     - [X] lua version
     - [X] allowed global list
     - [X] enable/disable various linters
+    - [X] config validation
+    - [X] tests for config validation
 - [X] rename
     - [X] local symbols
     - [ ] module fields (may affect code behavior, may modify other files)
