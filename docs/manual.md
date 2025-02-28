@@ -1,128 +1,67 @@
 # Manual
-This document goes over how to set up fennel-ls.
 
-## Installation
-
-### fennel-ls Language Server Binary
-
-On Linux or Mac OS,
-```sh
-$ git clone https://git.sr.ht/~xerool/fennel-ls
-$ cd fennel-ls
-$ make docs-love2d # if you plan to use love2d
-$ make
-```
-
-will create a `fennel-ls` executable for you using your default system `lua`;
-use `make LUA=luajit` etc to use a different Lua version.
-
-Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
-a systemwide install.
-
-The default build will not include documentation for [LÖVE](https://love2d.org)
-due to the unfortunate licensing of their documentation. You can opt-in to
-build with these docs anyway with `make docs-love2d` but the resulting build
-may have legal complications when distributed.
-
-#### Arch Linux
-I think `fennel-ls` and `fennel-ls-git` may be in the AUR.
-
-#### NixOS
-If you are using NixOS, you can use the included `/flake.nix` or `/default.nix`.
-
-#### Debian/Ubuntu
-
-Unofficial `.deb` packages are available at
-[https://apt.technomancy.us](https://apt.technomancy.us).
-
-#### Luarocks
-Alternatively, `fennel-ls` is available in LuaRocks. Luarocks is kind of a pain to support though.
-```sh
-luarocks install fennel-ls
-```
-
-### Emacs
-prerequisites: You have installed the [fennel-ls binary](#fennel-ls-language-server-binary).
-
-For Emacs 30+, eglot will use fennel-ls automatically if its on the $PATH.
-For older versions:
-```lisp
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs '(fennel-mode . ("fennel-ls"))))
-```
-This code tells eglot to connect fennel-ls to your fennel-mode buffers.
-
-### Neovim
-prerequisites: You have installed the [fennel-ls binary](#fennel-ls-language-server-binary).
-If you're using neovim+lspconfig, use this snippet:
-```lua
-require("lspconfig").fennel_ls.setup({})
-```
-
-If you're also using mason and you want to install fennel-ls that way, you can
-use mason-lspconfig to ensure fennel-ls is installed:
-```lua
-require("mason-lspconfig").setup {
-    ensure_installed = {"fennel_ls"}
-}
-```
-
-### Sublime Text
-prerequisites: You have installed the [fennel-ls binary](#fennel-ls-language-server-binary) and the [LSP Sublime Text package](https://packagecontrol.io/packages/LSP) from Package Control.
-
-You can configure the LSP plugin to use fennel-ls directly by editing your `Packages/User/LSP.sublime-settings` file, which can be opened via "Preferences > Package Settings > LSP > Settings" from the menu or with the Preferences: LSP Settings command from the Command Palette. 
-
-You should add an entry to the top-level `"clients"` object (creating it if it doesn't exist), with this configuration:
-```json
-"clients": {
-    "fennel-ls": {
-        "enabled": true,
-        "selector": "source.fennel",
-        "command": ["fennel-ls"]
-    }
-}
-```
-
-If you run into problems, check the [LSP Client Configuration reference](https://lsp.sublimetext.io/client_configuration/) and double-check the location of fennel-ls on the $PATH is visible to Sublime Text.
-
-### Other editors
-It should be possible to set up for other text editors, but the instructions
-depend on which editor you use. Generally you need to tell your editor:
-* "fennel-ls" is a language server program on the $PATH
-* it should be run for fennel files.
-
+This document has information on how to configure and use fennel-ls after you [installed it](installation.md).
 
 ## Configuration
-fennel-ls can be configured by creating a file named `flsproject.fnl` in your
-workspace root. Any setting that isn't provided will be filled in with the
-defaults, which means that `{}` is a valid configuration with default settings.
-You can provide different settings in the same shape as the default settings to
-override the defaults.
 
-The default `flsproject.fnl` settings are:
+fennel-ls can be configured by creating a file named `flsproject.fnl` in the
+root of your project.
+
+The default settings are below, you only need to provide the settings you want
+to change. An empty table `{}` is a valid configuration and serves as a marker
+to indicate where the project root is located.
 
 ```fnl
 {:fennel-path "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl"
  :macro-path "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
  :lua-version "lua5.4"
- :libraries {:love2d false ; requires building with love2d support
-             :tic-80 false}
+ :libraries {}
  :extra-globals ""
  :lints {:unused-definition true
          :unknown-module-field true
          :unnecessary-method true
+         :unnecessary-tset true
+         :unnecessary-do true
+         :redundant-do true
+         :match-should-case true
          :bad-unpack true
          :var-never-set true
          :op-with-no-arguments true
-         :multival-in-middle-of-call true}}
+         :multival-in-middle-of-call true
+         :no-decreasing-comparison false}
 ```
 
-extra-globals: Space separated list of allowed global identifiers; in addition to a set of predefined lua globals.
+- `extra-globals`: Space separated list of allowed global identifiers that will
+  be added to a set of predefined lua globals.
 
-version: One of lua51, lua52, lua53, lua54, intersection, or union.
+  These identifiers and any of their fields will be considered valid and won't
+  produce diagnostics. Use this when importing a library for which
+  documentation is not available.
 
-libraries: This setting controls which extra documentation fennel-ls can load in to your environment. I've only done this for tic-80 for now.
+- `version`: One of `lua5.1`, `lua5.2`, `lua5.3`, `lua5.4`, `intersection`, or
+  `union`.
 
+  `intersection` represents the APIs that are available in *every* supported
+  Lua version, `union` represents APIs available in *any* version.
+
+- `libraries`: This setting controls which extra documentation fennel-ls will
+  load in your environment. Each entry in the table is the name of the library
+  and a boolean, `true` to enable the library and `false` to disable it.
+
+  The name of the library is the name of a file that will be loaded from
+  `~/.local/share/fennel-ls/docsets/` after appending the `.lua` extension.
+
+  For example, if the table contains `{:love2d true}` the file `love2s.lua`
+  will be loaded from `~/.local/share/fennel-ls/docsets/`.
+
+  The available docsets are listed on the [Fennel
+  wiki](http://wiki.fennel-lang.org/LanguageServer).
+
+  See the full [docsets documentation](docsets.md) for more information on how
+  to find, install, or create docsets.
+
+  > fennel-ls respects the XDG convention, so if you changed `$XDG_DATA_HOME`
+  > the files will be loaded from the location you specified.
 
 ## Usage
 
@@ -133,7 +72,6 @@ in the future when I come up with a better way to specify which files are meant
 to be macro files.
 
 ## Features
-
 
 Feature         | Locals | Fields | Builtin Globals | Across Files | Builtins | Macros | User globals |
 --------------- | ------ | ------ | --------------- | ------------ | -------- | ------ | ------------ |
@@ -155,10 +93,12 @@ purposes, it's recommended to put an underscore at the end. For example:
 ```
 
 ## CLI Usage
+
+fennel-ls can be used as a linter from the command line:
+
 ```sh
 fennel-ls --lint my-file.fnl f2.fnl # prints diagnostics for the files given
 ```
 
-This will analyze the given files, and print out all compiler errors and lints,
+This will analyze the given files and print out all compiler errors and lints,
 without launching a server. A successful exit code indicates no problems found.
-
