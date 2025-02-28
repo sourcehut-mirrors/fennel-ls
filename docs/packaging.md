@@ -3,6 +3,8 @@ Sorry packagers, I have committed two ultimate sins.
 1. I checked in some generated code into my repository.
 2. I have copied others' code into my repository, also known as "vendoring" code.
 
+Debian packaging is at https://git.sr.ht/~technomancy/fennel-ls/log/debian/latest
+
 ## Generated Code
 The files inside `src/fennel-ls/docs/generated/` are not hand-written, they are
 generated. The documentation embedded into `fennel-ls` needs to come from
@@ -15,21 +17,10 @@ any licensing issue.
 
 I understand if you want to build from source instead of relying on the output.
 You can rebuild these by running `make rm-docs` to remove the docs, and
-`make docs` to regenerate these files.
+`make docs` to regenerate these files. However, this requires internet access.
 ```sh
 $ make rm-docs
 $ make docs
-```
-
-## Including LÖVE documentation
-Due to license incompatibility between fennel-ls and the official LÖVE
-documentation, this repository cannot include the LÖVE documentation by
-default. It must be generated manually.
-
-This can be done by passing a flag to the `docs` target.
-
-```sh
-$ make docs GET_DOCS_FLAGS=--generate-love2d
 ```
 
 ## Vendored Dependencies

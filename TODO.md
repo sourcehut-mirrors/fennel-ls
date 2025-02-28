@@ -1,8 +1,4 @@
 # Wishlist of features
-([X] = complete,  [ ] = planned)
-
-My current goal is to work on completions a little bit more.
-- [X] create a release
 
 refactor brainstorm:
 - [ ] get rid of `bytes` stuff and use "stack" everywhere
@@ -23,15 +19,21 @@ refactor brainstorm:
 
 - [ ] make hovers look like (fn table.insert [t ?i v] ...)
 
-Here is my feature wishlist. I don't expect to ever get all of this done, but these are the sort of enhancements I am thinking about.
+Here is my feature wishlist. I don't expect to ever get all of this
+done, but these are the sort of enhancements I am thinking about.
+
 - [X] Able to connect to a client
 - [X] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
 - [ ] People have tried fennel-ls in:
     - [X] Neovim (This project isn't a neovim plugin, but there are instructions on how to inform neovim of the fennel-ls binary once you build it.)
     - [X] emacs
     - [X] helix
-    - [ ] vscode (publish an extension)
+    - [X] vscode (publish an extension)
     - [ ] vim+coc (publish a node thingy)
+- [ ] Improved global checks
+    - [ ] (or table.unpack _G.unpack) should be allowed on any Lua version
+- [ ] generate man page
+- [ ] load lints from external sources (sandboxed)
 - [x] Go-to-definition:
     - [X] literal table constructor
     - [X] table destructuring
@@ -69,10 +71,10 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [X] Unused locals
     - [X] Unknown fields of modules
     - [ ] Discarding results from pcall/xpcall/other functions
-    - [.] `unpack` or `values` into a special
+    - [X] `unpack` or `values` into a special
     - [ ] `do`/`values` with only one inner form
-    - [ ] redundant `do` as the last/only item in a form that accepts a "body"
-    - [ ] `values`/`unpack` in a non tail position
+    - [X] redundant `do` as the last/only item in a form that accepts a "body"
+    - [X] `values`/`unpack` in a non tail position
     - [ ] numbers and strings in a non tail position
     - [ ] deprecated specials/macros
     - [X] `var` forms that could be `local`
@@ -84,7 +86,6 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] Code that matches the shape of `accumulate` or `icollect` or `collect`?? or other macros??
     - [ ] Dead code (I'm not sure what sort of things cause dead code)
     - [ ] Unused fields (difficult)
-    - [ ] unification in a `match` pattern (difficult)
     - [ ] unused values in `λ` (difficult)
     - [ ] Brainstorm more linting patterns (I spent a couple minutes brainstorming these ideas, other ideas are welcome of course)
     - [ ] Type Checking
@@ -103,11 +104,10 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
     - [ ] global search across other files
 - [ ] Options / Configuration
     - [X] Configure over LSP
-    - [ ] Configure with some sort of per-project config file
-    - [ ] Configure with environment variables I guess??
+    - [X] Configure with some sort of per-project config file
     - [X] fennel/lua path
-    - [ ] lua version
-    - [ ] allowed global list
+    - [X] lua version
+    - [X] allowed global list
     - [X] enable/disable various linters
 - [X] rename
     - [X] local symbols
@@ -116,6 +116,33 @@ Here is my feature wishlist. I don't expect to ever get all of this done, but th
 - [ ] formatting with fnlfmt
 - [ ] Type annotations? Global type inference?
 
+- [ ] external docsets
+    - [X] load external docsets from ~/.local/share/fennel-ls/docsets/
+    - [X] warn on missing docset
+    - [ ] document how to download external docsets
+    - [ ] document how to create external docsets
+    - [ ] move love2d and tic80 to external docsets (published .... where?)
+    - [ ] automatic downloading of external docsets
+        - [ ] some kind of registry built-in?
+
+- [ ] discard input if there are more edits coming
+
+optional luaposix dependency for this?
+
+```
+local posix = require("posix")
+
+-- Function to set non-blocking mode for a file descriptor
+local function setNonBlocking(fd)
+    local flags = posix.fcntl(fd, posix.F_GETFL, 0)
+    posix.fcntl(fd, posix.F_SETFL, flags + posix.O_NONBLOCK)
+end
+
+-- Open stdin in non-blocking mode
+setNonBlocking(0)  -- 0 is the file descriptor for stdin
+
+print( io.read(0) and "Data in stdin" or "No data in stdin")
+```
 
 fn-arg-nil: Function arguments are assumed to be nil in a function body, until there's a type system to give more information.
 

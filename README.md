@@ -6,8 +6,8 @@ Provides intelligent editing features for fennel files.
 ## Quick Links
 * [Install](docs/manual.md#installation)
 * [Configuration](docs/manual.md#configuration)
-* [Features](docs/feature-matrix.md)
 * [Packaging](docs/packaging.md)
+* [Writing your own lint](docs/linting.md)
 
 ## License
 fennel-ls is licensed under the MIT license. See LICENSE for more info.

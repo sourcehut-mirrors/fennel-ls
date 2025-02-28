@@ -101,4 +101,4 @@ The return value should have these fields:
 * `codeDescription`: Use the name of your function.
 
 ### Testing:
-I will think about this later. :)
+I will think about this later. :) For now see examples in `test/lint.fnl`.
