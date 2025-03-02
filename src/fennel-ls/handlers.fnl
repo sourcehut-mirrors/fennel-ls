@@ -103,10 +103,10 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                           :textDocument {: uri}}]
   (let [this-file (files.get-by-uri server uri)
         byte (utils.position->byte this-file.text position server.position-encoding)]
-    (case-try (analyzer.find-symbol this-file.ast byte)
+    (match-try (analyzer.find-symbol this-file.ast byte)
       symbol
       (analyzer.find-nearest-definition server this-file symbol byte)
-      (where {: referenced-by : file : binding} (= file.uri uri))
+      {: referenced-by :file {:uri this-file.uri &as file} : binding}
       (let [result (icollect [_ {:symbol reference} (ipairs referenced-by)]
                      {:range (message.ast->range server file reference)
                       :kind documentHighlightKind.Read})]

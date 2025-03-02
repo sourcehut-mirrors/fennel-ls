@@ -4,6 +4,7 @@
 
 ### Features
 
+* Support highlighting references to the symbol under the cursor in the current scope.
 * Support loading external docsets from disk.
 * Extract TIC-80 docs to external docset.
 * Support `:lua-version` settings like `"lua5.4"` rather than requiring `"lua54"`.
