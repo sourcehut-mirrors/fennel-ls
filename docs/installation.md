@@ -7,7 +7,6 @@ To install from source on Linux or macOS, run:
 ```sh
 $ git clone https://git.sr.ht/~xerool/fennel-ls
 $ cd fennel-ls
-$ make docs-love2d # if you plan to use love2d
 $ make
 ```
 
@@ -19,10 +18,7 @@ system `lua`; use `make LUA=luajit` etc to use a different Lua version.
 Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
 a system wide install.
 
-The default build will not include documentation for [LÖVE](https://love2d.org)
-due to the unfortunate licensing of their documentation. You can opt-in to
-build with these docs anyway with `make docs-love2d` but the resulting build
-may have legal complications when distributed.
+You may want to also install [docsets](docsets) for external libraries.
 
 ## Packages
 
@@ -107,6 +103,11 @@ doesn't exist), with this configuration:
 If you run into problems, check the [LSP Client Configuration
 reference](https://lsp.sublimetext.io/client_configuration/) and double-check
 the location of fennel-ls on the $PATH is visible to Sublime Text.
+
+### Visual Studio Code
+
+You need to [install an extension](https://codeberg.org/adjuvant/vscode-fennel-ls)
+in order to use it.
 
 ### Other editors
 

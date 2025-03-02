@@ -35,7 +35,8 @@ available.
 ## Creating docsets
 
 The top level Lua table in the docset should contain symbol names as keys and
-*bindings* as values.
+*bindings* as values. These examples use Fennel syntax, so they should
+be compiled to Lua before installation or distribution.
 
 ```fnl
 {:symbol-a {
@@ -112,7 +113,9 @@ script and then serializing it using the `fennel.view` function.
 ## Compilation
 
 Finally, to be usable by fennel-ls the table needs to be compiled to Lua and
-installed in the docsets directory.
+installed in the docsets directory. Consider publishing them over HTTP
+and adding them to [the wiki](http://wiki.fennel-lang.org/LanguageServer)
+if they are likely to be useful to other Fennel developers.
 
 ```sh
 fennel library-docset.fnl > library-docset.lua
