@@ -8,6 +8,7 @@ There are no global settings. They're all stored in the `server` object.
 ;; TODO: Settings to set the warning levels of lints
 ;; Setting to allow all globals
 
+(local fennel (require :fennel))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
 (local utils (require :fennel-ls.utils))
@@ -85,6 +86,13 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 (λ reload [server]
   (set server.configuration (load-config server)))
 
+(fn load-plugins [server]
+  (let [plugin-dir (.. utils.home-dir "plugins")]
+    (set server.plugins (icollect [_ plugin-name (ipairs (utils.ls plugin-dir))]
+                          (if (plugin-name:find "%.fnl$")
+                              (fennel.dofile (.. plugin-dir "/" plugin-name)
+                                             {:env {}}))))))
+
 (λ initialize [server params]
   (set server.files {})
   (set server.modules {})
@@ -95,7 +103,8 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   ;; far, in that it considers foo.bar to be one "symbol".  If the user types
   ;; `foo.b`, every other client accepts `bar` as a completion, bun eglot wants
   ;; the full `foo.bar` symbol.
-  (set server.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
+  (set server.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot))
+  (set server.plugins (load-plugins server)))
 
 (λ validate [{: configuration} invalid]
   (when (not= :string (type configuration.fennel-path))

@@ -3,11 +3,9 @@
         :scopes {:global {:specials SPECIALS
                           :macros MACROS}}}
   (require :fennel.compiler))
+(local utils (require :fennel-ls.utils))
 
-(local docset-ext ".lua")
-(local data-dir (.. (or (os.getenv "XDG_DATA_HOME")
-                      (.. (or (os.getenv "HOME") "") "/.local/share/"))
-                  "/fennel-ls/docsets/"))
+(local docset-path (.. utils.home-dir "docsets/%s.lua"))
 
 (local specials
   (collect [name value (pairs SPECIALS)]
@@ -54,7 +52,7 @@
 (local libraries {})
 
 (λ load-library [name]
-  (let [path (.. data-dir name docset-ext)]
+  (let [path (string.format docset-path name)]
     (case (io.open path)
       f (let [docs (fennel.load-code (f:read :a) {})]
           (f:close)

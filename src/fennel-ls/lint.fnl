@@ -246,6 +246,11 @@ the `file.diagnostics` field, filling it with diagnostics."
      :code 307
      :codeDescription "bad-unpack"}))
 
+(fn add-plugin-diagnostics [server file]
+  (each [_ plugin (ipairs server.plugins)]
+    (each [_ lint (ipairs (or plugin.lints []))]
+      (lint server file))))
+
 (λ add-lint-diagnostics [server file]
   "fill up the file.diagnostics table with linting things"
   (let [lints server.configuration.lints
@@ -293,6 +298,9 @@ the `file.diagnostics` field, filling it with diagnostics."
         (table.insert diagnostics (match-should-case server file ast))))
 
     (when lints.unknown-module-field
-      (unknown-module-field server file))))
+      (unknown-module-field server file))
+
+    (when server.plugins
+      (add-plugin-diagnostics server file))))
 
 {: add-lint-diagnostics}

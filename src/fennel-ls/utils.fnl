@@ -206,6 +206,15 @@ WARNING: this is only used in the test code, not in the real language server"
     (: :gsub "/+" "/")
     (->> (pick-values 1))))
 
+(λ ls [dir]
+  ;; don't you dare put a newline in your filename. just don't!!!
+  (with-open [l (assert (io.popen (.. "ls " dir)))]
+    (icollect [x (l:lines)] x)))
+
+(local home-dir (.. (or (os.getenv "XDG_DATA_HOME")
+                        (.. (or (os.getenv "HOME") "") "/.local/share/"))
+                    "/fennel-ls/"))
+
 {: uri->path
  : path->uri
  : pos->position
@@ -220,4 +229,6 @@ WARNING: this is only used in the test code, not in the real language server"
  : absolute-path?
  : path-join
  : path-sep
- : endswith}
+ : endswith
+ : ls
+ : home-dir}
