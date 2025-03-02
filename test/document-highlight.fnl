@@ -22,14 +22,13 @@
         (table.sort response.result range-comparator)
         ;; Override kind in the result because utils.parse-markup doesn't have
         ;; a way to express it. The ranges are more important.
-        (each [i v (ipairs response.result)]
-          (set v.kind 1)
-          (set (. response.result i) v))
+        (each [_ v (ipairs response.result)]
+          (set v.kind 1))
         (faith.= highlights response.result
                  (view file-contents)))
       (faith.= highlights []))))
 
-(fn test-references []
+(fn test-document-highlights []
   (check "(let [==x== 10] ==x==|)")
   (check "(let [==x==| 10] ==x==)")
   (check "(let [==x==| 10] ==x== ==x== ==x==)")
@@ -46,4 +45,15 @@
             (let [x :shadowed] x))")
   nil)
 
-{: test-references}
+(fn test-multiple-files []
+  (check
+    {:foo.fnl "(fn target []
+                 nil)
+               {: target}"
+     :main.fnl "(local foo (require :foo))
+                (foo.targe|t)"})
+
+  nil)
+
+{: test-document-highlights
+ : test-multiple-files}

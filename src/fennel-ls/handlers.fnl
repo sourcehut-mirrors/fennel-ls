@@ -100,19 +100,19 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local documentHighlightKind {:Text 1 :Read 2 :Write 3})
 
 (λ requests.textDocument/documentHighlight [server _send {: position
-                                                           :textDocument {: uri}}]
-  (let [file (files.get-by-uri server uri)
-        byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (analyzer.find-symbol file.ast byte)
+                                                          :textDocument {: uri}}]
+  (let [this-file (files.get-by-uri server uri)
+        byte (utils.position->byte this-file.text position server.position-encoding)]
+    (case-try (analyzer.find-symbol this-file.ast byte)
       symbol
-      (analyzer.find-nearest-definition server file symbol byte)
-      {: referenced-by : file : binding}
-      (icollect [_ {: symbol} (ipairs referenced-by)
-                 &into [{:range (message.ast->range server file binding)
-                         :kind documentHighlightKind.Write}]]
-        ;; TODO don't include duplicates
-        {:range (message.ast->range server file symbol)
-         :kind documentHighlightKind.Read})
+      (analyzer.find-nearest-definition server this-file symbol byte)
+      (where {: referenced-by : file : binding} (= file.uri uri))
+      (let [result (icollect [_ {:symbol reference} (ipairs referenced-by)]
+                     {:range (message.ast->range server file reference)
+                      :kind documentHighlightKind.Read})]
+        (table.insert result {:range (message.ast->range server file binding)
+                              :kind documentHighlightKind.Write})
+        result)
       (catch _ nil))))
 
 (λ requests.textDocument/references [server _send {: position
