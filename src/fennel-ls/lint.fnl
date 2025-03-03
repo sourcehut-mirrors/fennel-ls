@@ -52,11 +52,19 @@ the `file.diagnostics` field, filling it with diagnostics."
       #[{:range (message.ast->range server file symbol)
          :newText (.. "_" (tostring symbol))}])))
 
+;; this is way too specific; it's also safe to do this inside an `if` or `case`
+(fn in-or? [calls symbol]
+  (accumulate [in? false call (pairs calls) &until in?]
+    (and (sym? (. call 1) :or) (utils.find call symbol))))
+
 (fn module-field-helper [server file symbol ?ast stack]
   "if ?ast is a module field that isn't known, return a diagnostic"
   (let [opts {}
         item (analyzer.search-ast server file ?ast stack opts)]
     (if (and (not item)
+             (not (in-or? file.calls symbol))
+             ;; this doesn't necessarily have to come thru require; it works
+             ;; for built-in modules too
              opts.searched-through-require-with-stack-size-1)
         (diagnostic
          {:range (message.ast->range server file symbol)

@@ -206,6 +206,9 @@ WARNING: this is only used in the test code, not in the real language server"
     (: :gsub "/+" "/")
     (->> (pick-values 1))))
 
+(fn find [t x ?k]
+  (match (next t ?k) (k x) k (k y_) (find t x k)))
+
 {: uri->path
  : path->uri
  : pos->position
@@ -220,4 +223,5 @@ WARNING: this is only used in the test code, not in the real language server"
  : absolute-path?
  : path-join
  : path-sep
- : endswith}
+ : endswith
+ : find}

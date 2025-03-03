@@ -156,6 +156,11 @@
          [{:message "unknown identifier: unpack"}
           {:message "unknown identifier: warn"}]
          {:lua-version "union"})
+  ;; can reference table.unpack in an or
+  (check "(print (or table.unpack _G.unpack))"
+         []
+         [{:message "unknown field: table.unpack"}]
+         {:lua-version "intersection"})
   ;; deprecated functions still work
   (check "(print (math.atan2 (tonumber (io.read))))"
          []

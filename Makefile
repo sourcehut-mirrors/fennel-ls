@@ -91,7 +91,7 @@ check-luarocks:
 	eval "$$(luarocks path)"; \
 	fennel-ls --lint
 
-ci: testall check-deps check-luarocks
+ci: selflint testall check-deps check-luarocks
 
 clean:
 	rm -fr $(EXE) old-deps old-fennel build/
