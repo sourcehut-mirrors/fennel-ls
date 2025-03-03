@@ -140,8 +140,9 @@ Every time the client sends a message, it gets handled by a function in the corr
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
       symbol (analyzer.search-main server file symbol {} {: byte})
-      result {:contents (formatter.hover-format result)
-              :range (message.ast->range server file symbol)}
+      {:indeterminate nil &as result} {:contents (formatter.hover-format result)
+                                       :range (message.ast->range server file
+                                                                  symbol)}
       (catch _ nil))))
 
 (λ make-completion-item [server file name scope]

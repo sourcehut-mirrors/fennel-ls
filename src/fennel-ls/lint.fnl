@@ -57,8 +57,7 @@ the `file.diagnostics` field, filling it with diagnostics."
   (let [opts {}
         item (analyzer.search-ast server file ?ast stack opts)]
     (if (and (not item)
-             opts.searched-through-require-with-stack-size-1
-             (not opts.searched-through-require-indeterminate))
+             opts.searched-through-require-with-stack-size-1)
         (diagnostic
          {:range (message.ast->range server file symbol)
           :message (.. "unknown field: " (tostring symbol))

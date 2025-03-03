@@ -73,7 +73,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
          (. document.fields (. stack (length stack))))
     (search-document server (. document.fields (table.remove stack)) stack opts)
     (not document.fields)
-    (set opts.searched-through-require-indeterminate true)))
+    {:indeterminate true}))
 
 (λ search-val [server file ?ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"
@@ -158,7 +158,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                            (sym? head :lambda)
                            (sym? head :λ))))
 
-              (search-multival server file (. definition (length definition)) stack multival opts)))))))
+              (search-multival server file (. definition (length definition)) stack multival opts)
+              result result))))))
 
 (set search-multival
   (λ [server file ?ast stack multival opts]
