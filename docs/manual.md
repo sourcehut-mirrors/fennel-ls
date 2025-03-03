@@ -1,6 +1,35 @@
 # Manual
 
-This document has information on how to configure and use fennel-ls after you [installed it](installation.md).
+This document has information on how to configure and use fennel-ls after you
+[installed it](installation.md).
+
+## Quick start
+
+fennel-ls can be used with no configuration beyond connecting it to your text
+editor, but if you are using external libraries you will need to add them to
+the configuration to get completions, documentation, and correct diagnostics.
+
+If a [docset is available](http://wiki.fennel-lang.org/LanguageServer) for the
+library you are using:
+
+- download it and place it in `~/.local/share/fennel-ls/docsets/`
+- create a `flsproject.fnl` in the root directory of your project
+- add the docset to it, it must match the name of the file you downloaded,
+  without the `.lua` extension:
+  ```fnl
+  {:libraries {:library-name true}}
+  ```
+
+If a docset is not available, add the globals created by the library to the
+`extra-globals` field, separated by spaces, so that they are not reported as
+errors:
+
+```fnl
+{:extra-globals "module1 module2 function1 function2"}
+```
+
+The rest of this document provides additional details on the configuration and
+usage of fennel-ls.
 
 ## Configuration
 

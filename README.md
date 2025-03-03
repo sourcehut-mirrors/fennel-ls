@@ -4,8 +4,8 @@
 Provides intelligent editing features for fennel files.
 
 ## Quick Links
-* [Install](docs/manual.md#installation)
-* [Configuration](docs/manual.md#configuration)
+* [Install](docs/installation.md)
+* [Configuration](docs/manual.md)
 * [Packaging](docs/packaging.md)
 * [Writing your own lint](docs/linting.md)
 
