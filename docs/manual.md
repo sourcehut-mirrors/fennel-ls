@@ -1,4 +1,4 @@
-# Manual
+# Fennel Language Server Manual
 
 This document has information on how to configure and use fennel-ls after you
 [installed it](installation.md).
