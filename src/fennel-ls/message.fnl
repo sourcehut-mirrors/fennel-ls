@@ -35,6 +35,14 @@ LSP json objects."
    :INFO 3
    :HINT 4})
 
+(local severity->string
+  ;; Transforming the `severity` table into
+  ;; `{severity-code printable-string ...}`
+  (collect [k v (pairs severity)]
+    v (case k
+        :WARN :warning
+        _ (string.lower k))))
+
 (λ create-error [code message ?id ?data]
   {:jsonrpc "2.0"
    :id ?id
@@ -106,4 +114,5 @@ LSP json objects."
  : range-and-uri
  : diagnostics
  : severity
+ : severity->string
  : show-message}

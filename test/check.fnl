@@ -10,7 +10,7 @@
     (let [output-file (io.popen (.. "./fennel-ls --lint "
                                     input-file-name)
                                 :r)]
-      (faith.= (.. input-file-name ":1:7: unused definition: x\n")
+      (faith.= (.. input-file-name ":1:7: warning: unused definition: x\n")
                (output-file:read :*a))
       (os.remove input-file-name))
     nil))
