@@ -2,7 +2,7 @@
 
 ## Manual installation
 
-To install from source on Linux or macOS, run:
+To install from source on a unix system that has Lua installed:
 
 ```sh
 $ git clone https://git.sr.ht/~xerool/fennel-ls
@@ -10,15 +10,13 @@ $ cd fennel-ls
 $ make
 ```
 
-The only dependency is a Lua installation.
-
 This build will create a `fennel-ls` executable for you using your default
 system `lua`; use `make LUA=luajit` etc to use a different Lua version.
 
 Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
 a system wide install.
 
-You may want to also install [docsets](docsets) for external libraries.
+You may want to also install [docsets](docsets.md) for external libraries.
 
 ## Packages
 

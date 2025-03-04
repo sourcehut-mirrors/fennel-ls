@@ -60,7 +60,8 @@ a, b radiuses and color with its center at x, y.
 ```
 
 - `binding` is the full name of the symbol, so if this symbol is part of a
-  module the name should be in the form `module.symbol`
+  module the name should be in the form `module.symbol`; if it doesn't
+  have a dot in it then it's interpreted as a global.
 
 - `fls/itemKind` describes the kind of this symbol, it can be any one of the
   [CompletionItemKind](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionItemKind)
@@ -118,7 +119,7 @@ and adding them to [the wiki](http://wiki.fennel-lang.org/LanguageServer)
 if they are likely to be useful to other Fennel developers.
 
 ```sh
-fennel library-docset.fnl > library-docset.lua
+fennel --compile library-docset.fnl > library-docset.lua
 cp library-docset.lua $HOME/.local/share/fennel-ls/docsets/
 ```
 

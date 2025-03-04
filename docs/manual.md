@@ -75,12 +75,12 @@ to indicate where the project root is located.
 
 - `libraries`: This setting controls which extra documentation fennel-ls will
   load in your environment. Each entry in the table is the name of the library
-  and a boolean, `true` to enable the library and `false` to disable it.
+  and a boolean, `true` to enable the library.
 
   The name of the library is the name of a file that will be loaded from
   `~/.local/share/fennel-ls/docsets/` after appending the `.lua` extension.
 
-  For example, if the table contains `{:love2d true}` the file `love2s.lua`
+  For example, if the table contains `{:love2d true}` the file `love2d.lua`
   will be loaded from `~/.local/share/fennel-ls/docsets/`.
 
   The available docsets are listed on the [Fennel
