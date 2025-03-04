@@ -34,7 +34,8 @@
         (each [_ {: message : range} (ipairs file.diagnostics)]
           (set should-err? true)
           (print-diagnostic filename message range))))
-    (os.exit (not should-err?))))
+    (when should-err?
+      (os.exit 1))))
 
 (λ main-loop [in out]
   (local send (partial json-rpc.write out))

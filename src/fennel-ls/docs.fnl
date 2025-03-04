@@ -56,7 +56,7 @@
 (λ load-library [name]
   (let [path (.. data-dir name docset-ext)]
     (case (io.open path)
-      f (let [docs (fennel.load-code (f:read :a) {})]
+      f (let [docs (fennel.load-code (f:read :*all) {})]
           (f:close)
           (docs))
       _ {:status :not-found
