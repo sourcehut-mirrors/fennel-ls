@@ -33,7 +33,10 @@
         server (doto {} initialize)]
     (var should-err? false)
     (each [_ filename (ipairs filenames)]
-      (let [file (files.get-by-uri server (.. "file://" filename))]
+      (let [uri (case filename
+                  "-" :stdin
+                  _ (.. "file://" filename))
+            file (files.get-by-uri server uri)]
         (lint.add-lint-diagnostics server file)
         (each [_ {: message : range : severity} (ipairs file.diagnostics)]
           (set should-err? true)

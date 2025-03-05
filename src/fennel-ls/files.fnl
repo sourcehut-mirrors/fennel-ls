@@ -13,10 +13,13 @@ in the \"server\" object."
 (λ read-file [server uri]
   (case (?. server.preload uri)
     preload {: uri :text preload}
-    _ (case (io.open (utils.uri->path uri) "r")
-        file (let [text (file:read :*a)]
-               (file:close)
-               {: uri : text}))))
+    _ (case uri
+        :stdin (let [text (io.read :*a)]
+                 {: uri : text})
+        _ (case (io.open (utils.uri->path uri) "r")
+            file (let [text (file:read :*a)]
+                   (file:close)
+                   {: uri : text})))))
 
 (λ get-by-uri [server uri]
   (or (. server.files uri)
