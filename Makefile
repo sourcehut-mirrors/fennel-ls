@@ -9,6 +9,7 @@ SRC:=$(shell find src -name "*.fnl")
 DESTDIR ?=
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
+MANDIR ?= $(PREFIX)/share/man/man1
 
 FENNELFLAGS=--add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
@@ -27,8 +28,9 @@ $(EXE): $(SRC)
 		--compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
-install: $(EXE)
+install: $(EXE) build/fennel-ls.1
 	mkdir -p $(DESTDIR)$(BINDIR) && cp $< $(DESTDIR)$(BINDIR)/
+	mkdir -p $(DESTDIR)$(MANDIR) && cp build/fennel-ls.1 $(DESTDIR)$(MANDIR)
 
 ## Generating docs
 
