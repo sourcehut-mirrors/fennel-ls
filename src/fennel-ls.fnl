@@ -51,12 +51,28 @@
     (let [msg (json-rpc.read in)]
       (dispatch.handle server send msg))))
 
+(local {: version} (require :fennel-ls.utils))
+(local help "Usage: fennel-ls [FLAG] [FILES]
+
+Run fennel-ls, the Fennel language server and linter.
+
+  --lint FILES : Run the linter on the provided files
+                 a single dash (-) can be used to read from stdin
+  --server     : Start the language server (stdio mode only)
+                 optional, this is the default with no arguments
+
+  --help       : Display this text
+  --version    : Show version")
+
 (λ main []
   (case arg
+    ["--help"] (print help)
+    ["--version"] (print version)
     ["--lint" & filenames] (lint filenames)
     (where (or ["--server"] [nil])) (main-loop (io.input)
                                                (io.output))
-    _args (do (io.stderr:write "USAGE: fennel-ls [--lint file] [--server]\n")
+    _args (do (io.stderr:write help)
+              (io.stderr:write "\n")
               (os.exit 1))))
 
 (main)

@@ -5,6 +5,8 @@ These functions are all pure functions, which makes me happy."
 
 (local fennel (require :fennel))
 
+(local version :0.2.0-dev)
+
 (λ next-line [str ?from]
   "Find the start of the next line from a given byte offset, or from the start of the string."
   (let [from (or ?from 1)]
@@ -209,7 +211,8 @@ WARNING: this is only used in the test code, not in the real language server"
 (fn find [t x ?k]
   (match (next t ?k) (k x) k (k y_) (find t x k)))
 
-{: uri->path
+{: version
+ : uri->path
  : path->uri
  : pos->position
  : byte->position

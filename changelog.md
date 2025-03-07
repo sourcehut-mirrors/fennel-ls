@@ -4,7 +4,9 @@
 
 ### Features
 
-* Support highlighting references to the symbol under the cursor in the current scope.
+* Add --help and --version command line flags.
+* Support providing improved completion kinds to clients.
+* Support highlighting references to the symbol under the cursor in the current file.
 * Support loading external docsets from disk.
 * Extract TIC-80 docs to external docset.
 * Support `:lua-version` settings like `"lua5.4"` rather than requiring `"lua54"`.

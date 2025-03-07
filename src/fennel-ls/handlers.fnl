@@ -78,7 +78,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;;                              :willDelete nil}}
          ;; :experimental nil)
     {: capabilities
-     :serverInfo {:name "fennel-ls" :version "0.1.0"}}))
+     :serverInfo {:name "fennel-ls" :version utils.version}}))
 
 (λ requests.textDocument/definition [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
