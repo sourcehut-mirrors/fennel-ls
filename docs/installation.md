@@ -26,8 +26,7 @@ I think `fennel-ls` and `fennel-ls-git` may be in the AUR.
 
 #### NixOS
 
-If you are using NixOS, you can use the included `/flake.nix` or
-`/default.nix`.
+Included in [nixpkgs](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/fe/fennel-ls/package.nix)
 
 #### Debian/Ubuntu
 
