@@ -33,14 +33,6 @@ Included in [nixpkgs](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/
 Unofficial `.deb` packages are available at
 [https://apt.technomancy.us](https://apt.technomancy.us).
 
-#### Luarocks
-
-Alternatively, `fennel-ls` is available in LuaRocks, but recommendation is to
-use one of the other packaging solutions over LuaRocks, if available.
-
-```sh
-luarocks install fennel-ls
-```
 
 ## Editor integration
 

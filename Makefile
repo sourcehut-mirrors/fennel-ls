@@ -14,11 +14,8 @@ MANDIR ?= $(PREFIX)/share/man/man1
 FENNELFLAGS=--add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
-ROCKSPEC_LATEST_SCM=rockspecs/fennel-ls-scm-$(shell ls rockspecs | \
-	grep -Eo 'scm-[0-9]+' | grep -Eo [0-9]+ | sort -n | tail -1).rockspec
-
 .PHONY: all clean test repl install docs docs-love2d install-deps ci selflint \
-	deps rm-docs rm-deps count testall check-deps check-luarocks
+	deps rm-docs rm-deps count testall check-deps
 
 all: $(EXE)
 
@@ -92,11 +89,6 @@ check-deps:
 	diff -r deps old-deps
 	diff -r fennel old-fennel
 	rm -rf old-deps old-fennel
-
-check-luarocks:
-	luarocks install $(ROCKSPEC_LATEST_SCM) --dev --local
-	eval "$$(luarocks path)"; \
-	fennel-ls --lint
 
 ci: selflint testall
 

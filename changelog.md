@@ -19,6 +19,10 @@
 * Settings file: `flsproject.fnl`. Settings are now editor agnostic.
 * Support `:intersection` as a Lua version; only includes globals present in every Lua.
 
+### Changes
+
+* Packaging scripts for nix and luarocks have been removed so they can be kept in downstream repositories.
+
 ### Bug Fixes
 * (set (. x y) z) wasn't being analyzed properly.
 * (local {: unknown-field} (require :module)) lint warns about the unknown field when accessed via destructuring.
