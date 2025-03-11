@@ -294,8 +294,7 @@ Every time the client sends a message, it gets handled by a function in the corr
     (icollect [_ diagnostic (ipairs file.diagnostics)]
       (if (and (overlap? diagnostic.range range)
                diagnostic.quickfix)
-        {:title diagnostic.codeDescription
-         :edit {:changes {uri (diagnostic.quickfix)}}}))))
+        (message.diagnostic->code-action server file diagnostic :quickfix)))))
 
 (λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
   (local file (files.get-by-uri server uri))

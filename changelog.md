@@ -4,6 +4,7 @@
 
 ### Features
 
+* Provide human readable code actions titles.
 * Add --help and --version command line flags.
 * Support providing improved completion kinds to clients.
 * Support highlighting references to the symbol under the cursor in the current file.

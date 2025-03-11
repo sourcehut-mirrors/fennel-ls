@@ -20,6 +20,7 @@
     (let [edits (?. action :edit :changes uri)
           edited-text (apply-edits text edits encoding)]
       (faith.= desired-file-contents edited-text))))
+
 (fn check-negative [file-contents action-not-suggested]
   (let [{: client : uri :locations [range]} (create-client file-contents)
         [{:result responses}] (client:code-action uri range.range)]
@@ -32,13 +33,13 @@
 (fn test-fix-op-no-arguments []
   (check "(let [x (+====)]
             (print x))"
-         "op-with-no-arguments"
+         "Replace with the corresponding literal"
          "(let [x 0]
             (print x))"))
 
 (fn test-fix-unused-definition []
   (check "(local x==== 10)"
-         "unused-definition"
+         "Prefix with _ to silence warning"
          "(local _x 10)"))
 
 ; (fn test-fix-method-function []

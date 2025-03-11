@@ -73,6 +73,24 @@ LSP json objects."
                              :end   (utils.byte->position file.text (+ byteend 1)
                                                           server.position-encoding)}))
 
+(λ code-action-title [diag]
+  (let [titles {:match-should-case "Replace match with case"
+                :unused-definition "Prefix with _ to silence warning"
+                :op-with-no-arguments "Replace with the corresponding literal"
+                :no-decreasing-comparison "Reverse comparison"
+                :unnecessary-tset "Replace with set"
+                :unnecessary-do-values "Remove unnecessary do or values"
+                :redundant-do "Remove redundant do"
+                :bad-unpack "Replace with table.concat call"}]
+    (or (. titles diag.codeDescription)
+        (.. "Action title missing - " diag.codeDescription))))
+
+(λ diagnostic->code-action [_server file diagnostic ?kind]
+  (let [{: uri} file]
+    {:title (code-action-title diagnostic)
+     :kind ?kind
+     :edit {:changes {uri (diagnostic.quickfix)}}}))
+
 (λ multisym->range [server file ast n]
   (let [spl (utils.multi-sym-split ast)
         n (if (< n 0) (+ n 1 (length spl)) n)]
@@ -110,6 +128,7 @@ LSP json objects."
  : create-response
  : create-error
  : ast->range
+ : diagnostic->code-action
  : multisym->range
  : range-and-uri
  : diagnostics
