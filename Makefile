@@ -50,6 +50,7 @@ rm-docs:
 	rm -rf src/fennel-ls/docs/
 
 build/fennel-ls.1:
+	mkdir -p build/
 	echo ".TH FENNEL-LS 1" > $@
 	pandoc --title-prefix=fennel-ls -t man docs/manual.md >> $@
 	echo ".SH LICENSE\nCopyright © 2023-2025, Released under the MIT/X11 license" >> $@
