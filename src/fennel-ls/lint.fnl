@@ -62,7 +62,7 @@ the `file.diagnostics` field, filling it with diagnostics."
   (let [opts {}
         item (analyzer.search-ast server file ?ast stack opts)]
     (if (and (not item)
-             (file.lexical symbol)
+             (. file.lexical symbol)
              (not (in-or? file.calls symbol))
              ;; this doesn't necessarily have to come thru require; it works
              ;; for built-in modules too
