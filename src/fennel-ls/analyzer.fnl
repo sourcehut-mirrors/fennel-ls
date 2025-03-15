@@ -157,9 +157,10 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                        (or (sym? head :fn)
                            (sym? head :lambda)
                            (sym? head :λ))))
-
               (search-multival server file (. definition (length definition)) stack multival opts)
-              result result))))))
+              result result
+              _ (case (docs.get-builtin server (tostring (. call 1)))
+                  {:metadata metadata_} {:indeterminate true})))))))
 
 (set search-multival
   (λ [server file ?ast stack multival opts]

@@ -111,6 +111,12 @@
                      field.unknown"}
          []
          [{:code 302}])
+  ;; specials are OK too
+  (check {:unpacker.fnl "(local unpack (or table.unpack _G.unpack)) {: unpack}"
+          :main.fnl "(local u (require :unpacker))
+                     (print (u.unpack [:haha :lol]))"}
+         []
+         [{:code 302}])
   (check "package.loaded.mymodule io.stderr.write"
          []
          [{:code 302}])
