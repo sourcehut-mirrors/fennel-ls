@@ -11,34 +11,27 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 
 (λ render-arg [arg]
   (case (type arg)
-    :table (view arg {:one-line? true
-                      :prefer-colon? true})
+    :table (: (view arg {:one-line? true
+                         :prefer-colon? true})
+              ;; transform {:key key} to {: key}
+              :gsub ":([%w?_-]+) ([%w?]+)([ }])"
+              #(if (= $1 $2)
+                 (.. ": " $2 $3)))
     _ (tostring arg)))
 
-(λ fn-signature-format [name args]
+(fn fn-signature-format [special name args]
   (let [args (case (type (?. args 1))
                :table (icollect [_ v (ipairs args)]
                         (render-arg v))
                _ args)]
     (.. "("
-        (tostring name) " "
+        (tostring (or name special)) " "
         (table.concat args " ")
         ")")))
 
 (fn fn-format [special name args docstring]
-  (.. (code-block (.. "("
-                      (tostring special)
-                      (if name (.. " " (tostring name)) "")
-                      (.. " "
-                          (: (view args
-                               {:empty-as-sequence? true
-                                :one-line? true
-                                :prefer-colon? true})
-                             :gsub ":([%w?_-]+) ([%w?]+)([ }])"
-                             #(if (= $1 $2)
-                                (.. ": " $2 $3))))
-                      " ...)"))
-      (if docstring (.. "\n" docstring) "")))
+  (.. (code-block (fn-signature-format special name args))
+      (if docstring (.. "\n---\n" docstring) "")))
 
 (fn metadata-format [{: binding : metadata}]
   "formats a special using its builtin metadata magic"
@@ -49,7 +42,7 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
         (= 0 (length metadata.fnl/arglist))
         (.. "(" (tostring binding) ")")
         (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")")))
-    "\n"
+    "\n---\n"
     (or metadata.fnl/docstring "")))
 
 (λ fn? [symbol]
@@ -99,15 +92,15 @@ fntype is one of fn or λ or lambda"
 
   symbol can be an actual ast symbol or a binding object from a docset"
   (case (analyze-fn symbol.definition)
-    {:name ?name :arglist ?arglist :docstring ?docstring}
-    {:label (fn-signature-format ?name ?arglist)
+    {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
+    {:label (fn-signature-format ?fntype ?name ?arglist)
      :documentation ?docstring
      :parameters (if ?arglist
                      (icollect [_ arg (ipairs ?arglist)]
                        {:label (render-arg arg)}))}
     _ (case symbol
         {: binding :metadata {:fnl/arglist arglist :fnl/docstring docstring}}
-        {:label (fn-signature-format binding arglist)
+        {:label (fn-signature-format :fn binding arglist)
          :documentation docstring}
         _ {:label (.. "ERROR: don't know how to format " (tostring symbol))
            :documentation (code-block

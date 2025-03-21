@@ -140,8 +140,9 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/signatureHelp [server
                                           _send
                                           {:textDocument {: uri} : position}]
-  (let [file (files.get-by-uri server uri)]
-    (case-try (analyzer.find-nearest-call server file position)
+  (let [file (files.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
+    (case-try (analyzer.find-nearest-call server file byte)
       (symbol active-parameter)
       (analyzer.find-nearest-definition server file symbol)
       {:indeterminate nil &as result}

@@ -33,13 +33,14 @@
   nil)
 
 (fn test-builtins []
-  (check "(d|o nil)" "```fnl\n(do ...)\n```\nEvaluate multiple forms; return last value.")
-  (check "(|doto nil (print))" "```fnl\n(doto val ...)\n```\nEvaluate val and splice it into the first argument of subsequent forms.")
-  (check "(le|t [x 10] 10)" "```fnl\n(let [name1 val1 ... nameN valN] ...)\n```\nIntroduces a new scope in which a given set of local bindings are used.")
+  (check "(d|o nil)" "```fnl\n(do ...)\n```\n---\nEvaluate multiple forms; return last value.")
+  (check "(|doto nil (print))" "```fnl\n(doto val ...)\n```\n---\nEvaluate val and splice it into the first argument of subsequent forms.")
+  (check "(le|t [x 10] 10)" "```fnl\n(let [name1 val1 ... nameN valN] ...)\n```\n---\nIntroduces a new scope in which a given set of local bindings are used.")
   nil)
 
 (fn test-globals []
   (check "(pri|nt :hello :world)" "```fnl\n(print ...)\n```
+---
 Receives any number of arguments
 and prints their values to `stdout`,
 converting each argument to a string
@@ -51,6 +52,7 @@ for instance for debugging.
 For complete control over the output,
 use `string.format` and `io.write`.")
   (check "(local x print) (x| :hello :world)" "```fnl\n(print ...)\n```
+---
 Receives any number of arguments
 and prints their values to `stdout`,
 converting each argument to a string
@@ -64,6 +66,7 @@ use `string.format` and `io.write`.")
   (check "(xpca|ll io.open debug.traceback :filename.txt)" "```fnl
 (xpcall f msgh ?arg1 ...)
 ```
+---
 This function is similar to `pcall`,
 except that it sets a new message handler `msgh`.")
   (check "(table.inser|t [] :message" #($:find "```fnl\n(table.insert list value)\n```" 1 true))
@@ -71,43 +74,43 @@ except that it sets a new message handler `msgh`.")
 
 (fn test-module []
   (check "coroutine.yie|ld"
-         "```fnl\n(coroutine.yield ...)\n```\nSuspends the execution of the calling coroutine.\nAny arguments to `yield` are passed as extra results to `resume`.")
+         "```fnl\n(coroutine.yield ...)\n```\n---\nSuspends the execution of the calling coroutine.\nAny arguments to `yield` are passed as extra results to `resume`.")
   (check "string.cha|r"
-         "```fnl\n(string.char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms.")
+         "```fnl\n(string.char ...)\n```\n---\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms.")
   (check "(local x :hello)
           x.cha|r"
-         "```fnl\n(string.char ...)\n```\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
+         "```fnl\n(string.char ...)\n```\n---\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
 
 
 (fn test-functions []
   (check "(fn my-function| [arg1 arg2 arg3]
             (print arg1 arg2 arg3))"
-         "```fnl\n(fn my-function [arg1 arg2 arg3] ...)\n```")
+         "```fnl\n(my-function arg1 arg2 arg3)\n```")
   (check "(fn my-function| [arg1 arg2 arg3]
             \"this is a doc string\"
             (print arg1 arg2 arg3))"
-         "```fnl\n(fn my-function [arg1 arg2 arg3] ...)\n```\nthis is a doc string")
+         "```fnl\n(my-function arg1 arg2 arg3)\n```\n---\nthis is a doc string")
   (check "(fn my-function [arg1 arg2 arg3]
             \"this is a doc string\"
             (print arg1 arg2 arg3))
           (|my-function)"
-         "```fnl\n(fn my-function [arg1 arg2 arg3] ...)\n```\nthis is a doc string")
+         "```fnl\n(my-function arg1 arg2 arg3)\n```\n---\nthis is a doc string")
   (check "(fn my-function [arg1 arg2 arg3]
             \"this is a doc string\"
             (print arg1 arg2 arg3))
           (my-function)|" nil)
   (check "(fn foo| [x ...]
             \"not a docstring, this gets returned\")"
-         "```fnl\n(fn foo [x ...] ...)\n```")
+         "```fnl\n(foo x ...)\n```")
   (check "(λ foo| [x ...]
             \"not a docstring, this gets returned\")"
-         "```fnl\n(λ foo [x ...] ...)\n```")
+         "```fnl\n(foo x ...)\n```")
   (check "(λ foo| [{: start : end}]
             :body)"
-         "```fnl\n(λ foo [{: end : start}] ...)\n```")
+         "```fnl\n(foo {: end : start})\n```")
   (check "(λ foo| [{:list [a b c] :table {: d : e : f}}]
             :body)"
-         "```fnl\n(λ foo [{:list [a b c] :table {: d : e : f}}] ...)\n```")
+         "```fnl\n(foo {:list [a b c] :table {: d : e : f}})\n```")
   nil)
 
 (fn test-multisym []
@@ -150,7 +153,7 @@ except that it sets a new message handler `msgh`.")
             \"docstring!\"
             `(,a ,b ,c))
           (fo|o print :hello :world)"
-         "```fnl\n(foo a b c)\n```\ndocstring!")
+         "```fnl\n(foo a b c)\n```\n---\ndocstring!")
   ; (check {:main.fnl "(import-macros cool :cool)
   ;                    (coo|l.=)"
   ;         :cool.fnl ";; fennel-ls: macro-file

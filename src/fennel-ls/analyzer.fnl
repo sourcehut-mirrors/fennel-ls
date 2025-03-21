@@ -274,12 +274,11 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 
-(λ find-nearest-call [server file position]
+(λ find-nearest-call [_server file byte]
   "Find the nearest call
 
 returns the called symbol and the argument number position points to"
-  (let [byte (utils.position->byte file.text position server.position-encoding)
-        (_ [[call] [parent]]) (find-symbol file.ast byte)]
+  (let [(_ [[call] [parent]]) (find-symbol file.ast byte)]
     (if (special? parent)
         (values parent -1)
         (values call -1))))
