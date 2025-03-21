@@ -55,6 +55,14 @@
      {: position
       :textDocument {:uri file}})))
 
+(fn signature-help [self file position]
+  (dispatch.handle*
+    self.server
+    (message.create-request (next-id! self)
+                            :textDocument/signatureHelp
+                            {: position
+                             :textDocument {:uri file}})))
+
 (fn rename [self file position newName]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/rename
@@ -83,6 +91,7 @@
              : hover
              : references
              : document-highlight
+             : signature-help
              : rename
              : code-action
              : did-save}})

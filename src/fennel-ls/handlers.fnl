@@ -40,7 +40,9 @@ Every time the client sends a message, it gets handled by a function in the corr
                               :triggerCharacters ["(" "[" "{" "." ":" "\""]
                               :completionItem {:labelDetailsSupport false}}
          :hoverProvider {:workDoneProgress false}
-         ;; :signatureHelpProvider nil
+         :signatureHelpProvider {:workDoneProgress false
+                                 :triggerCharacters [" "]
+                                 :retriggerCharacters [" "]}
          ;; :declarationProvider nil
          :definitionProvider {:workDoneProgress false}
          ;; :typeDefinitionProvider nil
@@ -133,6 +135,19 @@ Every time the client sends a message, it gets handled by a function in the corr
 
         ;; TODO don't include duplicates
         result)
+      (catch _ nil))))
+
+(λ requests.textDocument/signatureHelp [server
+                                          _send
+                                          {:textDocument {: uri} : position}]
+  (let [file (files.get-by-uri server uri)]
+    (case-try (analyzer.find-nearest-call server file position)
+      (symbol active-parameter)
+      (analyzer.find-nearest-definition server file symbol)
+      {:indeterminate nil &as result}
+      (message.symbol->signature-help server file symbol
+                                      (formatter.signature-help-format result)
+                                      active-parameter)
       (catch _ nil))))
 
 (λ requests.textDocument/hover [server _send {: position :textDocument {: uri}}]

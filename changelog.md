@@ -4,6 +4,7 @@
 
 ### Features
 
+* Signature help support.
 * Provide human readable code actions titles.
 * Add --help and --version command line flags.
 * Support providing improved completion kinds to clients.

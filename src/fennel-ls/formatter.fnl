@@ -9,6 +9,22 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
 
+(λ render-arg [arg]
+  (case (type arg)
+    :table (view arg {:one-line? true
+                      :prefer-colon? true})
+    _ (tostring arg)))
+
+(λ fn-signature-format [name args]
+  (let [args (case (type (?. args 1))
+               :table (icollect [_ v (ipairs args)]
+                        (render-arg v))
+               _ args)]
+    (.. "("
+        (tostring name) " "
+        (table.concat args " ")
+        ")")))
+
 (fn fn-format [special name args docstring]
   (.. (code-block (.. "("
                       (tostring special)
@@ -78,12 +94,32 @@ fntype is one of fn or λ or lambda"
       (= (type arglist) :table))
     {: fntype : arglist}))
 
+(λ signature-help-format [symbol]
+  "Return a signatureHelp lsp object
+
+  symbol can be an actual ast symbol or a binding object from a docset"
+  (case (analyze-fn symbol.definition)
+    {:name ?name :arglist ?arglist :docstring ?docstring}
+    {:label (fn-signature-format ?name ?arglist)
+     :documentation ?docstring
+     :parameters (if ?arglist
+                     (icollect [_ arg (ipairs ?arglist)]
+                       {:label (render-arg arg)}))}
+    _ (case symbol
+        {: binding :metadata {:fnl/arglist arglist :fnl/docstring docstring}}
+        {:label (fn-signature-format binding arglist)
+         :documentation docstring}
+        _ {:label (.. "ERROR: don't know how to format " (tostring symbol))
+           :documentation (code-block
+                            (view symbol {:depth 3}))})))
+
 (λ hover-format [result]
   "Format code that will appear when the user hovers over a symbol"
   {:kind "markdown"
    :value
    (case (analyze-fn result.definition)
-     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring} (fn-format ?fntype ?name ?arglist ?docstring)
+     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
+     (fn-format ?fntype ?name ?arglist ?docstring)
      _ (if (-?>> result.keys length (< 0))
          (code-block
            (.. "ERROR, I don't know how to show this "
@@ -112,5 +148,6 @@ fntype is one of fn or λ or lambda"
          :kind (. kinds (?. result :metadata :fls/itemKind))})
     (tset :documentation (hover-format result))))
 
-{: hover-format
+{: signature-help-format
+ : hover-format
  : completion-item-format}

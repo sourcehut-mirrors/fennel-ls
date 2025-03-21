@@ -39,11 +39,10 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 "
 
 (local {: sym? : list? : sequence? : varg?} (require :fennel))
-(local utils (require :fennel-ls.utils))
+(local {: special?} (require :fennel-ls.compiler))
+(local {: get-ast-info &as utils} (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
-
-(local get-ast-info utils.get-ast-info)
 
 (var search-multival nil) ;; all of the search functions are mutually recursive
 
@@ -222,9 +221,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (λ _past? [?ast byte]
   ;; check if a byte is past an ast object
   (and (= (type ?ast) :table)
-       (get-ast-info ?ast :bytestart)
-       (< byte (get-ast-info ?ast :bytestart))
-       false))
+       (get-ast-info ?ast :byteend)
+       (< (get-ast-info ?ast :byteend) byte)))
 
 (λ contains? [?ast byte]
   ;; check if an ast contains a byte
@@ -276,12 +274,23 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 
+(λ find-nearest-call [server file position]
+  "Find the nearest call
+
+returns the called symbol and the argument number position points to"
+  (let [byte (utils.position->byte file.text position server.position-encoding)
+        (_ [[call] [parent]]) (find-symbol file.ast byte)]
+    (if (special? parent)
+        (values parent -1)
+        (values call -1))))
+
 (λ find-nearest-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
     (. file.definitions symbol)
     (search-main server file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
+ : find-nearest-call
  : find-nearest-definition
  : search-main
  : search-name-and-scope

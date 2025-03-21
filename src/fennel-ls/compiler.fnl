@@ -6,12 +6,27 @@ compiler's plugin hook callbacks. It stores lexical info about which
 identifiers are declared / referenced in which places."
 
 (local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
+(local {:scopes {:global {: specials}}} (require :fennel.compiler))
 (local docs (require :fennel-ls.docs))
 (local message (require :fennel-ls.message))
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
 
 (local nil* (sym :nil))
+
+(fn special? [item]
+  (and (sym? item)
+       (. specials (tostring item))
+       item))
+
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1
+            "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1
+            "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
+
+(fn op? [item]
+  (and (sym? item)
+       (. ops (tostring item))
+       item))
 
 (fn scope? [candidate]
   ;; just checking a couple of the fields
@@ -426,4 +441,6 @@ identifiers are declared / referenced in which places."
       (set file.macro-refs macro-refs)
       (set file.macro-calls macro-calls))))
 
-{: compile}
+{: special?
+ : op?
+ : compile}

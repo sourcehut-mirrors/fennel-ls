@@ -4,7 +4,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (local {: sym? : list? : table? : view
         : sym : list &as fennel} (require :fennel))
-(local {:scopes {:global {: specials}}} (require :fennel.compiler))
+(local {: special? : op?} (require :fennel-ls.compiler))
 (local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
@@ -15,20 +15,6 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (fn diagnostic [self quickfix]
   (setmetatable {: self : quickfix} diagnostic-mt))
-
-(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1
-            "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1
-            "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
-
-(fn special? [item]
-  (and (sym? item)
-       (. specials (tostring item))
-       item))
-
-(fn op? [item]
-  (and (sym? item)
-       (. ops (tostring item))
-       item))
 
 (fn could-be-rewritten-as-sym? [str]
   (and (= :string (type str)) (not (str:find "^%d"))

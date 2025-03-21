@@ -91,6 +91,11 @@ LSP json objects."
      :kind ?kind
      :edit {:changes {uri (diagnostic.quickfix)}}}))
 
+(λ symbol->signature-help [_server _file _call signature active-parameter]
+  {:signatures [signature]
+   :activeSignature 0
+   :activeParameter active-parameter})
+
 (λ multisym->range [server file ast n]
   (let [spl (utils.multi-sym-split ast)
         n (if (< n 0) (+ n 1 (length spl)) n)]
@@ -129,6 +134,7 @@ LSP json objects."
  : create-error
  : ast->range
  : diagnostic->code-action
+ : symbol->signature-help
  : multisym->range
  : range-and-uri
  : diagnostics
