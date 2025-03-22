@@ -93,6 +93,28 @@ If you run into problems, check the [LSP Client Configuration
 reference](https://lsp.sublimetext.io/client_configuration/) and double-check
 the location of fennel-ls on the $PATH is visible to Sublime Text.
 
+### Helix
+
+Make sure `fennel_ls` is available in your `$PATH` and then add this to your
+`~/.config/helix/languages.toml` file:
+
+```toml
+[language-server.fennel-ls]
+command = "fennel-ls"
+
+[[language]]
+name = "fennel"
+scope = "source.fennel"
+file-types = ["fnl"]
+language-servers = ["fennel-ls"]
+```
+
+If you have `fnlfmt` you can also add this to the `[[language]]` section:
+
+```toml
+formatter = { command = "fnlfmt", args = ["-"]}
+```
+
 ### Visual Studio Code
 
 You need to [install an extension](https://codeberg.org/adjuvant/vscode-fennel-ls)
