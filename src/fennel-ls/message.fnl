@@ -82,8 +82,8 @@ LSP json objects."
                 :unnecessary-do-values "Remove unnecessary do or values"
                 :redundant-do "Remove redundant do"
                 :bad-unpack "Replace with table.concat call"}]
-    (or (. titles diag.codeDescription)
-        (.. "Action title missing - " diag.codeDescription))))
+    (or (. titles diag.code)
+        (.. "Action title missing - " diag.code))))
 
 (λ diagnostic->code-action [_server file diagnostic ?kind]
   (let [{: uri} file]

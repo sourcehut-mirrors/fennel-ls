@@ -43,23 +43,24 @@
 (fn test-unused []
   (check "(local x 10)"
          [{:message "unused definition: x"
-           :code 301
+           :code :unused-definition
            :range {:start {:character 7 :line 0}
                    :end   {:character 8 :line 0}}}])
   (check "(fn x [])"
          [{:message "unused definition: x"
-           :code 301
+           :code :unused-definition
            :range {:start {:character 4 :line 0}
                    :end   {:character 5 :line 0}}}])
   (check "(let [(x y) (values 1 2)] x)"
-         [{:code 301
+         [{:code :unused-definition
            :range {:start {:character 9  :line 0}
                    :end   {:character 10 :line 0}}}])
-  (check "(case [1 1 2 3 5 8] [a a] (print :first-two-equal))" [{:code 301}])
+  (check "(case [1 1 2 3 5 8] [a a] (print :first-two-equal))"
+         [{:code :unused-definition}])
   (assert-ok "(case [1 1 2 3 5 8] [a_ a_] (print :first-two-equal))")
   ;; setting a var without reading
   (check "(var x 1) (set x 2) (set [x] [3])"
-          [{:code 301
+          [{:code :unused-definition
             :range {:start {:character 5 :line 0}
                     :end   {:character 6 :line 0}}}])
   ;; setting a field without reading is okay
@@ -93,39 +94,39 @@
           :main.fnl
           "(local {: a : c &as guy} (require :the-guy-they-tell-you-not-to-worry-about))
            (print guy.b guy.d)"}
-         [{:code 302 :message "unknown field: c"}
-          {:code 302 :message "unknown field: guy.d"}]
-         [{:code 302 :message "unknown field: a"}
-          {:code 302 :message "unknown field: b"}])
+         [{:code :unknown-module-field :message "unknown field: c"}
+          {:code :unknown-module-field :message "unknown field: guy.d"}]
+         [{:code :unknown-module-field :message "unknown field: a"}
+          {:code :unknown-module-field :message "unknown field: b"}])
   (check "table.insert2 table.insert"
-         [{:code 302 :message "unknown field: table.insert2"}]
-         [{:code 302 :message "unknown field: table.insert"}])
+         [{:code :unknown-module-field :message "unknown field: table.insert2"}]
+         [{:code :unknown-module-field :message "unknown field: table.insert"}])
   ;; if you explicitly write "_G", it should turn off this test.
   ;; Hardcoded at the top of analyzer.fnl/search-document.
   (check "_G.insert2"
          []
-         [{:code 302}])
+         [{:code :unknown-module-field}])
   ;; we don't care about nested
   (check {:requireme.fnl "{:field []}"
           :main.fnl "(local {: field} (require :requireme))
                      field.unknown"}
          []
-         [{:code 302}])
+         [{:code :unknown-module-field}])
   ;; specials are OK too
   (check {:unpacker.fnl "(local unpack (or table.unpack _G.unpack)) {: unpack}"
           :main.fnl "(local u (require :unpacker))
                      (print (u.unpack [:haha :lol]))"}
          []
-         [{:code 302}])
+         [{:code :unknown-module-field}])
   (check "package.loaded.mymodule io.stderr.write"
          []
-         [{:code 302}])
+         [{:code :unknown-module-field}])
   nil)
 
-(fn test-unnecessary-colon []
+(fn test-unnecessary-method []
   (check "(let [x :haha] (: x :find :a))"
          [{:message "unnecessary : call: use (x:find)"
-           :code 303
+           :code :unnecessary-method
            :range {:start {:character 15 :line 0}
                    :end   {:character 29 :line 0}}}])
 
@@ -140,13 +141,13 @@
 
 (fn test-unpack-into-op []
   (check "(+ (unpack [1 2 3]))"
-         [{:code 304}])
+         [{:code :bad-unpack}])
 
   (check "(.. (table.unpack [\"hello\" \"world\"]))"
-         [{:code 304 :message #($:find "table.concat")}])
+         [{:code :bad-unpack :message #($:find "table.concat")}])
 
   (check "(* (table.unpack [\"hello\" \"world\"]))"
-         [{:code 304 :message #(not ($:find "table%.concat"))}])
+         [{:code :bad-unpack :message #(not ($:find "table%.concat"))}])
 
   ;; only when lexical
   (assert-ok "(-> [1 2 3] table.unpack +)")
@@ -154,7 +155,7 @@
 
 (fn test-unset-var []
   (check "(var x nil) (print x)"
-         [{:code 305
+         [{:code :var-never-set
            :range {:start {:character 5 :line 0}
                    :end   {:character 6 :line 0}}}])
 
@@ -166,7 +167,7 @@
 
 (fn test-unpack-in-middle []
   (check "(+ 1 2 3 (values 4 5) 6)"
-         [{:code 307
+         [{:code :inline-unpack
            :range {:start {:line 0 :character 9}
                    :end   {:line 0 :character 21}}}])
 
@@ -180,14 +181,15 @@
   (assert-ok "(local [tbl key] [{} :k]) (tset tbl key 249)")
   ;; never a good use of tset
   (check "(local tbl {}) (tset tbl :key 9)"
-         [{:code 309
-           :codeDescription "unnecessary-tset"
+         [{:code :unnecessary-tset
            :message "unnecessary tset"
            :range {:start {:character 15 :line 0}
                    :end {:character 32 :line 0}}}])
-  (check "(local tbl {}) (tset tbl :key :nested 9)" [{:code 309}])
+  (check "(local tbl {}) (tset tbl :key :nested 9)"
+         [{:code :unnecessary-tset}])
   ;; Lint only triggers on keys that can be written as a sym
-  (check "(local tbl {}) (tset tbl \"hello-world\" 249)" [{:code 309}])
+  (check "(local tbl {}) (tset tbl \"hello-world\" 249)"
+         [{:code :unnecessary-tset}])
   (assert-ok "(local tbl {}) (tset tbl \"01234567\" 249)")
   (assert-ok "(local tbl {}) (tset tbl \"hello world\" 1)")
   (assert-ok "(local tbl {}) (tset tbl \"0123.4567\" 1)")
@@ -198,14 +200,12 @@
   (assert-ok "(do (print :x) 11)")
   ;; unnecessary do
   (check "(do 9)" [{:message "unnecessary do"
-                    :code 310
-                    :codeDescription "unnecessary-do-values"
+                    :code :unnecessary-do-values
                     :range {:start {:character 0 :line 0}
                             :end {:character 6 :line 0}}}])
   ;; unnecessary values
   (check "(print :hey (values :lol))"
-         [{:code 310
-           :codeDescription "unnecessary-do-values"
+         [{:code :unnecessary-do-values
            :message "unnecessary values"
            :range {:start {:character 12 :line 0}
                    :end {:character 25 :line 0}}}])
@@ -216,8 +216,7 @@
   (assert-ok "(case 134 x (do (print :x x) 11))")
   ;; unnecessary one
   (check "(let [x 29] (do (print 9) x))"
-         [{:code 311
-           :codeDescription "redundant-do"
+         [{:code :redundant-do
            :message "redundant do"
            :range {:start {:character 12 :line 0}
                    :end {:character 28 :line 0}}}])
@@ -242,13 +241,13 @@
   ;; warn: basic no pinning
   (check "(match 91 z (print :yeah2 z))"
          [{:message "no pinned patterns; use case instead of match"
-           :code 308
+           :code :match-should-case
            :range {:start {:character 1 :line 0}
                    :end {:character 6 :line 0}}}])
   ;; warn: nested no pinning
   (check "(match [32] [lol] (print :nested-no-pin lol))"
          [{:message "no pinned patterns; use case instead of match"
-           :code 308
+           :code :match-should-case
            :range {:start {:character 1 :line 0}
                    :end {:character 6 :line 0}}}])
   nil)
@@ -268,7 +267,7 @@
 {: test-unused
  : test-ampersand
  : test-unknown-module-field
- : test-unnecessary-colon
+ : test-unnecessary-method
  : test-unnecessary-tset
  : test-unnecessary-do
  : test-redundant-do

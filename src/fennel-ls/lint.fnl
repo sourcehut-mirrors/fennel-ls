@@ -33,8 +33,7 @@ the `file.diagnostics` field, filling it with diagnostics."
       {:range (message.ast->range server file symbol)
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
-       :code 301
-       :codeDescription "unused-definition"}
+       :code :unused-definition}
       #[{:range (message.ast->range server file symbol)
          :newText (.. "_" (tostring symbol))}])))
 
@@ -57,8 +56,7 @@ the `file.diagnostics` field, filling it with diagnostics."
          {:range (message.ast->range server file symbol)
           :message (.. "unknown field: " (tostring symbol))
           :severity message.severity.WARN
-          :code 302
-          :codeDescription "unknown-module-field"}))))
+          :code :unknown-module-field}))))
 
 (λ unknown-module-field [server file]
   "any multisym whose definition can't be found through a (require) call"
@@ -83,8 +81,7 @@ the `file.diagnostics` field, filling it with diagnostics."
          :message (.. "unnecessary : call: use (" (tostring (. call 2))
                       ":" method ")")
          :severity message.severity.WARN
-         :code 303
-         :codeDescription "unnecessary-method"}))))
+         :code :unnecessary-method}))))
 
 (λ unnecessary-tset [server file head call]
   (λ all-syms? [call start end]
@@ -109,8 +106,7 @@ the `file.diagnostics` field, filling it with diagnostics."
       (diagnostic {:range (message.ast->range server file call)
                    :message (.. "unnecessary " (tostring head))
                    :severity message.severity.WARN
-                   :code 309
-                   :codeDescription "unnecessary-tset"}
+                   :code :unnecessary-tset}
                   #[{:range (message.ast->range server file call)
                      :newText (make-new-text call)}])))
 
@@ -120,8 +116,7 @@ the `file.diagnostics` field, filling it with diagnostics."
       (diagnostic {:range (message.ast->range server file call)
                    :message (.. "unnecessary " (tostring head))
                    :severity message.severity.WARN
-                   :code 310
-                   :codeDescription "unnecessary-do-values"}
+                   :code :unnecessary-do-values}
                   #[{:range (message.ast->range server file call)
                      :newText (view (. call 2))}])))
 
@@ -135,8 +130,7 @@ the `file.diagnostics` field, filling it with diagnostics."
         (diagnostic {:range (message.ast->range server file last-body)
                      :message "redundant do"
                      :severity message.severity.WARN
-                     :code 311
-                     :codeDescription "redundant-do"}
+                     :code :redundant-do}
                     #[{:range (message.ast->range server file last-body)
                        :newText (table.concat
                                  (fcollect [i 2 (length last-body)]
@@ -165,8 +159,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                         (.. " Use a loop when you have a dynamic number of "
                             "arguments to (" (tostring op) ")")))
          :severity message.severity.WARN
-         :code 304
-         :codeDescription "bad-unpack"}
+         :code :bad-unpack}
         (if (and (= (length call) 2)
                  (= (length (. call 2)) 2)
                  (sym? op ".."))
@@ -181,8 +174,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                    :message (.. "var is never set: " (tostring symbol)
                                 " Consider using (local) instead of (var)")
                    :severity message.severity.WARN
-                   :code 305
-                   :codeDescription "var-never-set"})))
+                   :code :var-never-set})))
 
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 (λ op-with-no-arguments [server file op call]
@@ -196,8 +188,7 @@ the `file.diagnostics` field, filling it with diagnostics."
         {:range  (message.ast->range server file call)
          :message (.. "write " (view identity) " instead of (" (tostring op) ")")
          :severity message.severity.WARN
-         :code 306
-         :codeDescription "op-with-no-arguments"}
+         :code :op-with-no-arguments}
         #[{:range (message.ast->range server file call)
            :newText (view identity)}]))))
 
@@ -207,8 +198,7 @@ the `file.diagnostics` field, filling it with diagnostics."
        {:range  (message.ast->range server file call)
         :message "Use increasing operator instead of decreasing"
         :severity message.severity.WARN
-        :code 312
-        :codeDescription "no-decreasing-comparison"}
+        :code :no-decreasing-comparison}
        #[{:range (message.ast->range server file call)
           :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
                          reversed (fcollect [i (length call) 2 -1
@@ -230,8 +220,7 @@ the `file.diagnostics` field, filling it with diagnostics."
     (diagnostic {:range (message.ast->range server file (. ast 1))
                  :message "no pinned patterns; use case instead of match"
                  :severity message.severity.WARN
-                 :code 308
-                 :codeDescription "match-should-case"}
+                 :code :match-should-case}
                 #[{:range (message.ast->range server file (. ast 1))
                    :newText "case"}])))
 
@@ -250,8 +239,7 @@ the `file.diagnostics` field, filling it with diagnostics."
      :message (.. "bad " (tostring (. arg 1))
                   " call: only the first value of the multival will be used")
      :severity message.severity.WARN
-     :code 307
-     :codeDescription "bad-unpack"}))
+     :code :inline-unpack}))
 
 (λ add-lint-diagnostics [server file]
   "fill up the file.diagnostics table with linting things"
@@ -269,7 +257,7 @@ the `file.diagnostics` field, filling it with diagnostics."
     ;; all non-macro calls. This only covers specials and function calls.
     (each [[head &as call] (pairs file.calls)]
       (when head
-        (when lints.bad-unpack
+        (when (or lints.bad-unpack lints.inline-unpack)
           (table.insert diagnostics (bad-unpack server file head call)))
         (when lints.unnecessary-method
           (table.insert diagnostics (unnecessary-method server file head call)))
