@@ -185,6 +185,7 @@
            :message "unnecessary tset"
            :range {:start {:character 15 :line 0}
                    :end {:character 32 :line 0}}}])
+  (check "(local tbl {}) (tset tbl :key :nested 9)" [{:code 309}])
   ;; Lint only triggers on keys that can be written as a sym
   (check "(local tbl {}) (tset tbl \"hello-world\" 249)" [{:code 309}])
   (assert-ok "(local tbl {}) (tset tbl \"01234567\" 249)")
@@ -274,5 +275,5 @@
  : test-unset-var
  : test-match-should-case
  : test-unpack-into-op
- : test-unpack-in-middle
- }
+ : test-unpack-in-middle}
+ 

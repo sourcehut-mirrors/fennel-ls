@@ -42,14 +42,23 @@
          "Prefix with _ to silence warning"
          "(local _x 10)"))
 
-; (fn test-fix-method-function []
-;   (check "(local x {})
-;           (fn x:y [a b c]
-;             (print client a b c))"
-;          "TO-BE-NAMED"
-;          "(local x {})
-;           (fn x.y [client a b c]
-;             (print client a b c))"))
+(fn test-unnecessary-tset []
+  (check "==(tset state :mouse 496)=="
+         "Replace with set"
+         "(set state.mouse 496)")
+
+  (check "==(tset state :mouse :cursor 496)=="
+         "Replace with set"
+         "(set state.mouse.cursor 496)")
+
+  (check "==(tset state :mouse :cursor {:x 4 :y 7})=="
+         "Replace with set"
+         "(set state.mouse.cursor {:x 4 :y 7})")
+
+  (check "==(tset state :mouse :cursor :x 496)=="
+         "Replace with set"
+         "(set state.mouse.cursor.x 496)"))
 
 {: test-fix-op-no-arguments
- : test-fix-unused-definition}
+ : test-fix-unused-definition
+ : test-unnecessary-tset}

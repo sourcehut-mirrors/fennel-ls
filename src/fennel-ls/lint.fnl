@@ -87,9 +87,24 @@ the `file.diagnostics` field, filling it with diagnostics."
          :codeDescription "unnecessary-method"}))))
 
 (λ unnecessary-tset [server file head call]
+  (λ all-syms? [call start end]
+    (faccumulate [syms true
+                  i start end]
+      (and syms
+           (could-be-rewritten-as-sym? (. call i)))))
+
+  (λ make-new-text [call]
+    (.. (faccumulate [text "(set "
+                      i 2 (- (length call) 2)]
+          (.. text (tostring (. call i)) "."))
+        (tostring (. call (- (length call) 1)))
+        " "
+        (view (. call (length call)))
+        ")"))
+
   (if (and (sym? head :tset)
            (sym? (. call 2))
-           (could-be-rewritten-as-sym? (. call 3))
+           (all-syms? call 3 (- (length call) 1))
            (. file.lexical call))
       (diagnostic {:range (message.ast->range server file call)
                    :message (.. "unnecessary " (tostring head))
@@ -97,9 +112,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                    :code 309
                    :codeDescription "unnecessary-tset"}
                   #[{:range (message.ast->range server file call)
-                     :newText (string.format "(set %s.%s %s)"
-                                             (tostring (. call 2)) (. call 3)
-                                             (view (. call 4)))}])))
+                     :newText (make-new-text call)}])))
 
 (λ unnecessary-do-values [server file head call]
   (if (and (or (sym? head :do) (sym? head :values))
