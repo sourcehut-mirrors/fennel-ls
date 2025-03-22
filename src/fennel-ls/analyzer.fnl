@@ -278,8 +278,9 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   "Find the nearest call
 
 returns the called symbol and the argument number position points to"
-  (let [(_ [[call] [parent]]) (find-symbol file.ast byte)]
-    (if (special? parent)
+  (let [(_ [[call] parent-call]) (find-symbol file.ast byte)
+        parent (?. parent-call 1)]
+    (if (and parent (special? parent))
         (values parent -1)
         (values call -1))))
 
