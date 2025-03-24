@@ -305,8 +305,7 @@ identifiers are declared / referenced in which places."
           {:range range
            :message msg
            :severity message.severity.ERROR
-           :code 201
-           :codeDescription "compiler error"}))
+           :code :compiler-error}))
       (if (attempt-to-recover! msg ast)
         true
         (do
@@ -320,8 +319,7 @@ identifiers are declared / referenced in which places."
           {:range range
            :message msg
            :severity message.severity.ERROR
-           :code 101
-           :codeDescription "parse error"}))
+           :code :parse-error}))
       (if (attempt-to-recover! msg)
         true
         (do
