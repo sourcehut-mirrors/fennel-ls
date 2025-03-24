@@ -181,7 +181,7 @@ the `file.diagnostics` field, filling it with diagnostics."
   "A call like (+) that could be replaced with a literal"
   (let [identity (. op-identity-value (tostring op))]
     (if (and (op? op)
-             (not (. call 2))
+             (= 1 (length call))
              (. file.lexical call)
              (not= nil identity))
       (diagnostic

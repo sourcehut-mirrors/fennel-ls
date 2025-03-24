@@ -252,6 +252,17 @@
                    :end {:character 6 :line 0}}}])
   nil)
 
+(fn test-op-with-no-arguments []
+  (assert-ok "(and 1)")
+  (assert-ok "(and false 1)")
+  (assert-ok "(and nil 1)")
+  (check "(and)"
+         {:message "write true instead of (and)"
+          :code :op-with-no-arguments
+          :range {:start {:characer 0 :line 0}
+                  :end {:character 5 :line 0}}})
+  nil)
+
 ;; TODO lints:
 ;; duplicate keys in kv table
 ;; (tset <sym> <any>) --> (set (. <sym> <any>)) (might be wanted for compat?)
@@ -274,5 +285,5 @@
  : test-unset-var
  : test-match-should-case
  : test-unpack-into-op
- : test-unpack-in-middle}
- 
+ : test-unpack-in-middle
+ : test-op-with-no-arguments}
