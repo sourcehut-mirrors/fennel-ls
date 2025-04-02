@@ -17,7 +17,12 @@ There are no global settings. They're all stored in the `server` object.
 
 (local default-configuration
   {:fennel-path (option "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl")
-   :macro-path (option "./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl")
+   :macro-path (option (table.concat ["./?.fnlm" "./?/init.fnlm"
+                                      "./?.fnl" "./?/init-macros.fnl"
+                                      "./?/init.fnl"
+                                      "src/?.fnlm" "src/?/init.fnlm"
+                                      "src/?.fnl" "src/?/init-macros.fnl"
+                                      "src/?/init.fnl"] ";"))
    :lua-version (option "lua54")
    :lints {:unused-definition (option true)
            :unknown-module-field (option true)
