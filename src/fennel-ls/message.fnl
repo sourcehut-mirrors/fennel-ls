@@ -91,9 +91,16 @@ LSP json objects."
      :kind ?kind
      :edit {:changes {uri (diagnostic.quickfix)}}}))
 
-(λ symbol->signature-help [_server _file _call signature _active-parameter]
-  {:signatures [signature]
-   :activeSignature 0})
+(λ symbol->signature-help [_server _file _call signature active-parameter]
+  (let [params-count (length signature.parameters)
+        {:label last} (. signature.parameters params-count)]
+    {:signatures [signature]
+        :activeSignature 0 ; we only ever have one signature
+        :activeParameter (if (and (>= active-parameter params-count)
+                                  (= last "..."))
+                             (- params-count 1)
+                             (>= active-parameter 0)
+                             active-parameter)}))
 
 (λ multisym->range [server file ast n]
   (let [spl (utils.multi-sym-split ast)

@@ -39,7 +39,6 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 "
 
 (local {: sym? : list? : sequence? : varg?} (require :fennel))
-(local {: special?} (require :fennel-ls.compiler))
 (local {: get-ast-info &as utils} (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
@@ -218,7 +217,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
           _ (case (find-local-definition file name scope)
               def (search-val server file def.definition (stack-add-keys! stack def.keys) opts))))))
 
-(λ _past? [?ast byte]
+(λ past? [?ast byte]
   ;; check if a byte is past an ast object
   (and (= (type ?ast) :table)
        (get-ast-info ?ast :byteend)
@@ -277,12 +276,37 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (λ find-nearest-call [_server file byte]
   "Find the nearest call
 
-returns the called symbol and the argument number position points to"
-  (let [(_ [[call] parent-call]) (find-symbol file.ast byte)
-        parent (?. parent-call 1)]
-    (if (and parent (special? parent))
-        (values parent -1)
-        (values call -1))))
+returns the called symbol and the number of the argument closest to byte"
+  (λ find-list [[call & parents]]
+    (if (. file.calls call)
+        call
+        (if (next parents)
+            (find-list parents))))
+
+  (λ arg-index [call byte]
+    ;; TODO: special handling for binding forms so we can point to the
+    ;; individual arguments in an each or accumulate call.
+    ;; Also need to split them up in formatter.fnl
+    (faccumulate [index nil
+                  i (length call) 1 -1 &until index]
+      (if (contains? (. call i) byte)
+          ; -2 because this is the 3rd element of the list, but
+          ; the 2nd argument to the call, and LSP is 0-indexed
+          (- i 2)
+          (past? (. call i) byte)
+          ; this means we are either at the end of the list or
+          ; inserting between two arguments
+          (- i 1))))
+
+  (case-try (find-symbol file.ast byte)
+    (_symbol parents) (find-list parents)
+    [callee &as call] (values callee (arg-index call byte))
+    (catch _ nil)))
+
+(λ find-definition [server file symbol ?byte]
+  (if (. file.definitions symbol)
+    (. file.definitions symbol)
+    (search-main server file symbol {:stop-early? false} {:byte ?byte})))
 
 (λ find-nearest-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
@@ -292,6 +316,7 @@ returns the called symbol and the argument number position points to"
 {: find-symbol
  : find-nearest-call
  : find-nearest-definition
+ : find-definition
  : search-main
  : search-name-and-scope
  :search-ast search-val}

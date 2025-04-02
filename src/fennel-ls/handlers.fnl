@@ -138,16 +138,18 @@ Every time the client sends a message, it gets handled by a function in the corr
       (catch _ nil))))
 
 (λ requests.textDocument/signatureHelp [server
-                                          _send
-                                          {:textDocument {: uri} : position}]
+                                        _send
+                                        {:textDocument {: uri} : position}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-nearest-call server file byte)
       (symbol active-parameter)
-      (analyzer.find-nearest-definition server file symbol)
-      {:indeterminate nil &as result}
+      (analyzer.find-definition server file symbol)
+      {:indeterminate nil &as definition}
+      (formatter.signature-help-format definition)
+      signature
       (message.symbol->signature-help server file symbol
-                                      (formatter.signature-help-format result)
+                                      signature
                                       active-parameter)
       (catch _ nil))))
 

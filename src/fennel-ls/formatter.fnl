@@ -19,6 +19,11 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
                  (.. ": " $2 $3)))
     _ (tostring arg)))
 
+(fn render-arglist [?arglist]
+  (if ?arglist
+      (icollect [_ arg (ipairs ?arglist)]
+        {:label (render-arg arg)})))
+
 (fn fn-signature-format [special name args]
   (let [args (case (type (?. args 1))
                :table (icollect [_ v (ipairs args)]
@@ -95,14 +100,14 @@ fntype is one of fn or λ or lambda"
     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
     {:label (fn-signature-format ?fntype ?name ?arglist)
      :documentation ?docstring
-     :parameters (if ?arglist
-                     (icollect [_ arg (ipairs ?arglist)]
-                       {:label (render-arg arg)}))}
+     :parameters (render-arglist ?arglist)}
     _ (case symbol
         {: binding :metadata {:fnl/arglist arglist :fnl/docstring docstring}}
         {:label (fn-signature-format :fn binding arglist)
-         :documentation docstring}
-        _ {:label (.. "ERROR: don't know how to format " (tostring symbol))
+         :documentation docstring
+         :parameters (render-arglist arglist)}
+        _ {:label (.. "ERROR: don't know how to format "
+                      (view symbol {:one-line? true :depth 3}))
            :documentation (code-block
                             (view symbol {:depth 3}))})))
 
