@@ -326,6 +326,14 @@ identifiers are declared / referenced in which places."
           (call-me-to-reset-the-compiler)
           (error "__NOT_AN_ERROR"))))
 
+    (λ warn [msg ?ast _file ?line]
+      (let [range (or (message.ast->range server file ?ast) (line+byte->range server file (or ?line 1) 0))]
+        (table.insert diagnostics
+          {:range range
+           :message msg
+           :severity message.severity.WARN
+           :code :compiler-warning})))
+
     (local allowed-globals (docs.get-all-globals server))
     (icollect [extra-global (server.configuration.extra-globals:gmatch "[^ ]+")
                &into allowed-globals]
@@ -358,6 +366,7 @@ identifiers are declared / referenced in which places."
                 :allowedGlobals allowed-globals
                 :useMetadata true
                 :requireAsInclude false
+                : warn
                 : scope}
           filter-errors (fn _filter-errors [component ...]
                           (case ...

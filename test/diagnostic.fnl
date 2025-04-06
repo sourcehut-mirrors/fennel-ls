@@ -167,8 +167,14 @@
          [{:message "unknown field: math.atan2"}]
          {:lua-version "lua5.3"}))
 
+(fn test-warnings []
+  (check "(print \"hello\"table)"
+         [{:message "expected whitespace before token"}]
+         []))
+
 {: test-lua-versions
  : test-compile-error
  : test-parse-error
  : test-macro-error
- : test-multiple-errors}
+ : test-multiple-errors
+ : test-warnings}
