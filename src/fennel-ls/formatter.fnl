@@ -19,20 +19,27 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
                  (.. ": " $2 $3)))
     _ (tostring arg)))
 
-(fn render-arglist [?arglist]
-  (if ?arglist
-      (icollect [_ arg (ipairs ?arglist)]
-        {:label (render-arg arg)})))
-
 (fn fn-signature-format [special name args]
-  (let [args (case (type (?. args 1))
+  "Returns the LSP-formatted signature and parameters objects"
+  (fn render-arglist [arglist offset]
+    (var offset offset)
+    (icollect [_ arg (ipairs arglist)]
+      (let [rendered {:label [offset (+ offset (length arg))]}]
+        (set offset (+ 1 (. rendered :label 2)))
+        rendered)))
+
+  (let [name (tostring (or name special))
+        args (case (type (?. args 1))
                :table (icollect [_ v (ipairs args)]
                         (render-arg v))
-               _ args)]
-    (.. "("
-        (tostring (or name special)) " "
-        (table.concat args " ")
-        ")")))
+               _ args)
+        ;; + 2 for the opening paren and the space
+        args-offset (+ 2 (length name))]
+    (values (.. "("
+                name " "
+                (table.concat args " ")
+                ")")
+            (render-arglist args args-offset))))
 
 (fn fn-format [special name args docstring]
   (.. (code-block (fn-signature-format special name args))
@@ -96,20 +103,26 @@ fntype is one of fn or λ or lambda"
   "Return a signatureHelp lsp object
 
   symbol can be an actual ast symbol or a binding object from a docset"
-  (case (analyze-fn symbol.definition)
+  (case-try (analyze-fn symbol.definition)
     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
-    {:label (fn-signature-format ?fntype ?name ?arglist)
+    (fn-signature-format ?fntype ?name ?arglist)
+    (signature parameters)
+    {:label signature
      :documentation ?docstring
-     :parameters (render-arglist ?arglist)}
-    _ (case symbol
-        {: binding :metadata {:fnl/arglist arglist :fnl/docstring docstring}}
-        {:label (fn-signature-format :fn binding arglist)
-         :documentation docstring
-         :parameters (render-arglist arglist)}
-        _ {:label (.. "ERROR: don't know how to format "
-                      (view symbol {:one-line? true :depth 3}))
-           :documentation (code-block
-                            (view symbol {:depth 3}))})))
+     :parameters parameters}
+    ;; if we couldn't get the info from the ast, try the metadata
+    (catch _ (case-try symbol
+               {: binding :metadata {:fnl/arglist arglist
+                                     :fnl/docstring docstring}}
+               (fn-signature-format "" binding arglist)
+               (signature parameters)
+               {:label signature
+                :documentation docstring
+                :parameters parameters}
+               (catch _ {:label (.. "ERROR: don't know how to format "
+                                  (view symbol {:one-line? true :depth 3}))
+                         :documentation (code-block
+                                           (view symbol {:depth 3}))})))))
 
 (λ hover-format [result]
   "Format code that will appear when the user hovers over a symbol"

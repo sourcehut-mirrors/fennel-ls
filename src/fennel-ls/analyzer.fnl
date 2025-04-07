@@ -305,13 +305,13 @@ returns the called symbol and the number of the argument closest to byte"
 
 (λ find-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
-    (. file.definitions symbol)
-    (search-main server file symbol {:stop-early? false} {:byte ?byte})))
+      (. file.definitions symbol)
+      (search-main server file symbol {:stop-early? false} {:byte ?byte})))
 
 (λ find-nearest-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
-    (. file.definitions symbol)
-    (search-main server file symbol {:stop-early? true} {:byte ?byte})))
+      (. file.definitions symbol)
+      (search-main server file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
  : find-nearest-call
