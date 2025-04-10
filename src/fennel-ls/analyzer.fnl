@@ -127,7 +127,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (let [mod (. call 2)]
           (if (= multival 1)
             (when (= :string (type mod))
-              (let [newfile (files.get-by-module server mod)]
+              (let [newfile (files.get-by-module server mod file.macro-file?)]
                 (when newfile
                   (let [newitem (. newfile.ast (length newfile.ast))]
                     (when (= (length stack) 1)

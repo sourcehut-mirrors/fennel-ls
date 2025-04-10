@@ -11,6 +11,7 @@ in the \"server\" object."
 (local {: compile} (require :fennel-ls.compiler))
 
 (λ read-file [server uri]
+  ;; preload is here so that tests can inject files
   (case (?. server.preload uri)
     preload {: uri :text preload}
     _ (case uri
@@ -29,20 +30,21 @@ in the \"server\" object."
                (tset server.files uri file)
                file))))
 
-(λ get-by-module [server module]
-  ;; check the cache
-  (case (. server.modules module)
-    uri
-    (or (get-by-uri server uri)
-        ;; if the cached uri isn't found, clear the cache and try again
-        (do (tset server.modules module nil)
-            (get-by-module server module)))
-    nil
-    (case (searcher.lookup server module)
+(λ get-by-module [server module macro?]
+  (let [modules (if macro? server.macro-modules server.modules)]
+    ;; check the cache
+    (case (. modules module)
       uri
-      (do
-        (tset server.modules module uri)
-        (get-by-uri server uri)))))
+      (or (get-by-uri server uri)
+          ;; if the cached uri isn't found, clear the cache and try again
+          (do (tset modules module nil)
+              (get-by-module server module)))
+      nil
+      (case (searcher.lookup server module macro?)
+        uri
+        (do
+          (tset modules module uri)
+          (get-by-uri server uri))))))
 
 (λ set-uri-contents [server uri text]
   (case (. server.files uri)

@@ -24,13 +24,13 @@ I suspect this file may be gone after a bit of refactoring."
        (case (io.open (uri->path uri))
          f (do (f:close) true))))
 
-(λ lookup [{:configuration {: fennel-path} :root-uri ?root-uri &as server} mod]
-  "Use the fennel path to find a file on disk"
+(λ lookup [{:configuration {: fennel-path : macro-path} :root-uri ?root-uri &as server} mod macro?]
+  "Use the configured path to find a file on disk"
   (when ?root-uri
     (let [mod (mod:gsub "%." path-sep)
           root-path (uri->path ?root-uri)]
       (accumulate [uri nil
-                   segment (fennel-path:gmatch "[^;]+")
+                   segment (: (if macro? macro-path fennel-path) :gmatch "[^;]+")
                    &until uri]
         (let [segment (segment:gsub "%?" mod)
               segment (if (absolute-path? segment)

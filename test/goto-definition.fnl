@@ -3,8 +3,8 @@
 (local {: null} (require :dkjson))
 (local {: view} (require :fennel))
 
-(fn check [file-contents]
-  (let [{: client : uri : cursor :locations [location]} (create-client file-contents)
+(fn check [file-contents ?config]
+  (let [{: client : uri : cursor :locations [location]} (create-client file-contents nil ?config)
         [message] (client:definition uri cursor)]
     (if location
       (faith.= location message.result
@@ -190,15 +190,6 @@
 
   nil)
 
-; (fn test-macro []
-;   (check "(macro ==my-macro== [] `nil)
-;           (my-mac|ro)")
-;   (check {:m.fnl ";; fennel-ls: macro-file
-;                   (fn ==my-macro== [] `nil)
-;                   {: my-macro}"
-;           :main.fnl "(import-macros m :m)
-;                      (m.my-macro|)"}))
-
 (fn test-no-crash []
   (check "(macro cool [a b] `(let [,b 10] ,a))\n(cool |x ==x==)")
   (check "(macro cool [a b] `(let [,b 10] ,a))\n(cool x x|)")
@@ -217,6 +208,7 @@
   (check "(fn foo [] [{} =={}== {}])
           (local [x y| z] (foo))")
   nil)
+
 (fn test-macro []
   "Macros are mostly unsupported for now.
   Fennel-ls can understand the expansion of macros, because it mostly operates
@@ -224,11 +216,31 @@
   ;; Can see the expansion of a macro
   (check "(macro hello [x y z] y)
           (local x| (hello {} =={}== {}))")
+
   ;; ;; Can see the macro itself
   ;; (check "==(macro hello [x y z] y)==
   ;;         (local x (hello| {} {} {})")
 
+  ;; ;; Can see macros thru import-macros
+  ;; (check {:m.mfnl "(fn ==my-macro== [] `nil)
+  ;;                  {: my-macro}"
+  ;;         :main.fnl "(import-macros m :m)
+  ;;                    (m.my-macro|)")
+
+  ;; go-to-definition inside of macro files uses the macro path
+  (check {:abcde/friend.fnl "=={}=="
+          :friend.fnl "{}"
+          :main.fnl ";; fennel-ls: macro-file
+                     (local x| (require :friend))"}
+         {:macro-path "abcde/?.fnl"})
+
+  (check {:abcde/friend.fnl "{}"
+          :friend.fnl "=={}=="
+          :main.fnl "(local x| (require :friend))"}
+         {:macro-path "abcde/?.fnl"})
+
   nil)
+
 
 ; ;; (it "can go to a destructured function argument")
 ; ;; (it "will give up instead of freezing on recursive requires")

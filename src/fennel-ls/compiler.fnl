@@ -434,6 +434,7 @@ identifiers are declared / referenced in which places."
         (cmd))
 
       ;; TODO make this construct an object instead of mutating the file
+      (set file.macro-file? macro-file?)
       (set file.ast ast)
       (set file.calls calls)
       (set file.lexical lexical)

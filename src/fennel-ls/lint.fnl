@@ -39,6 +39,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 ;; this is way too specific; it's also safe to do this inside an `if` or `case`
 (fn in-or? [calls symbol]
+  "Check if the symbol is in an expression like `(or unpack table.unpack)`, where we want to suppress the module field stuff."
   (accumulate [in? false call (pairs calls) &until in?]
     (and (sym? (. call 1) :or) (utils.find call symbol))))
 
