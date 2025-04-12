@@ -163,31 +163,71 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                                   symbol)}
       (catch _ nil))))
 
-(λ make-completion-item [server file name scope]
-  (case (analyzer.search-name-and-scope server file name scope)
-    def (formatter.completion-item-format name def)
-    _ {:label name}))
-
-;; All of the helper functions for textDocument/completion are here until I
-;; finish refactoring them, and then they can find a home in analyzer.fnl
-(λ collect-scope [scope typ server file ?target ?default-kind]
-  (let [result (or ?target [])]
-    (var scope scope)
-    (while scope
-      (icollect [name (pairs (. scope typ)) &into result]
-        (let [item (make-completion-item server file name scope)]
-          (when (= nil item.kind)
-            (set item.kind ?default-kind))
-          item))
-      (set scope scope.parent))
-    result))
-
 ;; CompletionItemKind
 (local kinds
  {:Text 1 :Method 2 :Function 3 :Constructor 4 :Field 5 :Variable 6 :Class 7
   :Interface 8 :Module 9 :Property 10 :Unit 11 :Value 12 :Enum 13 :Keyword 14
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
+
+;; All of the helper functions for textDocument/completion are here until I
+;; finish refactoring them, and then they can find a home in analyzer.fnl
+(λ field-completion-helper [server ?result last-found-binding]
+   (case ?result
+     {: definition : file}
+     (case (values definition (type definition))
+       ;; fields of a string are hardcoded to "string"
+       (_str :string) (icollect [label info (pairs (. (docs.get-global server :string) :fields))]
+                        (formatter.completion-item-format label info))
+       ;; fields of a table
+       (where (tbl :table) (fennel.table? tbl)) (let [keys []
+                                                      result []]
+                                                  (icollect [label _ (pairs tbl) &into keys]
+                                                    label)
+                                                  (when (?. last-found-binding 1 :fields)
+                                                    (icollect [label _ (pairs (. last-found-binding 1 :fields)) &into keys]
+                                                      label))
+                                                  (icollect [_ label (pairs keys) &into result]
+                                                    (if (= (type label) :string)
+                                                      (let [last-found-binding []]
+                                                        (case (analyzer.search-ast server file tbl [label] {:save-last-binding last-found-binding})
+                                                          def (do
+                                                                 (icollect [_ completion (ipairs (or (field-completion-helper server def last-found-binding) [])) &into result]
+                                                                   (do
+                                                                     (set completion.filterText completion.label)
+                                                                     (set completion.insertText (.. label "." completion.label))
+                                                                     (set completion.label completion.insertText)
+                                                                     completion))
+                                                               (formatter.completion-item-format label def))
+                                                          _ {: label :kind kinds.Field}))))
+                                                  result))
+     {: metadata : fields}
+     (let [_metadata metadata]
+       (icollect [label info (pairs fields)]
+         (formatter.completion-item-format label info)))
+     _ nil))
+
+(λ collect-scope [scope typ server file ?target ?default-kind]
+  (let [result (or ?target [])]
+    (var scope scope)
+    (while scope
+      (icollect [name (pairs (. scope typ)) &into result]
+        (let [last-found-binding []
+              item (case (analyzer.search-name-and-scope server file name scope {:save-last-binding last-found-binding})
+                     def (do
+                           (icollect [_ completion (ipairs (or (field-completion-helper server def last-found-binding) [])) &into result]
+                             (do
+                               (set completion.filterText completion.label)
+                               (set completion.insertText (.. name "." completion.label))
+                               (set completion.label completion.insertText)
+                               completion))
+                           (formatter.completion-item-format name def))
+                     _ {:label name})]
+          (when (= nil item.kind)
+            (set item.kind ?default-kind))
+          item))
+      (set scope scope.parent))
+    result))
 
 (λ scope-completion [server file _byte ?symbol parents]
   (let [scope (or (accumulate [result nil
@@ -205,36 +245,23 @@ Every time the client sends a message, it gets handled by a function in the corr
       (collect-scope scope :macros server file result kinds.Keyword)
       (collect-scope scope :specials server file result kinds.Operator))
     (icollect [_ k (ipairs file.allowed-globals) &into result]
-      (make-completion-item server file k scope))))
+      (let [last-found-binding []]
+        (case (analyzer.search-name-and-scope server file k scope {:save-last-binding last-found-binding})
+          def (do (icollect [_ completion (ipairs (or (field-completion-helper server def last-found-binding) [])) &into result]
+                    (do
+                      (set completion.filterText completion.label)
+                      (set completion.insertText (.. k "." completion.label))
+                      (set completion.label completion.insertText)
+                      completion))
+                  (formatter.completion-item-format k def))
+          _ {:label k})))))
 
 (λ field-completion [server file symbol split]
   (let [stack (fcollect [i (- (length split) 1) 2 -1]
                 (. split i))
         last-found-binding []
         result (analyzer.search-main server file symbol {:save-last-binding last-found-binding} {: stack})]
-    (case result
-      {: definition : file}
-      (case (values definition (type definition))
-        ;; fields of a string are hardcoded to "string"
-        (_str :string) (icollect [label info (pairs (. (docs.get-global server :string) :fields))]
-                         (formatter.completion-item-format label info))
-        ;; fields of a table
-        (tbl :table) (let [keys []]
-                       (icollect [label _ (pairs tbl) &into keys]
-                         label)
-                       (when (?. last-found-binding 1 :fields)
-                         (icollect [label _ (pairs (. last-found-binding 1 :fields)) &into keys]
-                           label))
-                       (icollect [_ label (pairs keys)]
-                         (if (= (type label) :string)
-                           (case (analyzer.search-ast server file tbl [label] {})
-                             def (formatter.completion-item-format label def)
-                             _ {: label :kind kinds.Field})))))
-      {: metadata : fields}
-      (let [_metadata metadata]
-        (icollect [label info (pairs fields)]
-          (formatter.completion-item-format label info)))
-      _ nil)))
+   (field-completion-helper server result last-found-binding)))
 
 (λ requests.textDocument/completion [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
@@ -265,8 +292,6 @@ Every time the client sends a message, it gets handled by a function in the corr
             (each [_ completion (ipairs ?completions)]
               (set completion.textEdit {:newText completion.label :range input-range}))))
         ?completions))))
-
-
 
 (λ requests.textDocument/rename [server _send {: position :textDocument {: uri} :newName new-name}]
   (let [file (files.get-by-uri server uri)
