@@ -4,20 +4,38 @@ in tooltips and other notification messages. It is NOT for formatting
 user code. Fennel-ls doesn't support user-code formatting as of now."
 
 (local {: sym?
-        : view} (require :fennel))
+        : view
+        : table?} (require :fennel))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
 
+(local unview-mt {:__fennelview #$.value})
+(fn unview [value]
+  "Creates a value that renders to `value` when viewed"
+  (setmetatable {: value} unview-mt))
+
 (λ render-arg [arg]
-  (case (type arg)
-    :table (: (view arg {:one-line? true
-                         :prefer-colon? true})
-              ;; transform {:key key} to {: key}
-              :gsub ":([%w?_-]+) ([%w?]+)([ }])"
-              #(if (= $1 $2)
-                 (.. ": " $2 $3)))
-    _ (tostring arg)))
+  "Renders an argument to a string.
+   Strings and symbols are treated the same.
+   Fennel supports destructuring, so tables need to be rendered recursively.
+
+   Examples:
+      (render-arg :foo)       -> \"foo\"
+      (render-arg (sym :foo)) -> \"foo\"
+      (render-arg [:foo])       -> \"[foo]\"
+      (render-arg [(sym :foo)]) -> \"[foo]\""
+  (if (table? arg)
+    (: (view (collect [k v (pairs arg)]
+               ;; we don't want to view `v` because it's already been rendered
+               k (unview (render-arg v)))
+         {:one-line? true
+          :prefer-colon? true})
+       ;; transform {:key key} to {: key}
+       :gsub ":([%w?_-]+) ([%w?_-]+)([ }])"
+       #(if (= $1 $2)
+          (.. ": " $2 $3)))
+    (tostring arg)))
 
 (fn fn-signature-format [special name args]
   "Returns the LSP-formatted signature and parameters objects"
@@ -53,7 +71,12 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
         (tostring binding)
         (= 0 (length metadata.fnl/arglist))
         (.. "(" (tostring binding) ")")
-        (.. "(" (tostring binding) " " (table.concat metadata.fnl/arglist " ") ")")))
+        (.. "(" (tostring binding) " "
+            (table.concat
+              (icollect [_ v (ipairs metadata.fnl/arglist)]
+                (render-arg v))
+              " ")
+            ")")))
     "\n---\n"
     (or metadata.fnl/docstring "")))
 
