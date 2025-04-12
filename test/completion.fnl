@@ -77,6 +77,8 @@
   (check "#nil\n(" [:_G :debug :table :io :getmetatable :setmetatable
                     :_VERSION :ipairs :pairs :next] [])
   (check "(if ge" [:getmetatable] [])
+  (check "(table.i" [:insert] [])
+  (check "(ins" [:table.insert] [])
   nil)
 
 (fn test-local []
@@ -114,6 +116,9 @@
                           (+ number-of-x 1)
                           number-of-x))))
          [])
+  ;; stretchy completions
+  (check "(local x {:field 100})\n(if fi" [:x.field] [])
+  (check "(local x {:field {:deep 100}})\n(if de" [:x.field.deep] [])
   nil)
 
 (fn test-builtin []
