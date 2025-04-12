@@ -326,8 +326,8 @@ identifiers are declared / referenced in which places."
           (call-me-to-reset-the-compiler)
           (error "__NOT_AN_ERROR"))))
 
-    (λ warn [msg ?ast _file ?line]
-      (let [range (or (message.ast->range server file ?ast) (line+byte->range server file (or ?line 1) 0))]
+    (λ warn [msg ?ast _file ?line ?col]
+      (let [range (or (message.ast->range server file ?ast) (line+byte->range server file (or ?line 1) (or ?col 0)))]
         (table.insert diagnostics
           {:range range
            :message msg
