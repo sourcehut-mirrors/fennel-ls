@@ -342,8 +342,12 @@ identifiers are declared / referenced in which places."
     (fn parse-ast [parser]
       (icollect [ok ast parser &until (not ok)] ast))
 
+    (fn macro-file? [file]
+      (or (file.uri:match "%.fnlm$")
+          (= (file.text:sub 1 24) ";; fennel-ls: macro-file")))
+
     ;; TODO clean up this code. It's awful now that there is error handling
-    (let [macro-file? (= (file.text:sub 1 24) ";; fennel-ls: macro-file")
+    (let [macro-file? (macro-file? file)
           plugin
           {:name "fennel-ls"
            :versions ["1.4.1" "1.4.2" "1.5.0" "1.5.1" "1.5.3" "1.5.4"]
