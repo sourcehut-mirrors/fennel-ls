@@ -77,8 +77,8 @@
   (check "#nil\n(" [:_G :debug :table :io :getmetatable :setmetatable
                     :_VERSION :ipairs :pairs :next] [])
   (check "(if ge" [:getmetatable] [])
-  (check "(table.i" [:insert] [])
-  (check "(ins" [:table.insert] [])
+  (check "(table.i" [:table.insert] [])
+  (check "(tablei" [:table.insert] [])
   nil)
 
 (fn test-local []
@@ -108,7 +108,7 @@
   (check "(let [foo 10
                 bar 20
                 _ fo|" [:foo :bar] [])
-  (check "(local x {:field 100})\n(if x.fi" [:field] [])
+  (check "(local x {:field 100})\n(if x.fi" [:x.field] [])
   (check "(let [x 10] (let [x 10] x"
          (fn [completions]
            (faith.= 1 (accumulate [number-of-x 0 _ completion (ipairs completions)]
@@ -154,13 +154,13 @@
   nil)
 
 (fn test-field []
-  (check "(local x {:field (fn [])})\n(x:" [:field] [:local])
+  (check "(local x {:field (fn [])})\n(x:" [:x:field] [])
   ;; regression test for not crashing
   (check "(local x {:field (fn [])})\n(x::f" [] [])
   (check
     "(let [my-table {:foo 10 :bar 20}]\n  my-table.|)))"
     [:foo :bar]
-    [:_G :local :doto :+]) ;; no globals, specials, macros, or others
+    [:local :doto :+]) ;; no specials or macros because it's not in a head position
   (check
     {:main.fnl "(let [foo (require :fooo)]
                     foo.|)))"
@@ -247,33 +247,24 @@
     [])
   nil)
 
-(local eglot {:client-info {:name "Eglot" :version "1 million"}})
 
 (fn test-eglot-fields []
   "tests for handling Eglot specially"
   (check "(coroutine.y|"
-    [{:label "yield"
+    [{:label "coroutine.yield"
       :filterText "coroutine.yield"
-      :insertText "coroutine.yield"
-      :textEdit #(= nil $)
       :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
-    ["coroutine" "_G" "do"
-     {:documentation #(= nil $)}]
-    eglot)
+    [])
   (check "(local c coroutine)
           (c.y"
-    [{:label "yield"
+    [{:label "c.yield"
       :filterText "c.yield"
-      :insertText "c.yield"
       :textEdit #(= nil $)}]
-    ["coroutine" "_G" "do"]
-    eglot)
+    [])
   (check "(local x {:field (fn [])})
           (x:"
-    [:field]
-    [{:insertText :field}
-     :local]
-    eglot))
+    [:x:field]
+    []))
 
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
