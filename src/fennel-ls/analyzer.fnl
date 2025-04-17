@@ -206,7 +206,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 
 (λ search-name-and-scope [server file name scope ?opts]
   "find a definition just from the name of the item, and the scope it is in"
-  (assert (= (type name) :string))
+  (assert (= (type name) :string) "search-name-and-scope needs a string")
   (let [split (utils.multi-sym-split name)
         stack (stack-add-split! [] split)
         opts (or ?opts {})]
@@ -257,15 +257,15 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                        _ child (ipairs ast)
                        &until result]
             (if (contains? child byte)
-              (recurse child byte)))
+                (recurse child byte)))
           (and (not (sym? ast)) (not (varg? ast)))
           (accumulate [(result _parent) nil
                        key value (pairs ast)
                        &until result]
             (if (contains? key byte)
-              (recurse key byte)
-              (contains? value byte)
-              (recurse value byte)))))))
+                (recurse key byte)
+                (contains? value byte)
+                (recurse value byte)))))))
   (values
     (accumulate [result nil _ top-level-form (ipairs ast) &until result]
       (if (contains? top-level-form byte)

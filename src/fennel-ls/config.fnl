@@ -96,12 +96,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   (set server.macro-modules {})
   (set server.root-uri params.rootUri)
   (set server.position-encoding (choose-position-encoding params))
-  (reload server)
-  ;; Eglot does completions differently than every other client I've seen so
-  ;; far, in that it considers foo.bar to be one "symbol".  If the user types
-  ;; `foo.b`, every other client accepts `bar` as a completion, bun eglot wants
-  ;; the full `foo.bar` symbol.
-  (set server.EGLOT_COMPLETION_QUIRK_MODE (= (?. params :clientInfo :name) :Eglot)))
+  (reload server))
 
 (λ validate [{: configuration} invalid]
   (when (not= :string (type configuration.fennel-path))
