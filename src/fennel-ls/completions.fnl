@@ -50,8 +50,9 @@
                 def (do
                       (when (or (?. def :metadata :fnl/arglist)
                                 (and (fennel.list? def.definition)
-                                     (or (fennel.sym? (. def.definition 1) "fn"))
-                                     (or (fennel.sym? (. def.definition 1) "λ"))))
+                                     ;; TODO check that arg is called `self`
+                                     (or (fennel.sym? (. def.definition 1) "fn")
+                                         (fennel.sym? (. def.definition 1) "λ"))))
                         (add-completion def (.. name ":" field)))
                       (add-completion def (.. name "." field)))
                 _ (do
@@ -60,7 +61,7 @@
         (when definition.fields
             (each [field value (pairs definition.fields)]
               (when (= (type field) :string)
-                (add-completion value (.. name "." field)))))
+                (add-completion value (.. name ":" field)))))
 
         (set (. seen definition) false)))
     ;; end yield
