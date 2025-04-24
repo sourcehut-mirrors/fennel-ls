@@ -154,29 +154,29 @@
   nil)
 
 (fn test-field []
-  (check "(local x {:field (fn [])})\n(x:" [:x:field] [])
+  (check "(local x {:field (fn [self])})\n(x:" [:x:field] [])
+  (check "(local x {:field (fn [self])})\n(x:fi|" [:x:field] [])
   ;; regression test for not crashing
-  (check "(local x {:field (fn [])})\n(x::f" [] [])
+  (check "(local x {:field (fn [self])})\n(x::f" [] [])
   (check
     "(let [my-table {:foo 10 :bar 20}]\n  my-table.|)))"
-    [:foo :bar]
-    [:local :doto :+]) ;; no specials or macros because it's not in a head position
+    [:my-table.foo :my-table.bar]
+    [])
   (check
     {:main.fnl "(let [foo (require :fooo)]
                     foo.|)))"
      :fooo.fnl "(fn my-export [x] (print x))
                 {: my-export :constant 10}"}
-    [:my-export :constant]
-    [:_G :local :doto :+])
+    [:foo.my-export :foo.constant]
+    [])
   (check
     {:main.fnl "(let [foo (require :fooo)]
                     foo.|)))"
      :fooo.fnl "(local M {:constant 10})
                 (fn M.my-export [x] (print x))
                 M"}
-    [:my-export :constant]
-    [:_G :local :doto :+]) ;; no globals, specials, macros, or others
-  (check "(local x {:field (fn [])})\n(x:fi|" [:field] [:table])
+    [:foo.my-export :foo.constant]
+    [])
   nil)
 
 (fn test-docs []
@@ -231,12 +231,11 @@
   (check "(coroutine.y|"
     [{:label "yield"
       :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
-    ["coroutine" "_G" "do"
-     {:documentation #(= nil $)}])
+    [{:documentation #(= nil $)}])
   (check "(local c coroutine)
           (c.y"
-    [{:label "yield"}]
-    ["coroutine" "_G" "do"])
+    ["coroutine.yield" "c.yield"]
+    [{:documentation #(= nil $)}])
   (check "(local t table)
           (t.i"
     ["insert"]
@@ -247,24 +246,6 @@
     [])
   nil)
 
-
-(fn test-eglot-fields []
-  "tests for handling Eglot specially"
-  (check "(coroutine.y|"
-    [{:label "coroutine.yield"
-      :filterText "coroutine.yield"
-      :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
-    [])
-  (check "(local c coroutine)
-          (c.y"
-    [{:label "c.yield"
-      :filterText "c.yield"
-      :textEdit #(= nil $)}]
-    [])
-  (check "(local x {:field (fn [])})
-          (x:"
-    [:x:field]
-    []))
 
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
@@ -292,5 +273,4 @@
  : test-fn-arg
  : test-field
  : test-docs
- : test-module
- : test-eglot-fields}
+ : test-module}

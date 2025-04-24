@@ -83,14 +83,26 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                   :keys ?keys
                   :multival ?multival
                   :fields ?fields}} assignment]
-    (when (and (= 0 (length stack))
-               opts.save-last-binding)
-      (tset opts.save-last-binding 1 assignment.target))
     (if (and (= 0 (length stack)) opts.stop-early?)
         assignment.target ;; BASE CASE!!
-        ;; search a virtual field from :fields
+
+        ;; :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
         (search-assignment server file {:target (. ?fields (table.remove stack))} stack opts)
+
+        ;; This case is hard to explain.
+        ;; Under these conditions, search-multival is planning on returning {:definition ?definition : file}
+        ;; but assignment.target is more rich with information.
+        ;; Specifically, it has the :fields key, which is useful in finding non-local fields.
+        ;; For example, The `my-method` field of `M` in `(local M {})\n(fn M.my-method [])`
+        ;; is shared using this :fields mechanism.
+        (and (not (list? ?definition))
+             (not (varg? ?definition))
+             (= 1 (or 1 ?multival))
+             (not (sym? ?definition))
+             (= 0 (length stack)))
+        assignment.target
+
         (search-multival server file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))
 
 (λ search-reference [server file ref stack opts]
@@ -212,10 +224,10 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         opts (or ?opts {})]
     (case (docs.get-builtin server (. split 1))
       metadata (search-document server metadata stack opts)
-      _ (case (docs.get-global server (. split 1))
-          metadata (search-document server metadata stack opts)
-          _ (case (find-local-definition file name scope)
-              def (search-val server file def.definition (stack-add-keys! stack def.keys) opts))))))
+      _ (case (find-local-definition file name scope)
+          def (search-val server file def.definition (stack-add-keys! stack def.keys) opts)
+          _ (case (docs.get-global server (. split 1))
+              metadata (search-document server metadata stack opts))))))
 
 (λ past? [?ast byte]
   ;; check if a byte is past an ast object
