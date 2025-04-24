@@ -199,6 +199,13 @@
      ;; builtin macros
      {:label :-?>
       :kind kinds.Keyword
+      :documentation true}
+     ;; builtin globals
+     {:label :table
+      :kind kinds.Module
+      :documentation true}
+     {:label :_G
+      :kind kinds.Variable
       :documentation true}]
     [{:documentation #(= nil $) :label #(not (. things-that-are-allowed-to-have-missing-docs $))}
      {:kind #(= nil $)          :label #(not (. things-that-are-allowed-to-have-missing-docs $))}
@@ -210,26 +217,25 @@
                 t {: x}]
             (t."
     [:x]
-    [:_G
-     {:documentation #(= nil $)}
+    [{:documentation #(= nil $)}
      {:kind #(= nil $)}
      {:label #(= nil $)}])
 
   (check "(let [x :hi]
-            (x.|))"
-    [:gsub
-     :gmatch
-     :match
-     :sub
-     :len
-     :find]
+            (x:|))"
+    [:x:gsub
+     :x:match
+     :x:match
+     :x:sub
+     :x:len
+     :x:find]
     [{:documentation #(= nil $)}])
 
   nil)
 
 (fn test-module []
   (check "(coroutine.y|"
-    [{:label "yield"
+    [{:label "coroutine.yield"
       :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
     [{:documentation #(= nil $)}])
   (check "(local c coroutine)
@@ -238,10 +244,10 @@
     [{:documentation #(= nil $)}])
   (check "(local t table)
           (t.i"
-    ["insert"]
+    ["table.insert" "t.insert"]
     [{:documentation #(= nil $)}])
   (check "debug.deb|"
-    [{:label "debug"
+    [{:label "debug.debug"
       :documentation #(and $.value ($.value:find "```fnl\n(debug.debug)\n```" 1 true))}]
     [])
   nil)
