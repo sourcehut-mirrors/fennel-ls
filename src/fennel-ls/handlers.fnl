@@ -12,7 +12,6 @@ Every time the client sends a message, it gets handled by a function in the corr
 (local analyzer  (require :fennel-ls.analyzer))
 (local formatter (require :fennel-ls.formatter))
 (local utils     (require :fennel-ls.utils))
-(local docs      (require :fennel-ls.docs))
 (local fennel    (require :fennel))
 
 (local requests [])
