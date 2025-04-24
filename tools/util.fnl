@@ -14,7 +14,7 @@
                             (string.gsub arg "'" "\\'")
                             "'")))
                   " ")]
-    (print (.. "running command: " command))
+    (io.stderr:write "running command: " command "\n")
     (assert (os.execute command))))
 
 (fn clone [location url ?tag]
