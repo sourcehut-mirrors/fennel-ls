@@ -5,13 +5,7 @@
 (local fennel (require :fennel))
 (local message (require :fennel-ls.message))
 (local format (require :fennel-ls.formatter))
-
-;; CompletionItemKind
-(local _kinds
- {:Text 1 :Method 2 :Function 3 :Constructor 4 :Field 5 :Variable 6 :Class 7
-  :Interface 8 :Module 9 :Property 10 :Unit 11 :Value 12 :Enum 13 :Keyword 14
-  :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
-  :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
+(local {:metadata METADATA} (require :fennel.compiler))
 
 (λ textDocument/completion [server _send {: position :textDocument {: uri}}]
   ;; get the file
@@ -31,51 +25,46 @@
         results []
         seen {}]
 
-    (fn add-completion [definition name]
-      (table.insert results
-                    (doto (format.completion-item-format name definition)
-                      (tset :filterText name)
-                      (tset :textEdit {:newText name : range}))))
+    (fn add-completion! [name definition ?kind]
+      (table.insert results (format.completion-item-format name definition range ?kind)))
 
-    (fn add-completion-recursively [definition name]
+    (fn add-completion-recursively! [name definition]
       "add the completion. also recursively adds the fields' completions"
+
+      (fn thing [field def]
+        "TODO name this thing"
+        (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
+                (and (fennel.list? def.definition)
+                     (or (and (fennel.sym? (. def.definition 1) "fn")
+                              (fennel.sym? (?. def.definition 2 1) "self"))
+                         (and (fennel.sym? (. def.definition 1) "λ")
+                              (fennel.sym? (?. def.definition 2 1) "self")))))
+          (add-completion-recursively! (.. name ":" field) def)
+          (add-completion-recursively! (.. name "." field) def)))
+
       (when (not (. seen definition))
         (set (. seen definition) true)
-        (add-completion definition name)
+        (add-completion! name definition)
         (when (= (type definition.definition) :string)
           (each [key value (pairs (-> (docs.get-global server :string) (. :fields)))]
-            (add-completion-recursively value (.. name ":" key))))
+            (add-completion-recursively! (.. name ":" key) value)))
         (when (fennel.table? definition.definition)
           (each [field value (pairs definition.definition)]
             (when (= (type field) :string)
               (case (analyzer.search-ast server definition.file value [] {})
-                def (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
-                            (and (fennel.list? def.definition)
-                                 ;; TODO check that arg is called `self`
-                                 (or (and (fennel.sym? (. def.definition 1) "fn")
-                                          (fennel.sym? (?. def.definition 2 1) "self"))
-                                     (and (fennel.sym? (. def.definition 1) "λ")
-                                          (fennel.sym? (?. def.definition 2 1) "self")))))
-                      (add-completion-recursively def (.. name ":" field))
-                      (add-completion-recursively def (.. name "." field)))
+                    ;; TODO deduplicate code! copy 1
+                def (thing field def)
                 _ (do
                     (io.stderr:write "BAD!!!! undocumented field: " (tostring field) "\n")
                     {:label field})))))
         (when definition.fields
-          (each [field value (pairs definition.fields)]
+          (each [field def (pairs definition.fields)]
             (when (= (type field) :string)
-              (if (or (= :self (tostring (?. value :metadata :fnl/arglist 1)))
-                      (and (fennel.list? value.definition)
-                           ;; TODO check that arg is called `self`
-                           (or (and (fennel.sym? (. value.definition 1) "fn")
-                                    (fennel.sym? (?. value.definition 2 1) "self"))
-                               (and (fennel.sym? (. value.definition 1) "λ")
-                                    (fennel.sym? (?. value.definition 2 1) "self")))))
-                (add-completion-recursively value (.. name ":" field))
-                (add-completion-recursively value (.. name "." field))))))
+              ;; TODO deduplicate code! copy 2
+              (thing field def))))
 
         (set (. seen definition) false)))
-    ;; end yield
+    ;; endfn add-completion-recursively
 
     (local seen-manglings {})
 
@@ -85,11 +74,11 @@
         (case (analyzer.search-name-and-scope server file global* scope)
           def (if (and (= :_G (tostring global*))
                        (not (: (tostring ?symbol) :match "_G[:.]")))
-                (add-completion def global*)
-                (add-completion-recursively def global*))
+                (add-completion! global* def)
+                (add-completion-recursively! global* def))
           _ (do
               (io.stderr:write "BAD!!!! undocumented global: " (tostring global*) "\n")
-              {:label global*}))))
+              (add-completion! global* {})))))
 
 
     (var scope scope)
@@ -98,16 +87,19 @@
         (when (not (. seen-manglings mangling))
           (set (. seen-manglings mangling) true)
           (case (analyzer.search-name-and-scope server file mangling scope)
-            def (add-completion-recursively def mangling)
-            _ (add-completion-recursively {} mangling))))
+            def (add-completion-recursively! mangling def)
+            _ (add-completion-recursively! mangling {}))))
 
       (when in-call-position?
-        (each [macro* (pairs scope.macros)]
-          (table.insert results {:label macro* :filterText macro* :textEdit {:newText macro* : range}}))
+        (each [macro* macro-value (pairs scope.macros)]
+          (add-completion! macro*
+                           {:binding macro*
+                            :metadata (. METADATA macro-value)}
+                           :Keyword))
 
         (each [special (pairs scope.specials)]
            (case (analyzer.search-name-and-scope server file special scope)
-             def (add-completion-recursively def special)
+             def (add-completion! special def :Operator)
              _ (do
                  (io.stderr:write "BAD!!!! undocumented special: " (tostring special) "\n")
                  {:label special}))))
