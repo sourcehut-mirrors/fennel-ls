@@ -20,6 +20,7 @@
 * Ignore unused locals if they end in underscore.
 * Settings file: `flsproject.fnl`. Settings are now editor agnostic.
 * Support `:intersection` as a Lua version; only includes globals present in every Lua.
+* Support better completions. The eglot client is no longer a special case.
 
 ### Changes
 
