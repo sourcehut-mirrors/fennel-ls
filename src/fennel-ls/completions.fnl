@@ -32,43 +32,57 @@
         seen []]
 
     (fn add-completion [definition name]
+      (table.insert results
+                    (doto (format.completion-item-format name definition)
+                      (tset :filterText name)
+                      (tset :textEdit {:newText name : range}))))
+
+    (fn add-completion-recursively [definition name]
       "add the completion. also recursively adds the fields' completions"
       (when (not (. seen definition))
         (set (. seen definition) true)
-        (table.insert results
-                      (doto (format.completion-item-format name definition)
-                        (tset :filterText name)
-                        (tset :textEdit {:newText name : range})))
-
+        (add-completion definition name)
         (when (= (type definition.definition) :string)
           (each [key value (pairs (-> (docs.get-global server :string) (. :fields)))]
-            (add-completion value (.. name ":" key))))
+            (add-completion-recursively value (.. name ":" key))))
         (when (fennel.table? definition.definition)
           (each [field value (pairs definition.definition)]
             (when (= (type field) :string)
               (case (analyzer.search-ast server definition.file value [] {})
-                def (do
-                      (when (or (?. def :metadata :fnl/arglist)
-                                (and (fennel.list? def.definition)
-                                     ;; TODO check that arg is called `self`
-                                     (or (fennel.sym? (. def.definition 1) "fn")
-                                         (fennel.sym? (. def.definition 1) "λ"))))
-                        (add-completion def (.. name ":" field)))
-                      (add-completion def (.. name "." field)))
+                def (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
+                            (and (fennel.list? def.definition)
+                                 ;; TODO check that arg is called `self`
+                                 (or (and (fennel.sym? (. def.definition 1) "fn")
+                                          (fennel.sym? (. def.definition 2) "self"))
+                                     (and (fennel.sym? (. def.definition 1) "λ")
+                                          (fennel.sym? (. def.definition 2) "self")))))
+                      (add-completion-recursively def (.. name ":" field))
+                      (add-completion-recursively def (.. name "." field)))
                 _ (do
                     (io.stderr:write "BAD!!!! undocumented field: " (tostring field) "\n")
                     {:label field})))))
         (when definition.fields
             (each [field value (pairs definition.fields)]
               (when (= (type field) :string)
-                (add-completion value (.. name ":" field)))))
+                (if (or (= :self (tostring (?. value :metadata :fnl/arglist 1)))
+                        (and (fennel.list? value.definition)
+                             ;; TODO check that arg is called `self`
+                             (or (and (fennel.sym? (. value.definition 1) "fn")
+                                      (fennel.sym? (. value.definition 2) "self"))
+                                 (and (fennel.sym? (. value.definition 1) "λ")
+                                      (fennel.sym? (. value.definition 2) "self")))))
+                  (add-completion-recursively value (.. name ":" field))
+                  (add-completion-recursively value (.. name "." field))))))
 
         (set (. seen definition) false)))
     ;; end yield
 
     (each [_ global* (ipairs file.allowed-globals)]
       (case (analyzer.search-name-and-scope server file global* scope)
-        def (add-completion def global*)
+        def (if (and (= :_G (tostring global*))
+                     (not (: (tostring ?symbol) :match "_G[:.]")))
+              (add-completion def global*)
+              (add-completion-recursively def global*))
         _ (do
             (io.stderr:write "BAD!!!! undocumented global: " (tostring global*) "\n")
             {:label global*})))
@@ -76,18 +90,15 @@
     (while scope
       (each [mangling (pairs scope.manglings)]
         (case (analyzer.search-name-and-scope server file mangling scope)
-          def (add-completion def mangling)
-          _ (do
-              (io.stderr:write "BAD!!!! undocumented mangling: " (tostring mangling) "\n")
-              {:label mangling})))
+          def (add-completion-recursively def mangling)
+          _ (add-completion-recursively {} mangling)))
       (when in-call-position?
         (each [macro* (pairs scope.macros)]
-          ;; TODO make it work like the other ones
           (table.insert results {:label macro* :filterText macro* :textEdit {:newText macro* : range}}))
 
         (each [special (pairs scope.specials)]
            (case (analyzer.search-name-and-scope server file special scope)
-             def (add-completion def special)
+             def (add-completion-recursively def special)
              _ (do
                  (io.stderr:write "BAD!!!! undocumented special: " (tostring special) "\n")
                  {:label special}))))
