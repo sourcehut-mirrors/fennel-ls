@@ -192,24 +192,29 @@
   (let [version (input:match "Lua .- Reference Manual")
         (modules module-items last-update) (parse-html input)
         docs (collect [_ module (ipairs modules)]
-               (parse-h2-section module))]
+               (parse-h2-section module))
+        file-fields {}]
     (each [_ section (ipairs module-items)]
       (let [(mod k v) (parse-h3-section section)]
         (if (not mod)
             (tset docs k v)
-            (not= mod "file")
+            (= mod "file")
+            (do
+              (table.insert v.metadata.fnl/arglist 1 "self")
+              (tset file-fields k v))
             (let [module-doc (. docs mod)]
               (assert module-doc (.. mod " not found"))
               (tset (. module-doc :fields) k v)))))
-    {: docs : last-update : version}))
+    {: docs : file-fields : last-update : version}))
 
-(fn render [{: docs : last-update : version}]
+(fn render [{: docs : file-fields : last-update : version}]
   (.. ";; Lua " version " last updated " last-update "\n"
-      (fennel.view (fennel.list (fennel.sym :local) (fennel.sym :docs) docs))
-      "\n(set docs._G.fields docs)\n"
-      "(set docs.io.fields.stdin.fields docs.io.fields)\n"
-      "(set docs.io.fields.stdout.fields docs.io.fields)\n"
-      "(set docs.io.fields.stderr.fields docs.io.fields)\n"
+      (fennel.view (fennel.list (fennel.sym :local) (fennel.sym :docs) docs)) "\n"
+      (fennel.view (fennel.list (fennel.sym :local) (fennel.sym :file-fields) file-fields)) "\n"
+      "(set docs._G.fields docs)\n"
+      "(set docs.io.fields.stdin.fields file-fields)\n"
+      "(set docs.io.fields.stdout.fields file-fields)\n"
+      "(set docs.io.fields.stderr.fields file-fields)\n"
       "docs"))
 
 (fn derive-docs-for [version]
