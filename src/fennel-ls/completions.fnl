@@ -31,7 +31,7 @@
     (fn add-completion-recursively! [name definition]
       "add the completion. also recursively adds the fields' completions"
 
-      (fn thing [field def]
+      (fn add-field-recursively! [field def]
         "TODO name this thing"
         (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
                 (and (fennel.list? def.definition)
@@ -52,19 +52,16 @@
           (each [field value (pairs definition.definition)]
             (when (= (type field) :string)
               (case (analyzer.search-ast server definition.file value [] {})
-                    ;; TODO deduplicate code! copy 1
-                def (thing field def)
+                def (add-field-recursively! field def)
                 _ (do
                     (io.stderr:write "BAD!!!! undocumented field: " (tostring field) "\n")
                     {:label field})))))
         (when definition.fields
           (each [field def (pairs definition.fields)]
             (when (= (type field) :string)
-              ;; TODO deduplicate code! copy 2
-              (thing field def))))
+              (add-field-recursively! field def))))
 
         (set (. seen definition) false)))
-    ;; endfn add-completion-recursively
 
     (local seen-manglings {})
 
