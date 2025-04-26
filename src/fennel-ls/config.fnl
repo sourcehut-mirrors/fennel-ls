@@ -96,6 +96,12 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
   (set server.macro-modules {})
   (set server.root-uri params.rootUri)
   (set server.position-encoding (choose-position-encoding params))
+  (set server.can-do-good-completions?
+       ;; if client supports CompletionClientCapabilites.completionList.itemDefaults.editRange
+       ;;                and CompletionClientCapabilites.completionList.itemDefaults.data
+       (case (?. params :capabilities :textDocument :completion :completionList :itemDefaults)
+          completion-item-defaults  (and (accumulate [found nil _ v (ipairs completion-item-defaults) &until found] (= v :editRange))
+                                         (accumulate [found nil _ v (ipairs completion-item-defaults) &until found] (= v :data)))))
   (reload server))
 
 (λ validate [{: configuration} invalid]

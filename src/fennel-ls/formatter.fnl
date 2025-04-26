@@ -172,17 +172,16 @@ fntype is one of fn or λ or lambda"
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
-(λ completion-item-format [name definition range ?kind]
+(λ completion-item-format [server name definition range ?kind]
   "Makes a completion item"
   {:label name
-   :documentation (hover-format definition)
-   :filterText name
-   :textEdit {:newText name : range}
-   :kind (or (if ?kind (. kinds ?kind))
+   :documentation (when (not server.can-do-good-completions?) (hover-format definition))
+   :textEdit (when (not server.can-do-good-completions?) {:newText name : range})
+   :kind (or (when ?kind (. kinds ?kind))
              (. kinds (?. definition :metadata :fls/itemKind))
-             (if (or (?. definition :metadata :fnl/arglist)
-                     (?. (analyze-fn definition.definition)) :fntype)
-               (if (name:find ":") kinds.Method kinds.Function)))})
+             (when (or (?. definition :metadata :fnl/arglist)
+                       (?. (analyze-fn definition.definition)) :fntype)
+                 (if (name:find ":") kinds.Method kinds.Function)))})
 
 {: signature-help-format
  : hover-format

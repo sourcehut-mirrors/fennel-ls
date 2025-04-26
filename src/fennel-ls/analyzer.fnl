@@ -221,12 +221,13 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (assert (= (type name) :string) "search-name-and-scope needs a string")
   (let [split (utils.multi-sym-split name)
         stack (stack-add-split! [] split)
+        base-name (. split 1)
         opts (or ?opts {})]
-    (case (docs.get-builtin server (. split 1))
+    (case (docs.get-builtin server base-name)
       metadata (search-document server metadata stack opts)
-      _ (case (find-local-definition file name scope)
+      _ (case (find-local-definition file base-name scope)
           def (search-val server file def.definition (stack-add-keys! stack def.keys) opts)
-          _ (case (docs.get-global server (. split 1))
+          _ (case (docs.get-global server base-name)
               metadata (search-document server metadata stack opts))))))
 
 (λ past? [?ast byte]

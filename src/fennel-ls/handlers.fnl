@@ -35,7 +35,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          :textDocumentSync {:openClose true :change 2}
          ;; :notebookDocumentSync nil
          :completionProvider {:workDoneProgress false
-                              :resolveProvider false
+                              :resolveProvider server.can-do-good-completions?
                               :triggerCharacters ["(" "[" "{"]
                               :completionItem {:labelDetailsSupport false}}
          :hoverProvider {:workDoneProgress false}
@@ -162,7 +162,9 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                                   symbol)}
       (catch _ nil))))
 
-(set requests.textDocument/completion (. (require :fennel-ls.completions) :textDocument/completion))
+(set {:textDocument/completion requests.textDocument/completion
+      :completionItem/resolve requests.completionItem/resolve}
+     (require :fennel-ls.completions))
 
 (λ requests.textDocument/rename [server _send {: position :textDocument {: uri} :newName new-name}]
   (let [file (files.get-by-uri server uri)

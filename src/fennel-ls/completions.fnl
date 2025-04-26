@@ -26,7 +26,7 @@
         seen {}]
 
     (fn add-completion! [name definition ?kind]
-      (table.insert results (format.completion-item-format name definition range ?kind)))
+      (table.insert results (format.completion-item-format server name definition range ?kind)))
 
     (fn add-completion-recursively! [name definition]
       "add the completion. also recursively adds the fields' completions"
@@ -101,6 +101,20 @@
                  (io.stderr:write "BAD!!!! undocumented special: " (tostring special) "\n")
                  {:label special}))))
       (set scope scope.parent))
-    results))
+    (if server.can-do-good-completions?
+      {:itemDefaults {:editRange range :data {: uri : byte}}
+       :items results}
+      results)))
 
-{: textDocument/completion}
+(fn completionItem/resolve [server _send completion-item]
+  (let [{: uri : byte} completion-item.data
+        file (files.get-by-uri server uri)
+        (_symbol parents) (analyzer.find-symbol file.ast byte)
+        scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
+                    (. file.scopes parent))
+                  file.scope)]
+    (case (analyzer.search-name-and-scope server file completion-item.label scope)
+      result (doto completion-item (tset :documentation (format.hover-format result))))))
+
+{: textDocument/completion
+ : completionItem/resolve}
