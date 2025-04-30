@@ -66,9 +66,10 @@ Run fennel-ls, the Fennel language server and linter.
 
 (λ main []
   (case arg
-    ["--help"] (print help)
-    ["--version"] (print version)
-    ["--lint" & filenames] (lint filenames)
+    (where (or ["-h"] ["--help"])) (print help)
+    (where (or ["-v"] ["--version"])) (print version)
+    ;; (where (or ["-l" & filenames] ["--lint" & filenames])) (lint filenames) ;; compile error in fennel <= 1.5.4
+    (where [--lint & filenames] (or (= --lint "--lint") (= --lint "-l"))) (lint filenames)
     (where (or ["--server"] [nil])) (main-loop (io.input)
                                                (io.output))
     _args (do (io.stderr:write help)
