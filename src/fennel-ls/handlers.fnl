@@ -164,7 +164,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (set {:textDocument/completion requests.textDocument/completion
       :completionItem/resolve requests.completionItem/resolve}
-     (require :fennel-ls.completions))
+     (require :fennel-ls.completion))
 
 (λ requests.textDocument/rename [server _send {: position :textDocument {: uri} :newName new-name}]
   (let [file (files.get-by-uri server uri)
