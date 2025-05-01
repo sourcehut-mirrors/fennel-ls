@@ -2,7 +2,7 @@
 
 ;; TODO refactor fennel-ls.check to avoid running end-to-end
 ;; (but keep/write at least some end-to-end tests)
-(fn test-check []
+(fn test-lint []
   (let [input-file-name (os.tmpname)]
     (doto (io.open input-file-name :w)
       (: :write "(local x 1)")
@@ -15,4 +15,4 @@
       (os.remove input-file-name))
     nil))
 
-{: test-check}
+{: test-lint}
