@@ -9,13 +9,17 @@ It's probably not compliant yet, because serialization of [] and {} is the same.
 Luckily, I'm testing with Neovim, so I can pretend these problems don't exist for now."
 
 (local {: encode : decode} (require :dkjson))
+(local http-separator
+       (if (string.match package.config "^\\")
+           "\n\n"
+           "\r\n\r\n"))
 
 (λ read-header [in ?header]
   "Reads the header of a JSON-RPC message"
   (let [header (or ?header {})]
     (case (in:read)
       nil nil ;; I've hit end of stream, return nil instead of a header
-      line (case (line:match "^(.-)\r$") ;; strip trailing \r
+      line (case (line:match "^(.-)\r?$") ;; strip trailing \r
              "" header ;; base case. empty line marks end of header
              line (let [(k v) (line:match "^(.-): (.-)$")]
                     (if (not (and k v))
@@ -51,7 +55,7 @@ Returns a table with the message if it succeeded, or a string with the parse err
 (λ write [out msg]
   "Serializes and writes a JSON-RPC message to the given output stream"
   (let [content (encode msg)
-        msg-stringified (.. "Content-Length: " (length content) "\r\n\r\n" content)]
+        msg-stringified (.. "Content-Length: " (length content) http-separator content)]
     (out:write msg-stringified)
     (when out.flush
       (out:flush))))
