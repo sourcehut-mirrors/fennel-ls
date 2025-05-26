@@ -6,7 +6,7 @@
 
 (local docset-ext ".lua")
 (local data-dir (.. (or (os.getenv "XDG_DATA_HOME")
-                      (.. (or (os.getenv "HOME") "") "/.local/share/"))
+                      (.. (or (os.getenv "HOME") "") "/.local/share"))
                   "/fennel-ls/docsets/"))
 
 (local specials
