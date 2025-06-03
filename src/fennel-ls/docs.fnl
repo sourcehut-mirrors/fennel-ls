@@ -1,3 +1,4 @@
+(local {: path-join} (require :fennel-ls.utils))
 (local fennel (require :fennel))
 (local {:metadata METADATA
         :scopes {:global {:specials SPECIALS
@@ -5,9 +6,9 @@
   (require :fennel.compiler))
 
 (local docset-ext ".lua")
-(local data-dir (.. (or (os.getenv "XDG_DATA_HOME")
-                      (.. (or (os.getenv "HOME") "") "/.local/share"))
-                  "/fennel-ls/docsets/"))
+(local data-dir (path-join (or (os.getenv "XDG_DATA_HOME")
+                             (path-join (or (os.getenv "HOME") "") ".local/share"))
+                  "fennel-ls/docsets/"))
 
 (local specials
   (collect [name value (pairs SPECIALS)]

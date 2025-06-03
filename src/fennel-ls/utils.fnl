@@ -201,10 +201,10 @@ WARNING: this is only used in the test code, not in the real language server"
   (-> (.. path path-sep suffix)
     ;; delete duplicate
     ;; windows
-    (: :gsub "%.\\" "")
+    (: :gsub "^%.\\" "")
     (: :gsub "\\+" "\\")
     ;; modern society
-    (: :gsub "%./" "")
+    (: :gsub "^%./" "")
     (: :gsub "/+" "/")
     (->> (pick-values 1))))
 
