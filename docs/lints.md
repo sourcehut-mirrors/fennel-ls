@@ -201,8 +201,8 @@ for clarity.
 
 Instead, use:
 ```fnl
-(local x 10)
-(print x)
+(let [x 10]
+  (print x))
 ```
 
 # op-with-no-arguments
@@ -296,15 +296,12 @@ multivals instead of discarding them.
 
 Instead, use:
 ```fnl
-;; Either put the multival at the end:
+;; Try putting the multival at the end:
 (print 4 (values 1 2 3))
 
-;; Change your logic to explicitly capture the values
+;; Try writing the logic out manually instead of using multival
 (let [(a b c) (values 1 2 3)]
   (print a b c 4)
-
-;; Use `do` to make it clear that you intend to ignore the extra values
-(print (do 2 3 1) 4))
 ```
 
 ## Limitations
@@ -316,3 +313,7 @@ most of the time, only the first one is what's wanted.
 This lint specifically flags discarding multivals from `values` and `unpack`,
 instead of flagging all discards, because these forms indicate that the user
 *intends* for something to happen with multivals.
+
+## Note
+You find more information about Lua's multivals in [Benaiah's excellent post explaining Lua's multivals](https://benaiah.me/posts/everything-you-didnt-want-to-know-about-lua-multivals),
+or by searching the word "adjust" in the [Lua Manual](https://www.lua.org/manual/5.4/manual.html#3.4.12).
