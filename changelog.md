@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 / 2025-06-06
+
+### Bug Fixes
+* Fixed a path issue finding external docsets
+* Fixed failing tests in 0.2.0
+
 ## 0.2.0 / 2025-06-03
 
 ### Features
