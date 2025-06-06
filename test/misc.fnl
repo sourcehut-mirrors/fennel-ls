@@ -43,6 +43,28 @@
   (create-client "(let [map {}] (set (. map (tostring :a)) :b))")
   nil)
 
+(fn test-path-join []
+  ;; Basic path joining
+  (faith.= "path/file" (utils.path-join "path/" "file"))
+  (faith.= "path/file" (utils.path-join "path" "file"))
+  (faith.= "path/file" (utils.path-join "path" "./file"))
+
+  ; Empty path - return suffix as-is
+  (faith.= "file" (utils.path-join "" "file"))
+  (faith.= "main.fnl" (utils.path-join "" "main.fnl"))
+  (faith.= "path/" (utils.path-join "path" ""))
+
+  ; Absolute suffix should override base path
+  (faith.= "/usr/share/awesome/lib" (utils.path-join "/home/myusername/.config/awesome/" "/usr/share/awesome/lib"))
+
+  ; Leading ./ in suffix should be stripped
+  (faith.= "/home/myusername/my-project/main.fnl" (utils.path-join "/home/myusername/my-project" "./main.fnl"))
+
+  ; Nested relative paths
+  (faith.= "a/b/c/d" (utils.path-join "a/b" "c/d"))
+  nil)
+
 {: test-multi-sym-split
  : test-find-symbol
- : test-failure}
+ : test-failure
+ : test-path-join}

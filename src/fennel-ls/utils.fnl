@@ -198,15 +198,14 @@ WARNING: this is only used in the test code, not in the real language server"
     (= (path:sub 1 1) "/")))
 
 (λ path-join [path suffix]
-  (-> (.. path path-sep suffix)
-    ;; delete duplicate
-    ;; windows
-    (: :gsub "^%.\\" "")
-    (: :gsub "\\+" "\\")
-    ;; modern society
-    (: :gsub "^%./" "")
-    (: :gsub "/+" "/")
-    (->> (pick-values 1))))
+  (if (absolute-path? suffix) suffix
+      (= path "") suffix
+      (let [clean-path (path:gsub "[\\/]?$" path-sep) ; ensure trailing slash
+            clean-suffix (if (or (= (suffix:sub 1 2) "./")
+                                 (= (suffix:sub 1 2) ".\\"))
+                             (suffix:sub 3)
+                             suffix)]
+        (.. clean-path clean-suffix))))
 
 (fn find [t x ?k]
   (match (next t ?k) (k x) k (k y_) (find t x k)))
