@@ -200,7 +200,10 @@ WARNING: this is only used in the test code, not in the real language server"
 (λ path-join [path suffix]
   (if (absolute-path? suffix) suffix
       (= path "") suffix
-      (let [clean-path (path:gsub "[\\/]?$" path-sep) ; ensure trailing slash
+      (let [;; ensure trailing slash
+            ;; we need to limit to 1 replacement because old
+            ;; versions of lua can match the pattern twice.
+            clean-path (path:gsub "[\\/]?$" path-sep 1)
             clean-suffix (if (or (= (suffix:sub 1 2) "./")
                                  (= (suffix:sub 1 2) ".\\"))
                              (suffix:sub 3)
