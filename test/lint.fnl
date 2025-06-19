@@ -7,18 +7,19 @@
    (accumulate [result nil
                 i d (ipairs diagnostics)
                 &until result]
-     (if (and (or (= e.message nil)
-                  (if (= (type e.message) "function")
-                    (e.message d.message)
-                    (= e.message d.message)))
-              (or (= e.code nil)
-                  (= e.code d.code))
-              (or (= e.range nil)
-                  (and (= e.range.start.line      d.range.start.line)
-                       (= e.range.start.character d.range.start.character)
-                       (= e.range.end.line        d.range.end.line)
-                       (= e.range.end.character   d.range.end.character))))
-       i)))
+     (let [d (or d.self d)]
+       (if (and (or (= e.message nil)
+                    (if (= (type e.message) "function")
+                      (e.message d.message)
+                      (= e.message d.message)))
+                (or (= e.code nil)
+                    (= e.code d.code))
+                (or (= e.range nil)
+                    (and (= e.range.start.line      d.range.start.line)
+                         (= e.range.start.character d.range.start.character)
+                         (= e.range.end.line        d.range.end.line)
+                         (= e.range.end.character   d.range.end.character))))
+         i))))
 
 (fn check [file-contents expected ?unexpected]
   (let [{: diagnostics} (create-client file-contents)]
@@ -32,8 +33,8 @@
       (let [i (find diagnostics e)]
         (faith.is i (.. "No lint matching " (view e) "\n"
                         "from:    " (view file-contents) "\n"
-                        (view diagnostics {:empty-as-sequence? true
-                                           :escape-newlines? true})))
+                        "possible matches: " (view diagnostics {:empty-as-sequence? true
+                                                                :escape-newlines? true})))
         (table.remove diagnostics i)))))
 
 (fn assert-ok [file-contents]
@@ -257,11 +258,20 @@
   (assert-ok "(and false 1)")
   (assert-ok "(and nil 1)")
   (check "(and)"
-         {:message "write true instead of (and)"
-          :code :op-with-no-arguments
-          :range {:start {:characer 0 :line 0}
-                  :end {:character 5 :line 0}}})
+         [{:message "write true instead of (and)"
+           :code :op-with-no-arguments
+           :range {:start {:character 0 :line 0}
+                   :end {:character 5 :line 0}}}])
   nil)
+
+(fn test-empty-let []
+  (assert-ok "(let [x 1] x)")
+  (check "(let [] print)"
+         [{:message "use do instead of let with no bindings"
+           :code :empty-let
+           :range {:start {:character 5 :line 0}
+                   :end {:character 7 :line 0}}}])
+  (assert-ok "(-> [] (let print))"))
 
 ;; TODO lints:
 ;; duplicate keys in kv table
@@ -286,4 +296,5 @@
  : test-match-should-case
  : test-unpack-into-op
  : test-unpack-in-middle
- : test-op-with-no-arguments}
+ : test-op-with-no-arguments
+ : test-empty-let}

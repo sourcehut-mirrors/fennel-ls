@@ -35,7 +35,8 @@ There are no global settings. They're all stored in the `server` object.
            :var-never-set (option true)
            :op-with-no-arguments (option true)
            :multival-in-middle-of-call (option true)
-           :no-decreasing-comparison (option false)}
+           :no-decreasing-comparison (option false)
+           :empty-let (option true)}
    :libraries (option {})
    :extra-globals (option "")})
 

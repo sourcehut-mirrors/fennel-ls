@@ -242,6 +242,22 @@ the `file.diagnostics` field, filling it with diagnostics."
      :severity message.severity.WARN
      :code :inline-unpack}))
 
+(λ empty-let [server file _ call]
+  (case call
+    (where [let* binding]
+           (. file.lexical call)
+           (sym? let* :let)
+           (fennel.sequence? binding)
+           (= 0 (length binding)))
+    (diagnostic {:range (message.ast->range server file binding)
+                 :message "use do instead of let with no bindings"
+                 :severity message.severity.WARN
+                 :code :empty-let}
+                #[(let [{: start} (message.ast->range server file let*)
+                        {: end} (message.ast->range server file binding)]
+                    {:range {: start : end}
+                     :newText "do"})])))
+
 (λ add-lint-diagnostics [server file]
   "fill up the file.diagnostics table with linting things"
   (let [lints server.configuration.lints
@@ -272,6 +288,8 @@ the `file.diagnostics` field, filling it with diagnostics."
           (table.insert diagnostics (op-with-no-arguments server file head call)))
         (when lints.no-decreasing-comparison
           (table.insert diagnostics (no-decreasing-comparison server file head call)))
+        (when lints.empty-let
+          (table.insert diagnostics (empty-let server file head call)))
 
         ;; argument lints
         ;; every argument to a special or a function call

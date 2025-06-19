@@ -9,10 +9,11 @@
       (: :close))
     (let [output-file (io.popen (.. "./fennel-ls --lint "
                                     input-file-name)
-                                :r)]
+                                :r)
+          contents (output-file:read :*a)]
+      (os.remove input-file-name)
       (faith.= (.. input-file-name ":1:7: warning: unused definition: x\n")
-               (output-file:read :*a))
-      (os.remove input-file-name))
+               contents))
     nil))
 
 {: test-lint}

@@ -30,6 +30,11 @@
      {: position
       :textDocument {:uri file}})))
 
+(fn completion-item-resolve [self completion-item]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :completionItem/resolve
+     completion-item)))
+
 (fn definition [self file position]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/definition
@@ -87,6 +92,7 @@
   {:__index {: open-file!
              : pretend-this-file-exists!
              : completion
+             : completion-item-resolve
              : definition
              : hover
              : references
