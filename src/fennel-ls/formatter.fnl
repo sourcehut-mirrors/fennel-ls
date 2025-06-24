@@ -123,7 +123,7 @@ fntype is one of fn or λ or lambda"
     {: fntype : arglist}))
 
 (λ signature-help-format [symbol]
-  "Return a signatureHelp lsp object
+  "Return a SignatureInformation lsp object
 
   symbol can be an actual ast symbol or a binding object from a docset"
   (case-try (analyze-fn symbol.definition)
@@ -145,7 +145,8 @@ fntype is one of fn or λ or lambda"
                (catch _ {:label (.. "ERROR: don't know how to format "
                                   (view symbol {:one-line? true :depth 3}))
                          :documentation (code-block
-                                           (view symbol {:depth 3}))})))))
+                                           (view symbol {:depth 3}))
+                         :parameters []})))))
 
 (λ hover-format [result]
   "Format code that will appear when the user hovers over a symbol"
@@ -154,7 +155,7 @@ fntype is one of fn or λ or lambda"
    (case (analyze-fn result.definition)
      {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
      (fn-format ?fntype ?name ?arglist ?docstring)
-     _ (if (-?>> result.keys length (< 0))
+     _ (if (-?> result.keys length (not= 0))
          (code-block
            (.. "ERROR, I don't know how to show this "
                "(. "
