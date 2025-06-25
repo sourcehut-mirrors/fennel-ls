@@ -9,8 +9,6 @@ LSP json objects."
 (local utils (require :fennel-ls.utils))
 (local json (require :dkjson))
 
-(local json-array-mt {:__jsontype :array})
-
 (λ nullify [?value]
    (case ?value
      nil json.null
@@ -75,16 +73,13 @@ LSP json objects."
                              :end   (utils.byte->position file.text (+ byteend 1)
                                                           server.position-encoding)}))
 
-(λ array [?t]
-  (setmetatable (or ?t []) json-array-mt))
-
 (λ diagnostic->code-action [_server {: uri} diagnostic ?kind]
   (case-try diagnostic.fix
     fix (fix)
     {: title : changes} {: title
                          :kind ?kind
                          :diagnostics [diagnostic]
-                         :edit {:changes {uri (array changes)}}}))
+                         :edit {:changes {uri changes}}}))
 
 (λ call->signature-help [_server _file _call signature active-parameter]
   (let [params-count (length signature.parameters)]
@@ -138,5 +133,4 @@ LSP json objects."
  : diagnostics
  : severity
  : severity->string
- : show-message
- : array}
+ : show-message}

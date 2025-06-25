@@ -108,7 +108,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       symbol
       (analyzer.find-nearest-definition server this-file symbol byte)
       {: referenced-by :file {:uri this-file.uri &as file} : binding}
-      (let [result (icollect [_ {:symbol reference} (ipairs referenced-by) &into (message.array)]
+      (let [result (icollect [_ {:symbol reference} (ipairs referenced-by)]
                      {:range (message.ast->range server file reference)
                       :kind documentHighlightKind.Read})]
         (table.insert result {:range (message.ast->range server file binding)
@@ -207,7 +207,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/codeAction [server _send {: range :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)]
-    (icollect [_ diagnostic (ipairs file.diagnostics) &into (message.array)]
+    (icollect [_ diagnostic (ipairs file.diagnostics)]
       (if (overlap? diagnostic.range range)
         (message.diagnostic->code-action server file diagnostic :quickfix)))))
 

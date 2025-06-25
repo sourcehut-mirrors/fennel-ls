@@ -6,7 +6,6 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 (local {: sym?
         : view
         : table?} (require :fennel))
-(local message (require :fennel-ls.message))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
@@ -38,7 +37,7 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
           (.. ": " $2 $3)))
     (tostring arg)))
 
-(fn fn-signature-format [special name args]
+(fn fn-signature-format [special ?name args]
   "Returns the LSP-formatted signature and parameters objects"
   (fn render-arglist [arglist offset]
     (var offset offset)
@@ -47,7 +46,7 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
         (set offset (+ 1 (. rendered :label 2)))
         rendered)))
 
-  (let [name (tostring (or name special))
+  (let [name (tostring (or ?name special))
         args (case (type (?. args 1))
                :table (icollect [_ v (ipairs args)]
                         (render-arg v))
@@ -60,9 +59,9 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
                 ")")
             (render-arglist args args-offset))))
 
-(fn fn-format [special name args docstring]
-  (.. (code-block (fn-signature-format special name args))
-      (if docstring (.. "\n---\n" docstring) "")))
+(fn fn-format [special ?name args ?docstring]
+  (.. (code-block (fn-signature-format special ?name args))
+      (if ?docstring (.. "\n---\n" ?docstring) "")))
 
 (fn metadata-format [{: binding : metadata}]
   "formats a special using its builtin metadata magic"
@@ -123,11 +122,11 @@ fntype is one of fn or λ or lambda"
       (= (type arglist) :table))
     {: fntype : arglist}))
 
-(λ signature-help-format [symbol]
-  "Return a signatureHelp lsp object
+(λ signature-help-format [doc-or-definition]
+  "Return a SignatureInformation lsp object
 
   symbol can be an actual ast symbol or a binding object from a docset"
-  (case-try (analyze-fn symbol.definition)
+  (case-try (analyze-fn doc-or-definition.definition)
     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
     (fn-signature-format ?fntype ?name ?arglist)
     (signature parameters)
@@ -135,7 +134,7 @@ fntype is one of fn or λ or lambda"
      :documentation ?docstring
      :parameters parameters}
     ;; if we couldn't get the info from the ast, try the metadata
-    (catch _ (case-try symbol
+    (catch _ (case-try doc-or-definition
                {: binding :metadata {:fnl/arglist arglist
                                      :fnl/docstring docstring}}
                (fn-signature-format "" binding arglist)
@@ -143,20 +142,20 @@ fntype is one of fn or λ or lambda"
                {:label signature
                 :documentation docstring
                 :parameters parameters}
-               (catch _ {:parameters (message.array)
+               (catch _ {:parameters []
                          :label (.. "ERROR: don't know how to format "
-                                  (view symbol {:one-line? true :depth 3}))
+                                  (view doc-or-definition {:one-line? true :depth 3}))
                          :documentation (code-block
-                                           (view symbol {:depth 3}))})))))
+                                           (view doc-or-definition {:depth 3}))})))))
 
 (λ hover-format [result]
   "Format code that will appear when the user hovers over a symbol"
   {:kind "markdown"
    :value
    (case (analyze-fn result.definition)
-     {:fntype ?fntype :name ?name :arglist ?arglist :docstring ?docstring}
-     (fn-format ?fntype ?name ?arglist ?docstring)
-     _ (if (-?>> result.keys length (< 0))
+     {:fntype fntype :name ?name :arglist arglist :docstring ?docstring}
+     (fn-format fntype ?name arglist ?docstring)
+     _ (if (-?>> result.keys length (not= 0))
          (code-block
            (.. "ERROR, I don't know how to show this "
                "(. "
