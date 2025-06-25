@@ -6,6 +6,7 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 (local {: sym?
         : view
         : table?} (require :fennel))
+(local message (require :fennel-ls.message))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
@@ -142,7 +143,8 @@ fntype is one of fn or λ or lambda"
                {:label signature
                 :documentation docstring
                 :parameters parameters}
-               (catch _ {:label (.. "ERROR: don't know how to format "
+               (catch _ {:parameters (message.array)
+                         :label (.. "ERROR: don't know how to format "
                                   (view symbol {:one-line? true :depth 3}))
                          :documentation (code-block
                                            (view symbol {:depth 3}))})))))
