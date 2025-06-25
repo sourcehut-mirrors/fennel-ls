@@ -108,7 +108,7 @@ Every time the client sends a message, it gets handled by a function in the corr
       symbol
       (analyzer.find-nearest-definition server this-file symbol byte)
       {: referenced-by :file {:uri this-file.uri &as file} : binding}
-      (let [result (icollect [_ {:symbol reference} (ipairs referenced-by)]
+      (let [result (icollect [_ {:symbol reference} (ipairs referenced-by) &into (message.array)]
                      {:range (message.ast->range server file reference)
                       :kind documentHighlightKind.Read})]
         (table.insert result {:range (message.ast->range server file binding)
@@ -142,12 +142,12 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-nearest-call server file byte)
-      (symbol active-parameter)
-      (analyzer.find-definition server file symbol)
+      (call active-parameter)
+      (analyzer.find-definition server file call)
       {:indeterminate nil &as definition}
       (formatter.signature-help-format definition)
       signature
-      (message.symbol->signature-help server file symbol
+      (message.call->signature-help server file call
                                       signature
                                       active-parameter)
       (catch _ nil))))
@@ -207,9 +207,8 @@ Every time the client sends a message, it gets handled by a function in the corr
 
 (λ requests.textDocument/codeAction [server _send {: range :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)]
-    (icollect [_ diagnostic (ipairs file.diagnostics)]
-      (if (and (overlap? diagnostic.range range)
-               diagnostic.quickfix)
+    (icollect [_ diagnostic (ipairs file.diagnostics) &into (message.array)]
+      (if (overlap? diagnostic.range range)
         (message.diagnostic->code-action server file diagnostic :quickfix)))))
 
 (λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]

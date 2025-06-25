@@ -13,8 +13,10 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local diagnostic-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                       :__index #(. $1 :self $2)})
 
-(fn diagnostic [self quickfix]
-  (setmetatable {: self : quickfix} diagnostic-mt))
+(fn diagnostic [self]
+  (let [fix self.fix]
+    (set self.fix nil)
+    (setmetatable {: self : fix} diagnostic-mt)))
 
 (fn could-be-rewritten-as-sym? [str]
   (and (= :string (type str)) (not (str:find "^%d"))
@@ -33,9 +35,10 @@ the `file.diagnostics` field, filling it with diagnostics."
       {:range (message.ast->range server file symbol)
        :message (.. "unused definition: " (tostring symbol))
        :severity message.severity.WARN
-       :code :unused-definition}
-      #[{:range (message.ast->range server file symbol)
-         :newText (.. "_" (tostring symbol))}])))
+       :code :unused-definition
+       :fix #{:title (.. "Replace " (tostring symbol) " with _" (tostring symbol))
+              :changes [{:range (message.ast->range server file symbol)
+                         :newText (.. "_" (tostring symbol))}]}})))
 
 ;; this is way too specific; it's also safe to do this inside an `if` or `case`
 (fn in-or? [calls symbol]
@@ -107,9 +110,10 @@ the `file.diagnostics` field, filling it with diagnostics."
       (diagnostic {:range (message.ast->range server file call)
                    :message (.. "unnecessary " (tostring head))
                    :severity message.severity.WARN
-                   :code :unnecessary-tset}
-                  #[{:range (message.ast->range server file call)
-                     :newText (make-new-text call)}])))
+                   :code :unnecessary-tset
+                   :fix #{:title "Replace tset with set"
+                          :changes [{:range (message.ast->range server file call)
+                                     :newText (make-new-text call)}]}})))
 
 (λ unnecessary-do-values [server file head call]
   (if (and (or (sym? head :do) (sym? head :values))
@@ -117,26 +121,31 @@ the `file.diagnostics` field, filling it with diagnostics."
       (diagnostic {:range (message.ast->range server file call)
                    :message (.. "unnecessary " (tostring head))
                    :severity message.severity.WARN
-                   :code :unnecessary-do-values}
-                  #[{:range (message.ast->range server file call)
-                     :newText (view (. call 2))}])))
+                   :code :unnecessary-do-values
+                   :fix #{:title "Unwrap the expression"
+                          :changes [{:range (message.ast->range server file call)
+                                     :newText (view (. call 2))}]}})))
 
 (local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
                            (values form body-form?)))
 
 (λ redundant-do [server file head call]
   (let [last-body (. call (length call))]
-    (if (and (. implicit-do-forms (tostring head)) (. file.lexical call)
-             (list? last-body) (sym? (. last-body 1) :do))
+    (if (and (. implicit-do-forms (tostring head))
+             (. file.lexical call)
+             (list? last-body)
+             (sym? (. last-body 1) :do)
+             (not (unnecessary-do-values server file head call))) ;; we don't want two lints to trigger for same call
         (diagnostic {:range (message.ast->range server file last-body)
                      :message "redundant do"
                      :severity message.severity.WARN
-                     :code :redundant-do}
-                    #[{:range (message.ast->range server file last-body)
-                       :newText (table.concat
-                                 (fcollect [i 2 (length last-body)]
-                                   (view (. last-body i)))
-                                 " ")}]))))
+                     :code :redundant-do
+                     :fix #{:title "Unwrap the expression"
+                            :changes [{:range (message.ast->range server file last-body)
+                                       :newText (table.concat
+                                                 (fcollect [i 2 (length last-body)]
+                                                   (view (. last-body i)))
+                                                 " ")}]}}))))
 
 (λ bad-unpack [server file op call]
   "an unpack call leading into an operator"
@@ -160,12 +169,12 @@ the `file.diagnostics` field, filling it with diagnostics."
                         (.. " Use a loop when you have a dynamic number of "
                             "arguments to (" (tostring op) ")")))
          :severity message.severity.WARN
-         :code :bad-unpack}
-        (if (and (= (length call) 2)
-                 (= (length (. call 2)) 2)
-                 (sym? op ".."))
-          #[{:range (message.ast->range server file call)
-             :newText (.. "(table.concat " (view (. call 2 2)) ")")}])))))
+         :code :bad-unpack
+         :fix (if (and (= (length last-item) 2)
+                       (sym? op ".."))
+                  #{:title "Replace with a call to table.concat"
+                    :changes [{:range (message.ast->range server file (if (= 2 (length call)) call last-item))
+                               :newText (.. "(table.concat " (view (. last-item 2)) ")")}]})}))))
 
 (λ var-never-set [server file symbol definition]
   (if (and definition.var? (not definition.var-set) (. file.lexical symbol))
@@ -189,9 +198,10 @@ the `file.diagnostics` field, filling it with diagnostics."
         {:range  (message.ast->range server file call)
          :message (.. "write " (view identity) " instead of (" (tostring op) ")")
          :severity message.severity.WARN
-         :code :op-with-no-arguments}
-        #[{:range (message.ast->range server file call)
-           :newText (view identity)}]))))
+         :code :op-with-no-arguments
+         :fix #{:title (.. "Replace (" (tostring op) ") with " (view identity))
+                :changes [{:range (message.ast->range server file call)
+                           :newText (view identity)}]}}))))
 
 (λ no-decreasing-comparison [server file op call]
   (if (or (sym? op :>) (sym? op :>=))
@@ -199,13 +209,14 @@ the `file.diagnostics` field, filling it with diagnostics."
        {:range  (message.ast->range server file call)
         :message "Use increasing operator instead of decreasing"
         :severity message.severity.WARN
-        :code :no-decreasing-comparison}
-       #[{:range (message.ast->range server file call)
-          :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
-                         reversed (fcollect [i (length call) 2 -1
-                                             &into (list (sym new))]
-                                    (. call i))]
-                     (view reversed))}])))
+        :code :no-decreasing-comparison
+        :fix #{:title "Reverse the comparison"
+               :changes [{:range (message.ast->range server file call)
+                          :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
+                                         reversed (fcollect [i (length call) 2 -1
+                                                             &into (list (sym new))]
+                                                    (. call i))]
+                                     (view reversed))}]}})))
 
 (λ match-reference? [ast references]
   (if (sym? ast) (?. references ast :target)
@@ -221,9 +232,10 @@ the `file.diagnostics` field, filling it with diagnostics."
     (diagnostic {:range (message.ast->range server file (. ast 1))
                  :message "no pinned patterns; use case instead of match"
                  :severity message.severity.WARN
-                 :code :match-should-case}
-                #[{:range (message.ast->range server file (. ast 1))
-                   :newText "case"}])))
+                 :code :match-should-case
+                 :fix #{:title "Replace match with case"
+                        :changes [{:range (message.ast->range server file (. ast 1))
+                                   :newText "case"}]}})))
 
 (λ multival-in-middle-of-call [server file fun call arg index]
   "generally, values and unpack are signs that the user is trying to do
@@ -252,11 +264,12 @@ the `file.diagnostics` field, filling it with diagnostics."
     (diagnostic {:range (message.ast->range server file binding)
                  :message "use do instead of let with no bindings"
                  :severity message.severity.WARN
-                 :code :empty-let}
-                #[(let [{: start} (message.ast->range server file let*)
-                        {: end} (message.ast->range server file binding)]
-                    {:range {: start : end}
-                     :newText "do"})])))
+                 :code :empty-let
+                 :fix #{:title "Replace (let [] ...) with (do ...)"
+                        :changes [(let [{: start} (message.ast->range server file let*)
+                                        {: end} (message.ast->range server file binding)]
+                                    {:range {: start : end}
+                                     :newText "do"})]}})))
 
 (λ add-lint-diagnostics [server file]
   "fill up the file.diagnostics table with linting things"

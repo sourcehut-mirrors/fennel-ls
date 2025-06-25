@@ -9,6 +9,8 @@ LSP json objects."
 (local utils (require :fennel-ls.utils))
 (local json (require :dkjson))
 
+(local json-array-mt {:__jsontype :array})
+
 (λ nullify [?value]
    (case ?value
      nil json.null
@@ -73,25 +75,18 @@ LSP json objects."
                              :end   (utils.byte->position file.text (+ byteend 1)
                                                           server.position-encoding)}))
 
-(λ code-action-title [diag]
-  (let [titles {:match-should-case "Replace match with case"
-                :unused-definition "Prefix with _ to silence warning"
-                :op-with-no-arguments "Replace with the corresponding literal"
-                :no-decreasing-comparison "Reverse comparison"
-                :unnecessary-tset "Replace with set"
-                :unnecessary-do-values "Remove unnecessary do or values"
-                :redundant-do "Remove redundant do"
-                :bad-unpack "Replace with table.concat call"}]
-    (or (. titles diag.code)
-        (.. "Action title missing - " diag.code))))
+(λ array [?t]
+  (setmetatable (or ?t []) json-array-mt))
 
-(λ diagnostic->code-action [_server file diagnostic ?kind]
-  (let [{: uri} file]
-    {:title (code-action-title diagnostic)
-     :kind ?kind
-     :edit {:changes {uri (diagnostic.quickfix)}}}))
+(λ diagnostic->code-action [_server {: uri} diagnostic ?kind]
+  (case-try diagnostic.fix
+    fix (fix)
+    {: title : changes} {: title
+                         :kind ?kind
+                         :diagnostics [diagnostic]
+                         :edit {:changes {uri (array changes)}}}))
 
-(λ symbol->signature-help [_server _file _call signature active-parameter]
+(λ call->signature-help [_server _file _call signature active-parameter]
   (let [params-count (length signature.parameters)]
     {:signatures [signature]
      :activeSignature 0 ; we only ever have one signature
@@ -101,8 +96,7 @@ LSP json objects."
                           active-parameter)}))
 
 (λ multisym->range [server file ast n]
-  (let [spl (utils.multi-sym-split ast)
-        n (if (< n 0) (+ n 1 (length spl)) n)]
+  (let [spl (utils.multi-sym-split ast)]
     (case (values (utils.get-ast-info ast :bytestart)
                   (utils.get-ast-info ast :byteend))
       (bytestart byteend)
@@ -138,10 +132,11 @@ LSP json objects."
  : create-error
  : ast->range
  : diagnostic->code-action
- : symbol->signature-help
+ : call->signature-help
  : multisym->range
  : range-and-uri
  : diagnostics
  : severity
  : severity->string
- : show-message}
+ : show-message
+ : array}

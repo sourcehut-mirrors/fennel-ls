@@ -33,32 +33,47 @@
 (fn test-fix-op-no-arguments []
   (check "(let [x (+====)]
             (print x))"
-         "Replace with the corresponding literal"
+         "Replace (+) with 0"
          "(let [x 0]
-            (print x))"))
+            (print x))")
+  nil)
 
 (fn test-fix-unused-definition []
   (check "(local x==== 10)"
-         "Prefix with _ to silence warning"
-         "(local _x 10)"))
+         "Replace x with _x"
+         "(local _x 10)")
+  nil)
 
 (fn test-unnecessary-tset []
   (check "==(tset state :mouse 496)=="
-         "Replace with set"
+         "Replace tset with set"
          "(set state.mouse 496)")
 
   (check "==(tset state :mouse :cursor 496)=="
-         "Replace with set"
+         "Replace tset with set"
          "(set state.mouse.cursor 496)")
 
   (check "==(tset state :mouse :cursor {:x 4 :y 7})=="
-         "Replace with set"
+         "Replace tset with set"
          "(set state.mouse.cursor {:x 4 :y 7})")
 
   (check "==(tset state :mouse :cursor :x 496)=="
-         "Replace with set"
-         "(set state.mouse.cursor.x 496)"))
+         "Replace tset with set"
+         "(set state.mouse.cursor.x 496)")
+  nil)
+
+(fn test-fix-unpack []
+  (check "(.. (table.unpack my-ta====ble))"
+         "Replace with a call to table.concat"
+         "(table.concat my-table)")
+  (check "(.. 1 2 3 (table.unpa====ck my-table))"
+         "Replace with a call to table.concat"
+         "(.. 1 2 3 (table.concat my-table))")
+  (check-negative "(+ 1 2 3 (table.unpa====ck my-table))"
+         "Replace with a call to table.concat")
+  nil)
 
 {: test-fix-op-no-arguments
  : test-fix-unused-definition
- : test-unnecessary-tset}
+ : test-unnecessary-tset
+ : test-fix-unpack}
