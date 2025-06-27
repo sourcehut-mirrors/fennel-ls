@@ -10,13 +10,13 @@ remove the binding, or add an `_` to the variable name.
 
 ## Example
 ```fnl
-(local value 100)
+(var value 100)
 (set value 10)
 ```
 
 Instead, use the value, remove it, or add `_` to the variable name.
 ```fnl
-(local value 100)
+(var value 100)
 (set value 10)
 ;; use the value
 (print value)
