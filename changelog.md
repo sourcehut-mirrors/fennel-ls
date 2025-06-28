@@ -1,5 +1,11 @@
 # Changelog
 
+### Features
+* New lint for replacing (let [] ...) with (do ...)
+
+### Changes
+* Updated to dkjson 2.8
+
 ## 0.2.1 / 2025-06-06
 
 ### Bug Fixes

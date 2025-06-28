@@ -95,3 +95,32 @@ ci: selflint testall
 
 clean:
 	rm -fr $(EXE) old-deps old-fennel build/
+
+# Steps to release a new fennel-ls version
+
+# 0. run `make test` and `make selflint`, and/or check builds.sr.ht to ensure things are working.
+# 1. Ensure fennel is up to date
+# 2. Ensure dkjson is up to date
+# 3. Remove "-dev" suffix in version src/fennel-ls/utils.fnl
+# 4. Add the version to changelog.md
+# 5. Create a commit titled "Release 0.2.2"
+# 6. git tag --sign --annotate 0.2.2
+#     * For the tag's message, copy the relevant part of the changelog
+#       git doesn't accept #'s at the start of the line,
+#       so you need to use ='s instead. For example:
+#         """
+#         = 0.2.2 =
+# 
+#         == Bug Fixes ==
+#         * my cool bug fix 1
+#         * my cool bug fix 2
+#         """
+# 7. `git push origin 0.2.2`
+# 8. Bump version at the top of src/fennel-ls/utils.fnl, and add "-dev",
+#    in a commit titled "change version to 0.2.3-dev"
+# 9. XeroOl needs to publish a new version on LuaRocks.
+#     * The file will probably be the same as the previous one,
+#       but with a new version number.
+#     * Test with `luarocks build fennel-ls-0.2.2-1.rockspec --tree my-tree`
+#     * Upload with `luarocks upload fennel-ls-0.2.2-1.rockspec`
+# 10. Celebrate your accomplishment

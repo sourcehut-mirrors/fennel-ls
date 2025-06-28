@@ -102,13 +102,13 @@ to be macro files.
 
 ## Features
 
-Feature         | Locals | Fields | Builtin Globals | Across Files | Builtins | Macros | User globals |
---------------- | ------ | ------ | --------------- | ------------ | -------- | ------ | ------------ |
-Completions     | [X]    | [X]    | [X]             | [X]          | [X]      | [X]    | [ ]          |
-Hover           | [X]    | [X]    | [X]             | [X]          | [X]      | [X]    | [ ]          |
-Goto Definition | [X]    | [X]    | N/A             | [X]          | N/A      | [ ]    | [ ]          |
-Rename          | [X]    | [ ]    | N/A             | [ ]          | N/A      | [ ]    | [ ]          |
-Goto Reference  | [X]    | [ ]    | [ ]             | [ ]          | [ ]      | [ ]    | [ ]          |
+| Feature         | Locals | Fields | Builtin Globals | Across Files | Builtins | Macros | User globals |
+| --------------- | ------ | ------ | --------------- | ------------ | -------- | ------ | ------------ |
+| Completions     | [X]    | [X]    | [X]             | [X]          | [X]      | [X]    | [ ]          |
+| Hover           | [X]    | [X]    | [X]             | [X]          | [X]      | [X]    | [ ]          |
+| Goto Definition | [X]    | [X]    | N/A             | [X]          | N/A      | [ ]    | [ ]          |
+| Rename          | [X]    | [ ]    | N/A             | [ ]          | N/A      | [ ]    | [ ]          |
+| Goto Reference  | [X]    | [ ]    | [ ]             | [ ]          | [ ]      | [ ]    | [ ]          |
 
 Fennel-ls can report all fennel compiler errors, plus a few custom lints.
 
