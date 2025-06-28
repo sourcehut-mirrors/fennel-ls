@@ -9,10 +9,10 @@
 (local fennel-version "1.5.3")
 (local faith-version "0.2.0")
 (local penlight-version "1.14.0")
-(local dkjson-version "2.7")
+(local dkjson-version "2.8")
 ;; dkjson is hosted over http (unencrypted), so I check to make sure the file's not been tampered
-(local dkjson-md5sum "94320e64e95f9bb5b06d9955e5391a78  build/dkjson.lua")
-(local dkjson-sha1sum "6926b65aa74ae8278b6c5923c0c5568af4f1fef1  build/dkjson.lua")
+(local dkjson-md5sum "6bdfb30f5e192315ad0bb249f1d48e72  build/dkjson.lua")
+(local dkjson-sha1sum "19b27918b411b52b1c2b0061dd479672cb746687  build/dkjson.lua")
 
 
 ;; get fennel
