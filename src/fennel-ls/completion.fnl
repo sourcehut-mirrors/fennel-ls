@@ -51,7 +51,7 @@
         (when (fennel.table? definition.definition)
           (each [field value (pairs definition.definition)]
             (when (= (type field) :string)
-              (case (analyzer.search-ast server definition.file value [] {})
+              (case (analyzer.search server definition.file value {} {})
                 def (add-field-recursively! field def)
                 _ (do
                     (io.stderr:write "BAD!!!! undocumented field: " (tostring field) "\n")

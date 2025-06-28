@@ -187,28 +187,31 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 
 (local {:metadata METADATA} (require :fennel.compiler))
 ;; the options thing is getting out of hand
-(λ search-main [server file symbol opts initialization-opts]
-  "Find the definition of a symbol"
+(λ search [server file ast opts initialization-opts]
+  "Find the definition of an ast"
 
   (assert (= (type initialization-opts) :table))
   ;; The stack is the multi-sym parts still to search
   ;; for example, if I'm searching for "foo.bar.baz", my immediate priority is to find foo,
   ;; and the stack has ["baz" "bar"]. "bar" is at the "top"/"end" of the stack as the next key to search.
-  (if (sym? symbol)
+  (if (sym? ast)
+    ;; when your search starts as a symbol, there's lots of special interesting things to consider
     (let [stack
           (if initialization-opts.stack
               initialization-opts.stack
               (let [?byte initialization-opts.byte
-                    split (utils.multi-sym-split symbol (if ?byte (- ?byte symbol.bytestart)))]
+                    split (utils.multi-sym-split ast (if ?byte (- ?byte ast.bytestart)))]
                 (stack-add-split! [] split)))]
-      (case (docs.get-builtin server (utils.multi-sym-base symbol))
+      (case (docs.get-builtin server (utils.multi-sym-base ast))
         document (search-document server document stack opts)
-        _ (case (. file.references symbol)
+        _ (case (. file.references ast)
+            ;; we want to search at least once, assuming opts.stop-early?
             ref (search-reference server file ref stack opts)
-            _ (case (. file.definitions symbol)
+            _ (case (. file.definitions ast)
                 def (search-multival server file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)
-                _ (case (. file.macro-refs symbol)
-                    ref {:binding symbol :metadata (. METADATA ref)})))))))
+                _ (case (. file.macro-refs ast)
+                    ref {:binding ast :metadata (. METADATA ref)})))))
+    (search-val server file ast (or initialization-opts.stack []) opts)))
 
 (λ find-local-definition [file name ?scope]
   (when ?scope
@@ -319,17 +322,16 @@ returns the called symbol and the number of the argument closest to byte"
 (λ find-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
       (. file.definitions symbol)
-      (search-main server file symbol {:stop-early? false} {:byte ?byte})))
+      (search server file symbol {:stop-early? false} {:byte ?byte})))
 
 (λ find-nearest-definition [server file symbol ?byte]
   (if (. file.definitions symbol)
       (. file.definitions symbol)
-      (search-main server file symbol {:stop-early? true} {:byte ?byte})))
+      (search server file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
  : find-nearest-call
  : find-nearest-definition
  : find-definition
- : search-main
- : search-name-and-scope
- :search-ast search-val}
+ : search
+ : search-name-and-scope}

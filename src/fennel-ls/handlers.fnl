@@ -89,9 +89,9 @@ Every time the client sends a message, it gets handled by a function in the corr
       (if
         ;; require call
         (. file.require-calls parent)
-        (analyzer.search-ast server file parent [] {:stop-early? true})
+        (analyzer.search server file parent {:stop-early? true} {})
         ;; regular symbol
-        (analyzer.search-main server file symbol {:stop-early? true} {: byte}))
+        (analyzer.search server file symbol {:stop-early? true} {: byte}))
       result
       (if result.file
         (message.range-and-uri server result.file (or result.binding result.definition)))
@@ -156,7 +156,7 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
-      symbol (analyzer.search-main server file symbol {} {: byte})
+      symbol (analyzer.search server file symbol {} {: byte})
       {:indeterminate nil &as result} {:contents (formatter.hover-format result)
                                        :range (message.ast->range server file
                                                                   symbol)}

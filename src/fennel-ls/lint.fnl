@@ -46,10 +46,10 @@ the `file.diagnostics` field, filling it with diagnostics."
   (accumulate [in? false call (pairs calls) &until in?]
     (and (sym? (. call 1) :or) (utils.find call symbol))))
 
-(fn module-field-helper [server file symbol ?ast stack]
+(fn module-field-helper [server file symbol ?ast ?stack]
   "if ?ast is a module field that isn't known, return a diagnostic"
   (let [opts {}
-        item (analyzer.search-ast server file ?ast stack opts)]
+        item (analyzer.search server file ?ast opts {:stack ?stack})]
     (if (and (not item)
              (. file.lexical symbol)
              (not (in-or? file.calls symbol))
@@ -66,7 +66,7 @@ the `file.diagnostics` field, filling it with diagnostics."
   "any multisym whose definition can't be found through a (require) call"
   (icollect [symbol (pairs file.references) &into file.diagnostics]
     (if (. (utils.multi-sym-split symbol) 2)
-        (module-field-helper server file symbol symbol [])))
+        (module-field-helper server file symbol symbol)))
 
   (icollect [symbol binding (pairs file.definitions) &into file.diagnostics]
     (if binding.keys
