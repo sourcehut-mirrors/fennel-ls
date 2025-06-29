@@ -207,6 +207,8 @@
           (local (x y| z) (foo))")
   (check "(fn foo [] [{} =={}== {}])
           (local [x y| z] (foo))")
+  (check "(let [foo #=={}==
+                x| (foo)")
   nil)
 
 (fn test-macro []

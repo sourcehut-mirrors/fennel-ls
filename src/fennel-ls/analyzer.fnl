@@ -153,7 +153,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         :setmetatable
         (search-val server file (. call 2) stack opts)
 
-        (where (or :fn :lambda :λ))
+        (where (or :fn :lambda :λ :hashfn))
         (if (and (= multival 1) (= 0 (length stack)))
           {:definition call : file}) ;; BASE CASE !!
 
@@ -166,7 +166,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                      (let [head (. definition 1)]
                        (or (sym? head :fn)
                            (sym? head :lambda)
-                           (sym? head :λ))))
+                           (sym? head :λ)
+                           (sym? head :hashfn))))
               (search-multival server file (. definition (length definition)) stack multival opts)
               result result
               _ (case (docs.get-builtin server (tostring (. call 1)))
@@ -188,8 +189,14 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (local {:metadata METADATA} (require :fennel.compiler))
 ;; the options thing is getting out of hand
 (λ search [server file ast opts initialization-opts]
-  "Find the definition of an ast"
+  "Find the definition of an ast.
+   the options are getting out of hand.
 
+opts: {:searched-through-require-with-stack-size-1 ?true
+       :stop-early? bool}
+initialization-opts: {:stack ?list[ast]
+                      :byte ?integer}
+  "
   (assert (= (type initialization-opts) :table))
   ;; The stack is the multi-sym parts still to search
   ;; for example, if I'm searching for "foo.bar.baz", my immediate priority is to find foo,
@@ -204,13 +211,14 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                 (stack-add-split! [] split)))]
       (case (docs.get-builtin server (utils.multi-sym-base ast))
         document (search-document server document stack opts)
-        _ (case (. file.references ast)
-            ;; we want to search at least once, assuming opts.stop-early?
-            ref (search-reference server file ref stack opts)
-            _ (case (. file.definitions ast)
-                def (search-multival server file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts)
-                _ (case (. file.macro-refs ast)
-                    ref {:binding ast :metadata (. METADATA ref)})))))
+        _ (case (. file.macro-refs ast)
+            ref {:binding ast :metadata (. METADATA ref)}
+            ;; We want to traverse at least one reference, even if stop-early is set.
+            ;; so we wan't just use the definitions
+            _ (case (. file.references ast)
+                ref (search-reference server file ref stack opts)
+                _ (case (. file.definitions ast)
+                    def (search-multival server file def.definition (stack-add-keys! stack def.keys) (or def.multival 1) opts))))))
     (search-val server file ast (or initialization-opts.stack []) opts)))
 
 (λ find-local-definition [file name ?scope]
