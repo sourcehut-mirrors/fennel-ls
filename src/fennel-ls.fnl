@@ -2,17 +2,17 @@
 (local dispatch (require :fennel-ls.dispatch))
 (local json-rpc (require :fennel-ls.json-rpc))
 (local files (require :fennel-ls.files))
-(local {: severity->string} (require :fennel-ls.message))
+(local {: severity->string &as message} (require :fennel-ls.message))
 
-(fn print-diagnostic [filename message ?range ?severity]
+(fn print-diagnostic [filename msg range ?severity]
   (print (: "%s:%s:%s: %s: %s" :format
             filename
             ;; LSP line numbers are zero-indexed, but Emacs and Vim both use
             ;; 1-indexing for this.
-            (+ (or (?. ?range :start :line) 0) 1)
-            (or (?. ?range :start :character) "?")
+            (if (= range message.unknown-range) "?" (+ range.start.line 1))
+            (if (= range message.unknown-range) "?" range.start.character)
             (or (. severity->string ?severity) "?")
-            message)))
+            msg)))
 
 (fn initialize [server]
   (let [params {:id 1

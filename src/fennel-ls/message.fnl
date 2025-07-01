@@ -66,6 +66,9 @@ LSP json objects."
    : id
    :result (nullify ?result)})
 
+(local unknown-range {:start {:line 0 :character 0}
+                      :end {:line 0 :character 0}})
+
 (λ ast->range [server file ?ast]
   (case (fennel.ast-source ?ast)
     {: bytestart : byteend} {:start (utils.byte->position file.text bytestart
@@ -133,4 +136,5 @@ LSP json objects."
  : diagnostics
  : severity
  : severity->string
- : show-message}
+ : show-message
+ : unknown-range}

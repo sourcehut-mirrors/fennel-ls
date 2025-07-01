@@ -300,7 +300,7 @@ identifiers are declared / referenced in which places."
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range server file ast)
-                      (line+byte->range server file 1 1))]
+                      message.unknown-range)]
         (table.insert diagnostics
           {:range range
            :message msg
