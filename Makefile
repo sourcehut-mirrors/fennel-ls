@@ -91,7 +91,7 @@ check-deps:
 	diff -r fennel old-fennel
 	rm -rf old-deps old-fennel
 
-ci: selflint testall
+ci: testall selflint
 
 clean:
 	rm -fr $(EXE) old-deps old-fennel build/

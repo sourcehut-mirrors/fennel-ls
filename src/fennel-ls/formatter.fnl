@@ -65,10 +65,6 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
                 ")")
             (render-arglist args args-offset))))
 
-(fn fn-format [special ?name args ?docstring]
-  (.. (code-block (fn-signature-format special ?name args))
-      (if ?docstring (.. "\n---\n" ?docstring) "")))
-
 (fn metadata-format [{: binding : metadata}]
   "formats a special using its builtin metadata magic"
   (..
