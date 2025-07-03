@@ -99,7 +99,7 @@
                     (. file.scopes parent))
                   file.scope)]
     (case (analyzer.search-name-and-scope server file completion-item.label scope)
-      result (doto completion-item (tset :documentation (format.hover-format result))))))
+      result (doto completion-item (tset :documentation (format.hover-format server completion-item.label result))))))
 
 {: textDocument/completion
  : completionItem/resolve}

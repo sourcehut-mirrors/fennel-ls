@@ -51,7 +51,7 @@ but only as a quick way to show a value,
 for instance for debugging.
 For complete control over the output,
 use `string.format` and `io.write`.")
-  (check "(local x print) (x| :hello :world)" "```fnl\n(print ...)\n```
+  (check "(local x print) (x| :hello :world)" "```fnl\n(x ...)\n```
 ---
 Receives any number of arguments
 and prints their values to `stdout`,
@@ -79,7 +79,7 @@ except that it sets a new message handler `msgh`.")
          "```fnl\n(string.char ...)\n```\n---\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms.")
   (check "(local x :hello)
           x.cha|r"
-         "```fnl\n(string.char ...)\n```\n---\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
+         "```fnl\n(x.char ...)\n```\n---\nReceives zero or more integers.\nReturns a string with length equal to the number of arguments,\nin which each character has the internal numeric code equal\nto its corresponding argument.\n\nNumeric codes are not necessarily portable across platforms."))
 
 
 (fn test-functions []
@@ -147,7 +147,7 @@ except that it sets a new message handler `msgh`.")
             \"docstring!\"
             `(let [,a ,b] ,c))
           (bind x print |x)"
-         #($:find "```fnl\n(print ...)\n```" 1 true))
+         #($:find "```fnl\n(x ...)\n```" 1 true))
 
   (check "(macro foo [a b c]
             \"docstring!\"

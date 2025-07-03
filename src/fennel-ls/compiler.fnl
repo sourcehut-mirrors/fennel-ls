@@ -5,7 +5,7 @@ fennel compiler, and then tries to store into it gets from the fennel
 compiler's plugin hook callbacks. It stores lexical info about which
 identifiers are declared / referenced in which places."
 
-(local {: sym? : list? : sequence? : table? : sym : view &as fennel} (require :fennel))
+(local {: sym? : list? : sequence? : table? : varg? : sym : view &as fennel} (require :fennel))
 (local {:scopes {:global {: specials}}} (require :fennel.compiler))
 (local docs (require :fennel-ls.docs))
 (local message (require :fennel-ls.message))
@@ -396,7 +396,7 @@ identifiers are declared / referenced in which places."
             (table.insert defer #(set ast.byteend ast.bytestart))
             (where (:unquote ","))
             (table.insert defer #(set ast.byteend ast.bytestart))))
-        (when (or (table? ast) (list? ast) (sym? ast))
+        (when (or (table? ast) (list? ast) (sym? ast) (varg? ast))
           (tset lexical ast true))
         ;; recursive call
         (when (or (table? ast) (list? ast))
@@ -410,7 +410,7 @@ identifiers are declared / referenced in which places."
             (tset ast 1 (sym :fn))
             (table.insert defer #(tset ast 1 old-sym)))))
 
-      (parsed ast lexical)
+      (parsed ast)
 
       ;; This is bad; we have to mutate fennel.macro-path to use fennel's native macro loader
       (let [old-macro-path fennel.macro-path

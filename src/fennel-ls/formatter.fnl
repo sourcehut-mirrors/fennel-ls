@@ -5,7 +5,12 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
 
 (local {: sym?
         : view
-        : table?} (require :fennel))
+        : table?
+        : varg?
+        : list? &as fennel} (require :fennel))
+
+(local navigate (require :fennel-ls.navigate))
+(local utils (require :fennel-ls.utils))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
@@ -26,15 +31,16 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
       (render-arg [:foo])       -> \"[foo]\"
       (render-arg [(sym :foo)]) -> \"[foo]\""
   (if (table? arg)
-    (: (view (collect [k v (pairs arg)]
-               ;; we don't want to view `v` because it's already been rendered
-               k (unview (render-arg v)))
-         {:one-line? true
-          :prefer-colon? true})
-       ;; transform {:key key} to {: key}
-       :gsub ":([%w?_-]+) ([%w?_-]+)([ }])"
-       #(if (= $1 $2)
-          (.. ": " $2 $3)))
+    (pick-values 1
+      (: (view (collect [k v (pairs arg)]
+                 ;; we don't want to view `v` because it's already been rendered
+                 k (unview (render-arg v)))
+           {:one-line? true
+            :prefer-colon? true})
+         ;; transform {:key key} to {: key}
+         :gsub ":([%w?_-]+) ([%w?_-]+)([ }])"
+         #(if (= $1 $2)
+            (.. ": " $2 $3))))
     (tostring arg)))
 
 (fn fn-signature-format [special ?name args]
@@ -147,24 +153,49 @@ fntype is one of fn or λ or lambda"
                                   (view doc-or-definition {:one-line? true :depth 3}))
                          :documentation (code-block
                                            (view doc-or-definition {:depth 3}))})))))
+(λ get-stub [server name definition ?short]
+  "gets a string representation of this object"
+  (or (case definition.definition
+        ast (case (type ast)
+              (where _ (varg? ast)) (view ast)
+              (where _ (sym? ast :nil)) "nil"
+              (where (or :string :number :boolean)) (view ast {:prefer-colon? true})
+              (where _ (table? ast))
+              (if ?short
+                "{...}"
+                (let [t (collect [k v (navigate.iter-fields server definition)]
+                          k (unview (get-stub server (.. name "." k) v true)))]
+                  (view t)))))
+      (case definition.definition
+        (where [hfn body]
+               (list? definition.definition)
+               (sym? hfn :hashfn))
+        (.. "#" (view body {:one-line? true})))
+      (case (navigate.getmetadata server definition)
+        metadata
+        (if metadata.fnl/arglist
+          (.. "("
+              (table.concat (icollect [_ arg (ipairs metadata.fnl/arglist) &into [name]]
+                                (render-arg arg))
+                            " ")
+              ")")
+          ?short
+          "{...}"
+          (let [t (collect [k v (navigate.iter-fields server definition)]
+                    k (unview (get-stub server (.. name "." k) v true)))]
+            (view t {:prefer-colon true}))))
+      (when definition.indeterminate
+        "?")
+      (view (or definition.binding definition.definition))))
 
-(λ hover-format [result]
+(λ hover-format [server name definition]
   "Format code that will appear when the user hovers over a symbol"
   {:kind "markdown"
-   :value
-   (case (analyze-fn result.definition)
-     {:fntype fntype :name ?name :arglist arglist :docstring ?docstring}
-     (fn-format fntype ?name arglist ?docstring)
-     _ (if (-?>> result.keys length (not= 0))
-         (code-block
-           (.. "ERROR, I don't know how to show this "
-               "(. "
-               (view result.definition {:prefer-colon? true}) " "
-               (view result.keys {:prefer-colon? true}) ")"))
-         result.metadata
-         (metadata-format result)
-         (code-block
-            (view result.definition {:prefer-colon? true}))))})
+   :value (.. (code-block (get-stub server name definition))
+              (or (-?> (navigate.getmetadata server definition)
+                       (. :fnl/docstring)
+                       (->> (.. "\n---\n")))
+                  ""))})
 
 ;; CompletionItemKind
 (local kinds
@@ -176,13 +207,15 @@ fntype is one of fn or λ or lambda"
 (λ completion-item-format [server name definition range ?kind]
   "Makes a completion item"
   {:label name
-   :documentation (when (not server.can-do-good-completions?) (hover-format definition))
+   :documentation (when (not server.can-do-good-completions?) (hover-format server name definition))
    :textEdit (when (not server.can-do-good-completions?) {:newText name : range})
-   :kind (or (when ?kind (. kinds ?kind))
-             (. kinds (?. definition :metadata :fls/itemKind))
-             (when (or (?. definition :metadata :fnl/arglist)
-                       (?. (analyze-fn definition.definition)) :fntype)
-                 (if (name:find ":") kinds.Method kinds.Function)))})
+   :kind (or (?. kinds ?kind)
+             (case (navigate.getmetadata server definition)
+               metadata
+               (or (?. kinds metadata.fls/itemKind)
+                   (when metadata.fnl/arglist
+                       (if (name:find ":") kinds.Method kinds.Function))))
+             kinds.Text)})
 
 {: signature-help-format
  : hover-format

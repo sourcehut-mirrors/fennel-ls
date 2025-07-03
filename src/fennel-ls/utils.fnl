@@ -33,10 +33,9 @@ These functions are all pure functions, which makes me happy."
     (values 4 2)
     (error :utf8-error)))
 
-(fn byte->unit16 [str ?byte]
+(fn byte->unit16 [str byte]
   "convert from normal units to utf16 garbage"
-  ;; TODO reconsider this when upstream #180 is fixed
-  (let [unit8 (math.min (length str) ?byte)]
+  (let [unit8 byte]
     (var o8 0)
     (var o16 0)
     (while (< o8 unit8)
@@ -80,6 +79,12 @@ These functions are all pure functions, which makes me happy."
   (case encoding
     :utf-8 {: line :character (- byte pos)}
     :utf-16 {: line :character (byte->unit16 (str:sub pos) (- byte pos))}
+    _ (error (.. "unknown encoding: " encoding))))
+
+(λ byte->character [str byte encoding]
+  (case encoding
+    :utf-8 byte
+    :utf-16 (byte->unit16 str byte)
     _ (error (.. "unknown encoding: " encoding))))
 
 (λ position->byte [str {: line : character} encoding]
@@ -218,6 +223,7 @@ WARNING: this is only used in the test code, not in the real language server"
  : path->uri
  : pos->position
  : byte->position
+ : byte->character
  : position->byte
  : apply-changes
  : apply-edits
