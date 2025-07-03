@@ -119,6 +119,10 @@
   ;; stretchy completions
   (check "(local x {:field 100})\n(if fi" [:x.field] [])
   (check "(local x {:field {:deep 100}})\n(if de" [:x.field.deep] [])
+  (check "(local t {:field (fn [foo] nil)})\n(t|" [:t.field] [])
+  (check "(local t {:field (fn [self] nil)})\n(t|" [:t:field] [])
+  (check "(local t {})\n(fn t.field [foo] nil)})\n(t|" [:t.field] [])
+  (check "(local t {})\n(fn t.field [self] nil)})\n(t|" [:t:field] [])
   nil)
 
 (fn test-builtin []

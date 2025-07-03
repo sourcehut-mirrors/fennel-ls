@@ -1,10 +1,10 @@
 (local files (require :fennel-ls.files))
 (local utils (require :fennel-ls.utils))
 (local analyzer (require :fennel-ls.analyzer))
-(local docs (require :fennel-ls.docs))
 (local fennel (require :fennel))
 (local message (require :fennel-ls.message))
 (local format (require :fennel-ls.formatter))
+(local navigate (require :fennel-ls.navigate))
 (local {:metadata METADATA} (require :fennel.compiler))
 
 (λ textDocument/completion [server _send {: position :textDocument {: uri}}]
@@ -30,37 +30,22 @@
 
     (fn add-completion-recursively! [name definition]
       "add the completion. also recursively adds the fields' completions"
-
-      (fn add-field-recursively! [field def]
-        "TODO name this thing"
-        (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
-                (and (fennel.list? def.definition)
-                     (or (and (fennel.sym? (. def.definition 1) "fn")
-                              (fennel.sym? (?. def.definition 2 1) "self"))
-                         (and (fennel.sym? (. def.definition 1) "λ")
-                              (fennel.sym? (?. def.definition 2 1) "self")))))
-          (add-completion-recursively! (.. name ":" field) def)
-          (add-completion-recursively! (.. name "." field) def)))
-
       (when (not (. seen definition))
         (set (. seen definition) true)
         (add-completion! name definition)
-        (when (= (type definition.definition) :string)
-          (each [key value (pairs (-> (docs.get-global server :string) (. :fields)))]
-            (add-completion-recursively! (.. name ":" key) value)))
-        (when (fennel.table? definition.definition)
-          (each [field value (pairs definition.definition)]
-            (when (= (type field) :string)
-              (case (analyzer.search server definition.file value {} {})
-                def (add-field-recursively! field def)
-                _ (do
-                    (io.stderr:write "BAD!!!! undocumented field: " (tostring field) "\n")
-                    {:label field})))))
-        (when definition.fields
-          (each [field def (pairs definition.fields)]
-            (when (= (type field) :string)
-              (add-field-recursively! field def))))
-
+        (each [field def ?string-method (navigate.iter-fields server definition)]
+          (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
+                  ?string-method
+                  (and (fennel.list? def.definition)
+                       (or (fennel.sym? (. def.definition 1) "fn")
+                           (fennel.sym? (. def.definition 1) "λ"))
+                       (or (and (fennel.table? (. def.definition 2))
+                                (fennel.sym? (. def.definition 2 1) "self"))
+                           (and (fennel.sym? (. def.definition 2))
+                                (fennel.table? (. def.definition 3))
+                                (fennel.sym? (?. def.definition 3 1) "self")))))
+              (add-completion-recursively! (.. name ":" field) def)
+              (add-completion-recursively! (.. name "." field) def)))
         (set (. seen definition) false)))
 
     (local seen-manglings {})

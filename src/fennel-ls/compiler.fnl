@@ -65,9 +65,6 @@ identifiers are declared / referenced in which places."
 
 (λ line+byte->range [server file line byte]
   (let [line (- line 1)
-        ;; some errors in fennel erroneously say column -1
-        ;; try compiling "(do\n" to see what I mean
-        byte (math.max 0 byte)
         position (utils.pos->position file.text line byte server.position-encoding)]
     {:start position :end position}))
 

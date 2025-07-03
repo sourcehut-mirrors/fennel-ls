@@ -77,18 +77,18 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   "searches for the definition of the ast, adjusted to 1 value"
   (search-multival server file ?ast stack 1 opts))
 
-(λ search-assignment [server file assignment stack opts]
-  (let [{:target {:binding _
-                  :definition ?definition
-                  :keys ?keys
-                  :multival ?multival
-                  :fields ?fields}} assignment]
+(λ search-definition [server file definition stack opts]
+  (let [{:binding _
+         :definition ?definition
+         :keys ?keys
+         :multival ?multival
+         :fields ?fields} definition]
     (if (and (= 0 (length stack)) opts.stop-early?)
-        assignment.target ;; BASE CASE!!
+        definition ;; BASE CASE!!
 
         ;; :fields
         (and (not= 0 (length stack)) (?. ?fields (. stack (length stack))))
-        (search-assignment server file {:target (. ?fields (table.remove stack))} stack opts)
+        (search-definition server file (. ?fields (table.remove stack)) stack opts)
 
         ;; This case is hard to explain.
         ;; Under these conditions, search-multival is planning on returning {:definition ?definition : file}
@@ -101,7 +101,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
              (= 1 (or 1 ?multival))
              (not (sym? ?definition))
              (= 0 (length stack)))
-        assignment.target
+        definition
 
         (search-multival server file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))
 
@@ -109,7 +109,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (if ref.target.metadata
      (search-document server ref.target stack opts)
      ref.target.binding
-     (search-assignment server file ref stack opts)))
+     (search-definition server file ref.target stack opts)))
 
 (λ search-symbol [server file symbol stack opts]
   (if (= (tostring symbol) :nil)
@@ -237,7 +237,7 @@ initialization-opts: {:stack ?list[ast]
     (case (docs.get-builtin server base-name)
       metadata (search-document server metadata stack opts)
       _ (case (find-local-definition file base-name scope)
-          def (search-val server file def.definition (stack-add-keys! stack def.keys) opts)
+          def (search-definition server file def [] opts)
           _ (case (docs.get-global server base-name)
               metadata (search-document server metadata stack opts))))))
 
@@ -328,13 +328,11 @@ returns the called symbol and the number of the argument closest to byte"
     (catch _ nil)))
 
 (λ find-definition [server file symbol ?byte]
-  (if (. file.definitions symbol)
-      (. file.definitions symbol)
+  (or (. file.definitions symbol)
       (search server file symbol {:stop-early? false} {:byte ?byte})))
 
 (λ find-nearest-definition [server file symbol ?byte]
-  (if (. file.definitions symbol)
-      (. file.definitions symbol)
+  (or (. file.definitions symbol)
       (search server file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
