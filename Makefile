@@ -11,7 +11,7 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 MANDIR ?= $(PREFIX)/share/man/man1
 
-FENNELFLAGS=--add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
+FENNELFLAGS ?= --add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
 REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
 
 .PHONY: all clean test repl install docs docs-love2d install-deps ci selflint \
