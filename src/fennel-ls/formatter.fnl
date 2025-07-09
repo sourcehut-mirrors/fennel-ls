@@ -7,10 +7,9 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
         : view
         : table?
         : varg?
-        : list? &as fennel} (require :fennel))
+        : list?} (require :fennel))
 
 (local navigate (require :fennel-ls.navigate))
-(local utils (require :fennel-ls.utils))
 
 (λ code-block [str]
   (.. "```fnl\n" str "\n```"))
@@ -64,23 +63,6 @@ user code. Fennel-ls doesn't support user-code formatting as of now."
                 (table.concat args " ")
                 ")")
             (render-arglist args args-offset))))
-
-(fn metadata-format [{: binding : metadata}]
-  "formats a special using its builtin metadata magic"
-  (..
-    (code-block
-      (if (not metadata.fnl/arglist)
-        (tostring binding)
-        (= 0 (length metadata.fnl/arglist))
-        (.. "(" (tostring binding) ")")
-        (.. "(" (tostring binding) " "
-            (table.concat
-              (icollect [_ v (ipairs metadata.fnl/arglist)]
-                (render-arg v))
-              " ")
-            ")")))
-    "\n---\n"
-    (or metadata.fnl/docstring "")))
 
 (λ fn? [symbol]
   (if (sym? symbol)

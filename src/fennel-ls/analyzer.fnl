@@ -237,7 +237,7 @@ initialization-opts: {:stack ?list[ast]
     (case (docs.get-builtin server base-name)
       metadata (search-document server metadata stack opts)
       _ (case (find-local-definition file base-name scope)
-          def (search-definition server file def [] opts)
+          def (search-definition server file def stack opts)
           _ (case (docs.get-global server base-name)
               metadata (search-document server metadata stack opts))))))
 
