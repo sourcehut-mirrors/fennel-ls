@@ -293,7 +293,16 @@ identifiers are declared / referenced in which places."
             (let [old (tostring ?ast)]
               (tset ?ast 1 "!!invalid-multi-symbol!!")
               (table.insert defer #(tset ?ast 1 old))
-              true))))
+              true))
+          (when (and (= 1 (msg:find "expected name and value"))
+                     (list? ?ast))
+            (when (= 1 (length ?ast))
+              (table.insert ?ast (sym "_"))
+              (table.insert defer #(table.remove ?ast)))
+            (when (= 2 (length ?ast))
+              (table.insert ?ast nil*)
+              (table.insert defer #(table.remove ?ast)))
+            (= 3 (length ?ast)))))
 
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range server file ast)

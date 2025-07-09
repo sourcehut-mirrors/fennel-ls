@@ -193,12 +193,13 @@ fntype is one of fn or λ or lambda"
   {:label name
    :documentation (when (not server.can-do-good-completions?) (hover-format server name definition))
    :textEdit (when (not server.can-do-good-completions?) {:newText name : range})
-   :kind (or (?. kinds ?kind)
+   :kind (or (if (not= ?kind :Value) (?. kinds ?kind))
              (case (navigate.getmetadata server definition)
                metadata
                (or (?. kinds metadata.fls/itemKind)
                    (when metadata.fnl/arglist
                        (if (name:find ":") kinds.Method kinds.Function))))
+             (?. kinds ?kind)
              kinds.Text)})
 
 {: signature-help-format

@@ -164,7 +164,8 @@
   (check "(local x {:field (fn [self])})\n(x::f" [] [])
   (check
     "(let [my-table {:foo 10 :bar 20}]\n  my-table.|)))"
-    [:my-table.foo :my-table.bar]
+    [{:label :my-table.foo :kind kinds.Value}
+     {:label :my-table.bar :kind kinds.Value}]
     [])
   (check
     {:main.fnl "(let [foo (require :fooo)]
@@ -256,6 +257,15 @@
     [])
   nil)
 
+(fn test-destructure []
+  ;; this is a binding variable, we don't want all the normal completions
+  (check "(local f|)\n(print foo)"
+    [:foo]
+    [:setmetatable :_G])
+  (check "(let [f|]\n(print foo)"
+    [:foo]
+    [:setmetatable :_G])
+  nil)
 
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
@@ -283,4 +293,5 @@
  : test-fn-arg
  : test-field
  : test-docs
- : test-module}
+ : test-module
+ : test-destructure}
