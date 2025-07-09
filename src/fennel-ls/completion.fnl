@@ -7,6 +7,14 @@
 (local navigate (require :fennel-ls.navigate))
 (local {:metadata METADATA} (require :fennel.compiler))
 
+(local hardcoded-completions
+  {:nil {:metadata {:fnl/docstring "Represents the absence of a useful value."
+                    :fls/itemKind "Keyword"}}
+   :true {:metadata {:fnl/docstring "A boolean value representing truth."
+                     :fls/itemKind "Keyword"}}
+   :false {:metadata {:fnl/docstring "A boolean value representing falsehood."
+                      :fls/itemKind "Keyword"}}})
+
 (λ textDocument/completion [server _send {: position :textDocument {: uri}}]
   ;; get the file
   (let [file (files.get-by-uri server uri)
@@ -47,6 +55,9 @@
               (add-completion-recursively! (.. name ":" field) def)
               (add-completion-recursively! (.. name "." field) def)))
         (set (. seen definition) false)))
+
+    (each [name documentation (pairs hardcoded-completions)]
+      (add-completion! name documentation))
 
     (local seen-manglings {})
 
@@ -92,14 +103,15 @@
       results)))
 
 (fn completionItem/resolve [server _send completion-item]
-  (let [{: uri : byte} completion-item.data
-        file (files.get-by-uri server uri)
-        (_symbol parents) (analyzer.find-symbol file.ast byte)
-        scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
-                    (. file.scopes parent))
-                  file.scope)]
-    (case (analyzer.search-name-and-scope server file completion-item.label scope)
-      result (doto completion-item (tset :documentation (format.hover-format server completion-item.label result))))))
+  (or (. hardcoded-completions completion-item.label)
+      (let [{: uri : byte} completion-item.data
+            file (files.get-by-uri server uri)
+            (_symbol parents) (analyzer.find-symbol file.ast byte)
+            scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
+                        (. file.scopes parent))
+                      file.scope)]
+        (case (analyzer.search-name-and-scope server file completion-item.label scope)
+          result (doto completion-item (tset :documentation (format.hover-format server completion-item.label result)))))))
 
 {: textDocument/completion
  : completionItem/resolve}
