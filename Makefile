@@ -11,17 +11,24 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 MANDIR ?= $(PREFIX)/share/man/man1
 
-FENNELFLAGS ?= --add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
-REQUIRE_AS_INCLUDE_SETTINGS=$(shell $(FENNEL) tools/require-flags.fnl)
+VENDOR ?= true
 
-.PHONY: all clean test repl install docs docs-love2d install-deps ci selflint \
-	deps rm-docs rm-deps count testall check-deps
+ifeq ($(VENDOR), true)
+	FENNELFLAGS ?= --add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
+	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler
+else
+	FENNELFLAGS ?= --add-fennel-path "src/?.fnl"
+	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler,fennel,dkjson
+endif
+
+.PHONY: all clean test repl install docs docs-love2d ci selflint \
+	deps count testall check-deps check-docs
 
 all: $(EXE)
 
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
-	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_SETTINGS) --require-as-include \
+	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_FLAGS) \
 		--compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
@@ -46,9 +53,6 @@ docs-love2d:
 	@echo "https://wiki.fennel-lang.org/LanguageServer"
 	@exit 1
 
-rm-docs:
-	rm -rf src/fennel-ls/docs/
-
 build/fennel-ls.1:
 	mkdir -p build/
 	echo ".TH FENNEL-LS 1" > $@
@@ -57,9 +61,6 @@ build/fennel-ls.1:
 
 deps:
 	$(FENNEL) $(FENNELFLAGS) tools/get-deps.fnl
-
-rm-deps:
-	rm -rf fennel deps/
 
 selflint:
 	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(SRC)
@@ -91,10 +92,17 @@ check-deps:
 	diff -r fennel old-fennel
 	rm -rf old-deps old-fennel
 
+check-docs:
+	rm -rf old-docs
+	mv src/fennel-ls/docs/generated old-docs
+	$(MAKE) docs
+	diff -r src/fennel-ls/docs/generated old-docs
+	rm -rf old-docs
+
 ci: testall selflint
 
 clean:
-	rm -fr $(EXE) old-deps old-fennel build/
+	rm -fr $(EXE) old-deps old-fennel old-docs build/
 
 # Steps to release a new fennel-ls version
 
