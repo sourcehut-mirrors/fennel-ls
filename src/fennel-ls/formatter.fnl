@@ -166,14 +166,20 @@ fntype is one of fn or λ or lambda"
         "?")
       (view (or definition.binding definition.definition))))
 
-(λ hover-format [server name definition]
+(λ hover-format [server name definition ?opts]
   "Format code that will appear when the user hovers over a symbol"
   {:kind "markdown"
    :value (.. (code-block (get-stub server name definition))
-              (or (-?> (navigate.getmetadata server definition)
-                       (. :fnl/docstring)
-                       (->> (.. "\n---\n")))
-                  ""))})
+              (case (navigate.getmetadata server definition)
+                {: fnl/docstring}
+                (.. "\n---\n" fnl/docstring)
+                _ "")
+              (case (?. ?opts :macroexpansion)
+                macroexpansion
+                (.. "\n---\n"
+                    "Macro expands to:\n"
+                    (code-block macroexpansion))
+                _ ""))})
 
 ;; CompletionItemKind
 (local kinds

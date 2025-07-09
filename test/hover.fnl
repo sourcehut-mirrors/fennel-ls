@@ -34,7 +34,7 @@
 
 (fn test-builtins []
   (check "(d|o nil)" "```fnl\n(do ...)\n```\n---\nEvaluate multiple forms; return last value.")
-  (check "(|doto nil (print))" "```fnl\n(doto val ...)\n```\n---\nEvaluate val and splice it into the first argument of subsequent forms.")
+  (check "(|doto nil (print))" "```fnl\n(doto val ...)\n```\n---\nEvaluate val and splice it into the first argument of subsequent forms.\n---\nMacro expands to:\n```fnl\n(do (print nil) nil)\n```")
   (check "(le|t [x 10] 10)" "```fnl\n(let [name1 val1 ... nameN valN] ...)\n```\n---\nIntroduces a new scope in which a given set of local bindings are used.")
   nil)
 
@@ -153,7 +153,7 @@ except that it sets a new message handler `msgh`.")
             \"docstring!\"
             `(,a ,b ,c))
           (fo|o print :hello :world)"
-         "```fnl\n(foo a b c)\n```\n---\ndocstring!")
+         "```fnl\n(foo a b c)\n```\n---\ndocstring!\n---\nMacro expands to:\n```fnl\n(print \"hello\" \"world\")\n```")
   ; (check {:main.fnl "(import-macros cool :cool)
   ;                    (coo|l.=)"
   ;         :cool.fnl ";; fennel-ls: macro-file

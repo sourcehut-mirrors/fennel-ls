@@ -156,10 +156,16 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
-      symbol (analyzer.search server file symbol {} {: byte})
-      {:indeterminate nil &as result} {:contents (formatter.hover-format server (tostring symbol) result)
-                                       :range (message.ast->range server file
-                                                                  symbol)}
+      (symbol parents) (analyzer.search server file symbol {} {: byte})
+      {:indeterminate nil &as result}
+      (let [opts {:macroexpansion (case-try parents
+                                            (where [[(= symbol) &as parent]])
+                                            file.macro-calls
+                                            {parent expansion}
+                                            (fennel.view expansion)
+                                            (catch _ nil))}]
+        {:contents (formatter.hover-format server (tostring symbol) result opts)
+         :range (message.ast->range server file symbol)})
       (catch _ nil))))
 
 (set {:textDocument/completion requests.textDocument/completion
@@ -206,8 +212,16 @@ Every time the client sends a message, it gets handled by a function in the corr
        (pos<= range-2.start range-1.end)))
 
 (λ requests.textDocument/codeAction [server _send {: range :textDocument {: uri}}]
-  (let [file (files.get-by-uri server uri)]
-    (icollect [_ diagnostic (ipairs file.diagnostics)]
+  (let [file (files.get-by-uri server uri)
+        byte (utils.position->byte file.text range.start server.position-encoding)
+        results []]
+    (case-try (analyzer.find-symbol file.ast byte)
+      (symbol_ [[symbol_ &as parent]]) file.macro-calls
+      {parent expansion} (table.insert results
+                           {:title "Expand macro"
+                            :edit {:changes {uri [{:range (message.ast->range server file parent)
+                                                   :newText (fennel.view expansion)}]}}}))
+    (icollect [_ diagnostic (ipairs file.diagnostics) &into results]
       (if (overlap? diagnostic.range range)
         (message.diagnostic->code-action server file diagnostic :quickfix)))))
 
