@@ -11,6 +11,7 @@ There are no global settings. They're all stored in the `server` object.
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
 (local utils (require :fennel-ls.utils))
+(local lint (require :fennel-ls.lint))
 
 (local option-mt {})
 (fn option [default-value] (doto [default-value] (setmetatable option-mt)))
@@ -24,19 +25,8 @@ There are no global settings. They're all stored in the `server` object.
                                       "src/?.fnl" "src/?/init-macros.fnl"
                                       "src/?/init.fnl"] ";"))
    :lua-version (option "lua54")
-   :lints {:unused-definition (option true)
-           :unknown-module-field (option true)
-           :unnecessary-method (option true)
-           :unnecessary-tset (option true)
-           :unnecessary-do (option true)
-           :redundant-do (option true)
-           :match-should-case (option true)
-           :bad-unpack (option true)
-           :var-never-set (option true)
-           :op-with-no-arguments (option true)
-           :multival-in-middle-of-call (option true)
-           :no-decreasing-comparison (option false)
-           :empty-let (option true)}
+   :lints (collect [_ lint (ipairs lint.list)]
+            lint.name (option lint.enabled))
    :libraries (option {})
    :extra-globals (option "")})
 
