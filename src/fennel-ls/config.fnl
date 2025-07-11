@@ -26,7 +26,7 @@ There are no global settings. They're all stored in the `server` object.
                                       "src/?/init.fnl"] ";"))
    :lua-version (option "lua54")
    :lints (collect [_ lint (ipairs lint.list)]
-            lint.name (option lint.enabled))
+            lint.name (option (not lint.disabled)))
    :libraries (option {})
    :extra-globals (option "")})
 

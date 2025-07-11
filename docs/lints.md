@@ -118,12 +118,12 @@ Instead, use:
 (set alien.health 1337)
 ```
 
-# unnecessary-do-values
+# unnecessary-unary
 ## What it does
 Warns about unnecessary `do` or `values` forms that only contain a single expression.
 
 ## Why is this bad?
-Extra `do` or `values` forms without multiple expressions add syntactic noise.
+Extra forms that don't do anything add syntactic noise.
 
 ## Example
 ```fnl
@@ -277,7 +277,7 @@ Instead, use:
   _ "other")
 ```
 
-# multival-in-middle-of-call
+# inline-values
 ## What it does
 Warns when multiple values from `values` or `unpack` are used in a non-final
 position of a function call, where only the first value will be used.

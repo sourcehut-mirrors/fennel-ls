@@ -6,6 +6,11 @@
 ### Changes
 * Updated to dkjson 2.8
 
+### Bug Fixes
+* Completions no longer trigger unexpectedly in comments or strings
+* When using --lint, diagnostics that don't have source info use ? as a line number instead of line 1
+* lots of code simplification
+
 ## 0.2.1 / 2025-06-06
 
 ### Bug Fixes

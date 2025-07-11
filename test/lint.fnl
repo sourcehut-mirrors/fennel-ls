@@ -196,20 +196,26 @@
   (assert-ok "(local tbl {}) (tset tbl \"0123.4567\" 1)")
   nil)
 
-(fn test-unnecessary-do []
+(fn test-unnecessary-unary []
   ;; multi-arg do
   (assert-ok "(do (print :x) 11)")
   ;; unnecessary do
-  (check "(do 9)" [{:message "unnecessary do"
-                    :code :unnecessary-do-values
-                    :range {:start {:character 0 :line 0}
-                            :end {:character 6 :line 0}}}])
+  (check "(do 9)"
+         [{:message "unnecessary do"
+           :code :unnecessary-unary
+           :range {:start {:character 0 :line 0}
+                   :end {:character 6 :line 0}}}])
   ;; unnecessary values
   (check "(print :hey (values :lol))"
-         [{:code :unnecessary-do-values
+         [{:code :unnecessary-unary
            :message "unnecessary values"
            :range {:start {:character 12 :line 0}
                    :end {:character 25 :line 0}}}])
+  (check "(+ (* 3) (* 4 4))"
+         [{:message "unnecessary *"
+           :code :unnecessary-unary
+           :range {:start {:character 3 :line 0}
+                   :end {:character 8 :line 0}}}])
   nil)
 
 (fn test-redundant-do []
@@ -251,10 +257,12 @@
            :code :match-should-case
            :range {:start {:character 1 :line 0}
                    :end {:character 6 :line 0}}}])
+  ;; shouldn't trigger on quoted forms
+  (assert-ok "(macro foo [] `(match x x x))")
   nil)
 
 (fn test-op-with-no-arguments []
-  (assert-ok "(and 1)")
+  (assert-ok "(and 1 2)")
   (assert-ok "(and false 1)")
   (assert-ok "(and nil 1)")
   (check "(and)"
@@ -271,7 +279,31 @@
            :code :empty-let
            :range {:start {:character 5 :line 0}
                    :end {:character 7 :line 0}}}])
-  (assert-ok "(-> [] (let print))"))
+  (assert-ok "(-> [] (let print))")
+  nil)
+
+(fn test-decreasing-comparison []
+  (assert-ok "(let [x 5] (< 1 x 4))")
+  (assert-ok "(let [x 5] (<= 1 x 4))")
+  (assert-ok "(let [x 5] (> 4 x 1))")
+  (assert-ok "(let [x 5] (>= 4 x 1))")
+  (assert-ok {:main.fnl "(let [x 5] (< 1 x 4))"
+              :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"})
+  (assert-ok {:main.fnl "(let [x 5] (<= 1 x 4))"
+              :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"})
+  (check {:main.fnl "(let [x 5] (> 4 x 1))"
+          :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"}
+         [{:message "Use increasing operator instead of decreasing"
+           :code :no-decreasing-comparison
+           :range {:start {:character 11 :line 0}
+                   :end {:character 20 :line 0}}}])
+  (check {:main.fnl "(let [x 5] (>= 4 x 1))"
+          :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"}
+         [{:message "Use increasing operator instead of decreasing"
+           :code :no-decreasing-comparison
+           :range {:start {:character 11 :line 0}
+                   :end {:character 21 :line 0}}}])
+  nil)
 
 ;; TODO lints:
 ;; duplicate keys in kv table
@@ -290,11 +322,12 @@
  : test-unknown-module-field
  : test-unnecessary-method
  : test-unnecessary-tset
- : test-unnecessary-do
+ : test-unnecessary-unary
  : test-redundant-do
  : test-unset-var
  : test-match-should-case
  : test-unpack-into-op
  : test-unpack-in-middle
  : test-op-with-no-arguments
- : test-empty-let}
+ : test-empty-let
+ : test-decreasing-comparison}

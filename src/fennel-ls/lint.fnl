@@ -10,30 +10,23 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local utils (require :fennel-ls.utils))
 (local dkjson (require :dkjson))
 
-(local diagnostic-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
-                      :__index #(. $1 :self $2)})
-
-(fn diagnostic [self]
-  (let [fix self.fix]
-    (set self.fix nil)
-    (setmetatable {: self : fix} diagnostic-mt)))
-
 (local lints {:definition []
               :reference []
               :macro-call []
               :function-call []
-              :special-call []
-              :file []})
+              :special-call []})
 
 (local all-lints [])
 
-(fn add-lint [code lint]
-  (set lint.name code)
+(fn add-lint [code lint ...]
   (table.insert all-lints lint)
-  (if (= (type lint.type) :table)
-    (each [_ t (ipairs lint.type)]
-      (table.insert (. lints t) lint))
-    (table.insert (. lints lint.type) lint)))
+  (for [i 1 (select :# lint ...)]
+    (let [lint (select i lint ...)]
+      (set lint.name code)
+      (if (= (type lint.type) :table)
+        (each [_ t (ipairs lint.type)]
+          (table.insert (assert (. lints t) (.. "unknown lint type " t)) lint))
+        (table.insert (assert (. lints lint.type) (.. "unknown lint type " lint.type)) lint)))))
 
 (fn could-be-rewritten-as-sym? [str]
   (and (= :string (type str)) (not (str:find "^%d"))
@@ -42,8 +35,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (add-lint :unused-definition
   {:type :definition
-   :enabled true
-   :impl (λ [server file symbol definition]
+   :impl (fn [server file symbol definition]
            "local variable that is defined but not used"
            (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
                         (= "_" (: (tostring symbol) :sub -1 -1))
@@ -52,14 +44,12 @@ the `file.diagnostics` field, filling it with diagnostics."
                                      &until reference]
                           (or (= ref.ref-type :read)
                               (= ref.ref-type :mutate)))))
-             (diagnostic
-               {:range (message.ast->range server file symbol)
-                :message (.. "unused definition: " (tostring symbol))
-                :severity message.severity.WARN
-                :code :unused-definition
-                :fix #{:title (.. "Replace " (tostring symbol) " with _" (tostring symbol))
-                       :changes [{:range (message.ast->range server file symbol)
-                                  :newText (.. "_" (tostring symbol))}]}})))})
+             {:range (message.ast->range server file symbol)
+              :message (.. "unused definition: " (tostring symbol))
+              :severity message.severity.WARN
+              :fix #{:title (.. "Replace " (tostring symbol) " with _" (tostring symbol))
+                     :changes [{:range (message.ast->range server file symbol)
+                                :newText (.. "_" (tostring symbol))}]}}))})
 
 ;; this is way too specific; it's also safe to do this inside an `if` or `case`
 (fn in-or? [calls symbol]
@@ -72,200 +62,168 @@ the `file.diagnostics` field, filling it with diagnostics."
   (let [opts {}
         item (analyzer.search server file ?ast opts {:stack ?stack})]
     (if (and (not item)
-             (. file.lexical symbol)
              (not (in-or? file.calls symbol))
              ;; this doesn't necessarily have to come thru require; it works
              ;; for built-in modules too
              opts.searched-through-require-with-stack-size-1)
-        (diagnostic
-         {:range (message.ast->range server file symbol)
-          :message (.. "unknown field: " (tostring symbol))
-          :severity message.severity.WARN
-          :code :unknown-module-field}))))
+        {:range (message.ast->range server file symbol)
+         :message (.. "unknown field: " (tostring symbol))
+         :severity message.severity.WARN})))
 
 (add-lint :unknown-module-field
-  {:type :file
-   :enabled true
-   :impl (λ [server file]
-           "any multisym whose definition can't be found through a (require) call"
-           (icollect [symbol (pairs file.references) &into file.diagnostics]
-             (if (. (utils.multi-sym-split symbol) 2)
-                 (module-field-helper server file symbol symbol)))
-
-           (icollect [symbol binding (pairs file.definitions) &into file.diagnostics]
-             (if binding.keys
-                 (module-field-helper server file symbol binding.definition
-                                      (fcollect [i (length binding.keys) 1 -1]
-                                        (. binding.keys i))))))})
+  {:type :reference
+   :impl (fn [server file symbol]
+           (if (. (utils.multi-sym-split symbol) 2)
+               (module-field-helper server file symbol symbol)))}
+  {:type :definition
+   :impl (fn [server file symbol definition]
+           (if definition.keys
+               (module-field-helper server file symbol definition.definition
+                                    (fcollect [i (length definition.keys) 1 -1]
+                                      (. definition.keys i)))))})
 
 (add-lint :unnecessary-method
   {:type :special-call
-   :enabled true
-   :impl (λ [server file colon call]
+   :impl (fn [server file ast]
            "a call to the : builtin that could just be a multisym"
-           (if (and (sym? colon ":")
-                    (sym? (. call 2))
-                    (. file.lexical call))
-             (let [method (. call 3)]
-               (if (could-be-rewritten-as-sym? method)
-                 {:range (message.ast->range server file call)
-                  :message (.. "unnecessary : call: use (" (tostring (. call 2))
-                               ":" method ")")
-                  :severity message.severity.WARN
-                  :code :unnecessary-method}))))})
+            (let [object (. ast 2)
+                  method (. ast 3)]
+              (if (and (sym? (. ast 1) ":")
+                       (sym? object)
+                       (could-be-rewritten-as-sym? method))
+                {:range (message.ast->range server file ast)
+                 :message (.. "unnecessary : call: use (" (tostring object) ":" method ")")
+                 :severity message.severity.WARN})))})
 
 (add-lint :unnecessary-tset
   {:type :special-call
-   :enabled true
-   :impl (λ [server file head call]
-           (λ all-syms? [call start end]
-             (faccumulate [syms true
-                           i start end]
-               (and syms
-                    (could-be-rewritten-as-sym? (. call i)))))
+   :impl (fn [server file ast]
+           (let [all-rewritable? (faccumulate [syms true
+                                               i 3 (- (length ast) 1)
+                                               &until (not syms)]
+                                    (could-be-rewritten-as-sym? (. ast i)))]
+             (if (and (sym? (. ast 1) "tset")
+                      (sym? (. ast 2))
+                      all-rewritable?)
+                 {:range (message.ast->range server file ast)
+                  :message "unnecessary tset"
+                  :severity message.severity.WARN
+                  :fix #{:title "Replace tset with set"
+                         :changes [{:range (message.ast->range server file ast)
+                                    :newText (string.format "(set %s.%s %s)"
+                                                            (tostring (. ast 2))
+                                                            (table.concat ast "." 3 (- (length ast) 1))
+                                                            (view (. ast (length ast))))}]}})))})
 
-           (λ make-new-text [call]
-             (.. (faccumulate [text "(set "
-                               i 2 (- (length call) 2)]
-                   (.. text (tostring (. call i)) "."))
-                 (tostring (. call (- (length call) 1)))
-                 " "
-                 (view (. call (length call)))
-                 ")"))
+(local redundant-wrappers
+  {:do true :values true :+ true :* true :and true :or true :band true :bor true ".." true})
 
-           (if (and (sym? head :tset)
-                    (sym? (. call 2))
-                    (all-syms? call 3 (- (length call) 1))
-                    (. file.lexical call))
-               (diagnostic {:range (message.ast->range server file call)
-                            :message (.. "unnecessary " (tostring head))
-                            :severity message.severity.WARN
-                            :code :unnecessary-tset
-                            :fix #{:title "Replace tset with set"
-                                   :changes [{:range (message.ast->range server file call)
-                                              :newText (make-new-text call)}]}})))})
-
-(add-lint :unnecessary-do-values
+(add-lint :unnecessary-unary
   {:type :special-call
-   :enabled true
-   :impl (λ [server file head call]
-           (if (and (or (sym? head :do) (sym? head :values))
-                    (= nil (. call 3)) (. file.lexical call))
-               (diagnostic {:range (message.ast->range server file call)
-                            :message (.. "unnecessary " (tostring head))
-                            :severity message.severity.WARN
-                            :code :unnecessary-do-values
-                            :fix #{:title "Unwrap the expression"
-                                   :changes [{:range (message.ast->range server file call)
-                                              :newText (view (. call 2))}]}})))})
+   :impl (fn [server file ast]
+           (if (and (sym? (. ast 1))
+                    (. redundant-wrappers (tostring (. ast 1)))
+                    (= (length ast) 2))
+               {:range (message.ast->range server file ast)
+                :message (.. "unnecessary " (tostring (. ast 1)))
+                :severity message.severity.WARN
+                :fix #{:title "Unwrap the expression"
+                       :changes [{:range (message.ast->range server file ast)
+                                  :newText (view (. ast 2))}]}}))})
 
 (local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
                            (values form body-form?)))
 
 (add-lint :redundant-do
   {:type :special-call
-   :enabled true
-   :impl (λ [server file head call]
-           (let [last-body (. call (length call))]
-             (if (and (. implicit-do-forms (tostring head))
-                      (. file.lexical call)
+   :impl (fn [server file ast]
+           (let [last-body (. ast (length ast))]
+             (if (and (. implicit-do-forms (tostring (. ast 1)))
                       (list? last-body)
-                      (sym? (. last-body 1) :do)
-                      (not (and (sym? head :do) (= 3 (length call))))) ;; we don't want two lints to trigger for same call
-                 (diagnostic {:range (message.ast->range server file last-body)
-                              :message "redundant do"
-                              :severity message.severity.WARN
-                              :code :redundant-do
-                              :fix #{:title "Unwrap the expression"
-                                     :changes [{:range (message.ast->range server file last-body)
-                                                :newText (table.concat
-                                                          (fcollect [i 2 (length last-body)]
-                                                            (view (. last-body i)))
-                                                          " ")}]}}))))})
+                      (sym? (. last-body 1) :do))
+                 {:range (message.ast->range server file last-body)
+                  :message "redundant do"
+                  :severity message.severity.WARN
+                  :fix #{:title "Unwrap the expression"
+                         :changes [{:range (message.ast->range server file last-body)
+                                    :newText (table.concat
+                                              (fcollect [i 2 (length last-body)]
+                                                (view (. last-body i)))
+                                              " ")}]}})))})
 
 (add-lint :bad-unpack
   {:type :special-call
-   :enabled true
-   :impl (λ [server file op call]
+   :impl (fn [server file call]
            "an unpack call leading into an operator"
-           (let [last-item (. call (length call))]
+           (let [op (. call 1)
+                 last (. call (length call))]
              (if (and (op? op)
                       ;; last item is an unpack call
-                      (list? last-item)
-                      (or (sym? (. last-item 1) :unpack)
-                          (sym? (. last-item 1) :_G.unpack)
-                          (sym? (. last-item 1) :table.unpack))
-                      (. file.lexical last-item)
-                      (. file.lexical call))
-               (diagnostic
-                 {:range (message.ast->range server file last-item)
+                      (list? last)
+                      (or (sym? (. last 1) :unpack)
+                          (sym? (. last 1) :_G.unpack)
+                          (sym? (. last 1) :table.unpack)))
+                 {:range (message.ast->range server file last)
                   :message (.. "faulty unpack call: " (tostring op)
                                " isn't variadic at runtime."
                                (if (sym? op "..")
-                                 (let [unpackme (view (. last-item 2))]
+                                 (let [unpackme (view (. last 2))]
                                    (.. " Use (table.concat " unpackme
                                        ") instead of (.. (unpack " unpackme "))"))
                                  (.. " Use a loop when you have a dynamic number of "
                                      "arguments to (" (tostring op) ")")))
                   :severity message.severity.WARN
-                  :code :bad-unpack
-                  :fix (if (and (= (length last-item) 2)
+                  :fix (if (and (= (length last) 2)
                                 (sym? op ".."))
                            #{:title "Replace with a call to table.concat"
-                             :changes [{:range (message.ast->range server file (if (= 2 (length call)) call last-item))
-                                        :newText (.. "(table.concat " (view (. last-item 2)) ")")}]})}))))})
+                             :changes [{:range (message.ast->range server file (if (= 2 (length call)) call last))
+                                        :newText (.. "(table.concat " (view (. last 2)) ")")}]})})))})
 
-(add-lint :var-not-set
+(add-lint :var-never-set
   {:type :definition
-   :enabled true
-   :impl (λ [server file symbol definition]
-           (if (and definition.var? (not definition.var-set) (. file.lexical symbol))
+   :impl (fn [server file symbol definition]
+           (if (and definition.var? (not definition.var-set))
                ;; we can't provide a quickfix for this because the hooks don't give us
                ;; the full AST of the call to var; just the LHS/RHS
-               (diagnostic {:range (message.ast->range server file symbol)
-                            :message (.. "var is never set: " (tostring symbol)
-                                         " Consider using (local) instead of (var)")
-                            :severity message.severity.WARN
-                            :code :var-never-set})))})
+               {:range (message.ast->range server file symbol)
+                :message (.. "var is never set: " (tostring symbol)
+                             " Consider using (local) instead of (var)")
+                :severity message.severity.WARN}))})
 
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 
 (add-lint :op-with-no-arguments
   {:type :special-call
-   :enabled true
-   :impl (λ [server file op call]
+   :impl (fn [server file ast]
            "A call like (+) that could be replaced with a literal"
-           (let [identity (. op-identity-value (tostring op))]
+           (let [op (. ast 1)
+                 identity (. op-identity-value (tostring op))]
              (if (and (op? op)
-                      (= 1 (length call))
-                      (. file.lexical call)
+                      (= 1 (length ast))
                       (not= nil identity))
-               (diagnostic
-                 {:range  (message.ast->range server file call)
+                 {:range  (message.ast->range server file ast)
                   :message (.. "write " (view identity) " instead of (" (tostring op) ")")
                   :severity message.severity.WARN
-                  :code :op-with-no-arguments
                   :fix #{:title (.. "Replace (" (tostring op) ") with " (view identity))
-                         :changes [{:range (message.ast->range server file call)
-                                    :newText (view identity)}]}}))))})
+                         :changes [{:range (message.ast->range server file ast)
+                                    :newText (view identity)}]}})))})
 
 (add-lint :no-decreasing-comparison
   {:type :special-call
-   :enabled false
-   :impl (λ [server file op call]
-           (if (or (sym? op :>) (sym? op :>=))
-               (diagnostic
-                {:range  (message.ast->range server file call)
-                 :message "Use increasing operator instead of decreasing"
-                 :severity message.severity.WARN
-                 :code :no-decreasing-comparison
-                 :fix #{:title "Reverse the comparison"
-                        :changes [{:range (message.ast->range server file call)
-                                   :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
-                                                  reversed (fcollect [i (length call) 2 -1
-                                                                      &into (list (sym new))]
-                                                             (. call i))]
-                                              (view reversed))}]}})))})
+   :disabled true
+   :impl (fn [server file ast]
+           (let [op (. ast 1)]
+             (if (or (sym? op :>) (sym? op :>=))
+                 {:range  (message.ast->range server file ast)
+                  :message "Use increasing operator instead of decreasing"
+                  :severity message.severity.WARN
+                  :fix #{:title "Reverse the comparison"
+                         :changes [{:range (message.ast->range server file ast)
+                                    :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
+                                                   reversed (fcollect [i (length ast) 2 -1
+                                                                       &into (list (sym new))]
+                                                              (. ast i))]
+                                               (view reversed))}]}})))})
 
 (λ match-reference? [ast references]
   (if (sym? ast) (?. references ast :target)
@@ -275,30 +233,27 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (add-lint :match-should-case
   {:type :macro-call
-   :enabled true
-   :impl (λ [server {: references &as file} ast]
+   :impl (fn [server {: references &as file} ast]
            (when (and (list? ast)
                       (sym? (. ast 1) :match)
                       (not (faccumulate [ref false i 3 (length ast) 2 &until ref]
                              (match-reference? (. ast i) references))))
-             (diagnostic {:range (message.ast->range server file (. ast 1))
-                          :message "no pinned patterns; use case instead of match"
-                          :severity message.severity.WARN
-                          :code :match-should-case
-                          :fix #{:title "Replace match with case"
-                                 :changes [{:range (message.ast->range server file (. ast 1))
-                                            :newText "case"}]}})))})
+             {:range (message.ast->range server file (. ast 1))
+              :message "no pinned patterns; use case instead of match"
+              :severity message.severity.WARN
+              :fix #{:title "Replace match with case"
+                     :changes [{:range (message.ast->range server file (. ast 1))
+                                :newText "case"}]}}))})
 
 (add-lint :inline-unpack
   {:type [:function-call :special-call]
-   :enabled true
-   :impl (λ [server file fun call]
+   :impl (fn [server file call]
            "generally, values and unpack are signs that the user is trying to do
             something with multiple values. However, multiple values will get
             \"adjusted\" to one value if they don't come at the end of the call."
            (faccumulate [f nil index 2 (length call) &until f]
              (let [arg (. call index)]
-               (if (and (not (and (special? fun) (not (op? fun))))
+               (if (and (or (op? (. call 1)) (not (special? (. call 1))))
                         (not= index (length call))
                         (list? arg)
                         (or (sym? (. arg 1) :values)
@@ -308,57 +263,58 @@ the `file.diagnostics` field, filling it with diagnostics."
                  {:range (message.ast->range server file arg)
                   :message (.. "bad " (tostring (. arg 1))
                                " call: only the first value of the multival will be used")
-                  :severity message.severity.WARN
-                  :code :inline-unpack}))))})
+                  :severity message.severity.WARN}))))})
 
 (add-lint :empty-let
   {:type :special-call
-   :enabled true
-   :impl (λ [server file _ call]
+   :impl (fn [server file call]
            (case call
              (where [let* binding]
-                    (. file.lexical call)
                     (sym? let* :let)
                     (fennel.sequence? binding)
                     (= 0 (length binding)))
-             (diagnostic {:range (message.ast->range server file binding)
-                          :message "use do instead of let with no bindings"
-                          :severity message.severity.WARN
-                          :code :empty-let
-                          :fix #{:title "Replace (let [] ...) with (do ...)"
-                                 :changes [(let [{: start} (message.ast->range server file let*)
-                                                 {: end} (message.ast->range server file binding)]
-                                             {:range {: start : end}
-                                              :newText "do"})]}})))})
+             {:range (message.ast->range server file binding)
+              :message "use do instead of let with no bindings"
+              :severity message.severity.WARN
+              :fix #{:title "Replace (let [] ...) with (do ...)"
+                     :changes [(let [{: start} (message.ast->range server file let*)
+                                     {: end} (message.ast->range server file binding)]
+                                 {:range {: start : end}
+                                  :newText "do"})]}}))})
+
+(local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
+                :__index #(. $1 :self $2)})
+
+(fn wrap [self]
+  ;; hide `fix` field from the client
+  (let [fix self.fix]
+    (set self.fix nil)
+    (setmetatable {: self : fix} lint-mt)))
 
 (λ add-lint-diagnostics [server file]
-  (each [_ lint (ipairs lints.file)]
-    (when (. server.configuration.lints lint.name)
-      (lint.impl server file)))
+  (fn run [lints ...]
+    (each [_ lint (ipairs lints)]
+      (when (. server.configuration.lints lint.name)
+        (case (lint.impl ...)
+          diagnostic
+          (table.insert file.diagnostics
+            (wrap (doto diagnostic
+                        (tset :code lint.name))))))))
+
   (each [symbol definition (pairs file.definitions)]
     (when (. file.lexical symbol)
-      (each [_ lint (ipairs lints.definition)]
-        (when (. server.configuration.lints lint.name)
-          (table.insert file.diagnostics (lint.impl server file symbol definition))))))
+      (run lints.definition server file symbol definition)))
   (each [symbol (pairs file.references)]
     (when (. file.lexical symbol)
-      (each [_ lint (ipairs lints.reference)]
-        (when (. server.configuration.lints lint.name)
-          (table.insert file.diagnostics (lint.impl server file symbol))))))
+      (run lints.reference server file symbol)))
   (each [[head &as ast] (pairs file.calls)]
     (when (and (. file.lexical ast) (not= nil head))
-      (each [_ lint (ipairs (if (special? head)
-                                lints.special-call
-                                lints.function-call))]
-        (when (and (. server.configuration.lints lint.name)
-                   (or (not lint.target) (sym? head lint.target)))
-          (table.insert file.diagnostics (lint.impl server file head ast))))))
-  (each [[head &as ast] macroexpanded (pairs file.macro-calls)]
+      (run (if (special? head) lints.special-call lints.function-call)
+          server file ast)))
+  (each [ast macroexpanded (pairs file.macro-calls)]
     (when (. file.lexical ast)
-      (each [_ lint (ipairs lints.macro-call)]
-        (when (and (. server.configuration.lints lint.name)
-                   (or (not lint.target) (sym? head lint.target)))
-          (table.insert file.diagnostics (lint.impl server file ast macroexpanded)))))))
+      (run lints.macro-call
+           server file ast macroexpanded))))
 
 {: add-lint-diagnostics
  :list all-lints}
