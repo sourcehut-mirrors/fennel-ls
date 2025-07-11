@@ -5,6 +5,7 @@
 (local message (require :fennel-ls.message))
 (local format (require :fennel-ls.formatter))
 (local navigate (require :fennel-ls.navigate))
+(local compiler (require :fennel-ls.compiler))
 (local {:metadata METADATA} (require :fennel.compiler))
 
 (local hardcoded-completions
@@ -20,16 +21,21 @@
   (let [file (files.get-by-uri server uri)
         ;; find where the cursor is
         byte (utils.position->byte file.text position server.position-encoding)
+        ;; create a brand new file
+        file {:text (.. (file.text:sub 1 (- byte 1)) "|" (file.text:sub byte)) :uri file.uri}
+        _ (compiler.compile server file)
         ;; find what ast objects are under the cursor
-        (?symbol parents) (analyzer.find-symbol file.ast byte)
+        (symbol parents) (analyzer.find-symbol file.ast byte)
         ;; check what context I'm in
         in-call-position? (and (fennel.list? (. parents 1))
-                               (= ?symbol (. parents 1 1)))
+                               (= symbol (. parents 1 1)))
         ;; find the first one that contains a scope
         scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
                     (. file.scopes parent))
                   file.scope)
-        range (if ?symbol (message.ast->range server file ?symbol) {:start position :end position})
+        range (case (message.ast->range server file symbol)
+                r (do (set r.end.character (- r.end.character 1)) r)
+                _ {:start position :end position})
         results []
         seen {}]
 
@@ -67,7 +73,7 @@
           (set (. seen-manglings global*) true)
           (case (analyzer.search-name-and-scope server file global* scope)
             def (if (and (= :_G (tostring global*))
-                         (not (: (tostring ?symbol) :match "_G[:.]")))
+                         (not (: (tostring symbol) :match "_G[:.]")))
                   (add-completion! global* def)
                   (add-completion-recursively! global* def))
             _ (do
@@ -104,10 +110,10 @@
         (case (message:match "unknown identifier: ([a-zA-Z0-9_-]+)")
           identifier (add-completion! identifier {} :Variable))))
 
-    (if (. file.definitions ?symbol)
-      (binding-completions)
-      (expression-completions))
-
+    (when symbol
+      (if (. file.definitions symbol)
+          (binding-completions)
+          (expression-completions)))
 
     (if server.can-do-good-completions?
       {:itemDefaults {:editRange range :data {: uri : byte}}

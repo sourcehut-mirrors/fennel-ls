@@ -39,7 +39,7 @@
                         (= e.textEdit.range.end.line        c.textEdit.range.end.line)
                         (= e.textEdit.range.end.character   c.textEdit.range.end.character)
                         (= e.textEdit.newText c.textEdit.newText))
-                   (and (= (type e.textEdit) :function)) (e.textEdit c.textEdit))))
+                   (and (= (type e.textEdit) :function) (e.textEdit c.textEdit)))))
       i)))
 
 (fn check [file-contents expected unexpected ?client-opts]
@@ -121,8 +121,8 @@
   (check "(local x {:field {:deep 100}})\n(if de" [:x.field.deep] [])
   (check "(local t {:field (fn [foo] nil)})\n(t|" [:t.field] [])
   (check "(local t {:field (fn [self] nil)})\n(t|" [:t:field] [])
-  (check "(local t {})\n(fn t.field [foo] nil)})\n(t|" [:t.field] [])
-  (check "(local t {})\n(fn t.field [self] nil)})\n(t|" [:t:field] [])
+  (check "(local t {})\n(fn t.field [foo] nil)\n(t|" [:t.field] [])
+  (check "(local t {})\n(fn t.field [self] nil)\n(t|" [:t:field] [])
   nil)
 
 (fn test-builtin []
@@ -258,13 +258,35 @@
   nil)
 
 (fn test-destructure []
-  ;; this is a binding variable, we don't want all the normal completions
-  (check "(local f|)\n(print foo)"
+  ;; this is in a destructure location, so we don't want all the normal completions
+  (check "(local |)
+          (print foo)"
     [:foo]
-    [:setmetatable :_G])
-  (check "(let [f|]\n(print foo)"
+    [:math])
+  (check "(local f|)
+          (print foo)"
     [:foo]
-    [:setmetatable :_G])
+    [:math])
+  (check "(let [f|]
+            (print foo))"
+    [:foo]
+    [:math])
+  (check "(let [foo |] ; cursor is in an expression so we want expressions now
+            (print foo))"
+    [:math]
+    [])
+  nil)
+
+(fn test-no-completion []
+  (check "; ("
+    []
+    [:math])
+  (check "\" (|\n\""
+    []
+    [:math])
+  (check "\"\n(|\""
+    []
+    [:math])
   nil)
 
 ;; ;; Future tests / features
@@ -294,4 +316,5 @@
  : test-field
  : test-docs
  : test-module
- : test-destructure}
+ : test-destructure
+ : test-no-completion}
