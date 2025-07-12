@@ -315,6 +315,21 @@
               :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
   nil)
 
+(fn test-duplicate-keys []
+  (assert-ok "{:a 1 :b 2}")
+  (assert-ok "(local _ {:a 1}) {:a 2}")
+  (check "{:a 1 :a 2}" [{:code :duplicate-table-keys :message "key a appears more than once"}])
+  (check "{:there :are
+           :lots :of
+           :choices :for
+           :which :key
+           :to :include
+           :in :the
+           :message :.
+           :which :one?}" [{:code :duplicate-table-keys :message "key which appears more than once"}])
+  (check "(local a 1) {:a 2 : a}" [{:code :duplicate-table-keys}])
+  nil)
+
 ;; TODO lints:
 ;; duplicate keys in kv table
 ;; (tset <sym> <any>) --> (set (. <sym> <any>)) (might be wanted for compat?)
@@ -341,4 +356,5 @@
  : test-op-with-no-arguments
  : test-empty-let
  : test-decreasing-comparison
- : test-arg-count}
+ : test-arg-count
+ : test-duplicate-keys}

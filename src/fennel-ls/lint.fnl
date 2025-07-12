@@ -16,7 +16,8 @@ the `file.diagnostics` field, filling it with diagnostics."
               :reference []
               :macro-call []
               :function-call []
-              :special-call []})
+              :special-call []
+              :other []})
 
 (local all-lints [])
 
@@ -331,6 +332,25 @@ the `file.diagnostics` field, filling it with diagnostics."
                         :message (.. "too many args. my analysis of the signature says we ignore any arguments past " min-params " arguments but you've provided " number-of-args)
                         :severity message.severity.WARN})))))})
 
+(add-lint :duplicate-table-keys
+  {:type :other
+   :impl (fn [server file]
+           (let [seen []]
+             (each [ast (pairs file.lexical)]
+               (when (table? ast)
+                 (case (getmetatable ast)
+                   {: keys} (let [dkey (accumulate [_ 1 i v (ipairs keys) &until (. seen v)]
+                                         (do (set (. seen v) i)
+                                           (+ i 1)))]
+                              (when (. keys dkey)
+                                (coroutine.yield
+                                  {:code :duplicate-table-keys
+                                   :range (message.ast->range server file ast)
+                                   :message (.. "key " (tostring (. keys dkey)) " appears more than once")
+                                   :severity message.severity.WARN}))
+                              (each [k (pairs seen)]
+                                (set (. seen k) nil))))))))})
+
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                 :__index #(. $1 :self $2)})
 
@@ -349,7 +369,9 @@ the `file.diagnostics` field, filling it with diagnostics."
           (table.insert file.diagnostics
             (wrap (doto diagnostic
                         (tset :code lint.name))))))))
-
+  (each [diagnostic (coroutine.wrap #(run lints.other server file))]
+    (table.insert file.diagnostics
+      (wrap diagnostic)))
   (each [symbol definition (pairs file.definitions)]
     (when (. file.lexical symbol)
       (run lints.definition server file symbol definition)))
