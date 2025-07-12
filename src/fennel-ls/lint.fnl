@@ -310,7 +310,8 @@ the `file.diagnostics` field, filling it with diagnostics."
                                                                          nil
                                                                          last-required-argument
                                                                          last-required-argument
-                                                                         (not= (string.sub s 1 1) "?")
+                                                                         (let [first-char (string.sub s 1 1)]
+                                                                           (and (not= first-char "?") (not= first-char "_")))
                                                                          i)
                                                                      (or vararg m))))
                        ;; exception: (- a b) only needs 1 argument
