@@ -1,46 +1,62 @@
 # How to add a new lint
 
 ## Creating a new lint
-To start, you can set up all the plumbing:
-
-1. Go into `src/fennel-ls/lint.fnl` and create a new function.
-2. At the bottom of `src/fennel-ls/lint.fnl`, add an if statement in the
-   `check` function.
-    * Choose which `each` loop to put your function in, so your lint can be
-      applied to right thing.
-    * add `(if checks.<your-check> (table.insert diagnostics (<your-check> self file <the rest of the args>)))`
-3. Enable your lint! In `src/fennel-ls/config.fnl`, find the
-   `default-configuration` variable, and turn your check on by default.
+Go into `src/fennel-ls/lint.fnl` and create a new call to add-lint.
 
 ## Writing your lint
 Now, the fun part: writing your lint function.
 
 The goal is to check whether the given arguments should emit a warning, and
-what message to show. The current loops in `check` go over every:
+what message to show. You can request that your lint is called for every
+* function-call (Every time the user calls a function)
+* special-call (Every time the user calls a special)
+* macro-call (Every time the user calls a macro)
 * definition (Every time a new variable is bound)
-* call (Every time the user calls a function or a special. Macros don't count.)
-* lexical (Every source-tracked AST node in the whole file, before macro expansion.
-  Symbols, lists, tables, and varargs will be here; numbers, strings, booleans,
-  and nil will not.)
+* reference (Every time an identifier is referring to something in scope)
 
-More loops might have been added since I wrote this document.
+More types might have been added since I wrote this document.
 
 ### Input arguments
-All lints give you `server` and `file`. They're mostly useful to pass to other
-functions.
-* `server` is the table that represents the language server. It carries metadata
-  and stuff around. You probably don't need to use it directly.
-* `file` is an object that represents a .fnl file. It has some useful fields.
-  Check out what fields it has by looking at the end of `compiler.fnl`.
+All lints receive a `server` and `file`. These values are mostly useful to
+pass to other functions.
+* `server` is the table that represents the language server. It carries
+  metadata and stuff around. You probably don't need to use it directly.
+* `file` is an object that represents a fennel source file. It has some
+   useful fields. Check out what fields it has by looking at the end of
+   `compiler.fnl`.
 
-`file.lexical` stores the value `true` for every single list, table, or symbol
-that appears in the original file AST, but not things generated via
-macroexpansion. Make sure that the AST you're checking is inside of
-`file.lexical`; otherwise, your lint may not be actionable or relevant, because
-the user won't be able to see or edit the code your lint is warning about.
+The next arguments depend on which type the lint is in:
 
-The next arguments depend on which loop the lint is in:
-#### If your lint is linting definitions:
+#### "Call" type lints. (aka combinations aka compound forms aka lists):
+There are three call types: `function-call`, `special-call`, and `macro-call`.
+* `ast` is the AST of the call. it will be a list.
+* `macroexpanded` will be the AST generated from the expansion of the macro,
+  if the call was invoking a macro.
+
+For example, if I had the code
+```fnl
+(let [(x y) (values 1 2)]
+  (print (+ 1 x y)))
+```
+and I created a `function-call` lint, My lint would would be called once
+with `ast` as `(print (+ 1 x y))`. If I created a `special-call` lint,
+my lint would be called with `ast` as `(let [(x y) (values 1 2)] (print (+ 1 x y)))`,
+with `(values 1 2)`, and with `(+ 1 x y)`.
+
+#### "Reference" type lints
+References are any time a symbol is referring to a local or global variable.
+* `symbol` is the symbol that's referring to something.
+For example, in the code
+```fnl
+(let [x 10]
+  (print x))
+```
+`let` and `x` on line 1 are **not** references. `let` is a special, and `x` is
+introducing a new binding, not referring to existing ones.
+`print` and `x` on line 2 **are** references, and so a `reference` type
+lint would be called for `print` and for `x`.
+
+#### "Definition" type lints
 * `symbol` is the symbol being bound. It is just a regular fennel sym.
 * `definition` is a table full of information about what is being bound:
   * `definition.binding` is the symbol again.
@@ -55,6 +71,9 @@ The next arguments depend on which loop the lint is in:
   * `definition.var?` is a boolean, which tells if the `symbol` is introduced
     as a variable.
 
+#### "Other" type lints
+Don't write these. :)
+
 For example, if I write the code `(var x 1000)`, the definition will be:
 ```fnl
 {:definition 1000 :binding `x :var? true}
@@ -66,17 +85,10 @@ the definitions will be:
 {:definition `(my-expression)
  :binding `x
  :multival 1
- :referenced-by {:symbol `x.myfield :target @1 :ref-type "read"}}
+ :referenced-by {:symbol `x.myfield :ref-type "read"}}
 ;; for y
 {:definition `(my-expression) :binding `y :multival 2 :keys [:foo :bar]}
 ```
-
-#### If your lint is linting calls (to functions or specials, not macros)
-* `head` is the symbol that is being called. It is the same as `(. call 1)`.
-* `call` is the list that represents the call.
-
-#### If your lint is linting lexical nodes
-* `ast` is the AST node
 
 ### Output:
 Your lint function should return `nil` if there's nothing to report, or
@@ -87,18 +99,18 @@ The return value should have these fields:
 * `range`: make these with `message.ast->range` to get the range for a list or
   symbol or table, or with `message.multisym->range` to get the range of a
   specific segment of a multisym. Try to report specifically on which piece of
-  AST is wrong. If its the entire call, give the range of the call. If its a
-  specific argument, give the range of that argument if possible, and the call
-  if not. Remember that we can't get the range of things like numbers and
-  strings, because they don't have tracking info.
+  AST is wrong. If its an entire list, give the range of the list. If a
+  specific argument is problematic, give the range of that argument if possible,
+  and the call if not. `message.ast->range` will not fail on lists, symbols, or
+  tables, but it may fail on other AST items. (by returning `nil`)
 * `message`: this is the message your lint will produce. Try to make it
-  specific and helpful as possible.
+  specific and helpful as possible; it doesn't have to be the same every time
+  the lint is triggered.
 * `severity`: hardcode this to `message.severity.WARN`. ERROR is for compiler
   errors, and WARN is for lints.
-* `code`: Please use a new number counting up from 301 for each lint. The codes
-  are nice to have so that the message of the lint can change without breaking
-  tests that only check for the presence or absence of a lint.
-* `codeDescription`: Use the name of your function.
+* `fix`: Optional. If there's a way to address this programmatically, you can
+  add a "fix" field with the code to generate a quickfix. See the other lints
+  for examples.
 
 ### Testing:
 I will think about this later. :) For now see examples in `test/lint.fnl`.

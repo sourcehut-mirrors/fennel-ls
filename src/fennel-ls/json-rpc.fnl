@@ -5,11 +5,14 @@ There are only two functions exposed here:
 * `read` receives and parses a message from the client.
 * `write` serializes and sends a message to the client.
 
-It's probably not compliant yet, because serialization of [] and {} is the same.
-Luckily, I'm testing with Neovim, so I can pretend these problems don't exist for now."
+dkjson defaults to emitting [] when given an empty table, so we need to be
+sure our object-like tables have at least one key, or we apply metatable magic
+on the empty table to tell dkjson to serialize as {}."
 
 (local {: encode : decode} (require :dkjson))
-(local http-separator
+(local header-separator
+       ;; Something in windows replaces \n with \r\n,
+       ;; so we have to leave the \r's out
        (if (string.match package.config "^\\")
            "\n\n"
            "\r\n\r\n"))
@@ -55,7 +58,7 @@ Returns a table with the message if it succeeded, or a string with the parse err
 (λ write [out msg]
   "Serializes and writes a JSON-RPC message to the given output stream"
   (let [content (encode msg)
-        msg-stringified (.. "Content-Length: " (length content) http-separator content)]
+        msg-stringified (.. "Content-Length: " (length content) header-separator content)]
     (out:write msg-stringified)
     (when out.flush
       (out:flush))))
