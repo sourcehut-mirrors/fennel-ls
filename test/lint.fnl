@@ -305,6 +305,16 @@
                    :end {:character 21 :line 0}}}])
   nil)
 
+(fn test-arg-count []
+  ;; methods
+  (assert-ok {:main.fnl "(let [f :hi] (f:byte))"
+              :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
+  (assert-ok {:main.fnl "(let [foo 10] (fn [] foo))"
+              :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
+  (assert-ok {:main.fnl "(fn [])"
+              :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
+  nil)
+
 ;; TODO lints:
 ;; duplicate keys in kv table
 ;; (tset <sym> <any>) --> (set (. <sym> <any>)) (might be wanted for compat?)
@@ -330,4 +340,5 @@
  : test-unpack-in-middle
  : test-op-with-no-arguments
  : test-empty-let
- : test-decreasing-comparison}
+ : test-decreasing-comparison
+ : test-arg-count}

@@ -9,6 +9,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
 (local navigate (require :fennel-ls.navigate))
+(local docs (require :fennel-ls.docs))
 (local dkjson (require :dkjson))
 
 (local lints {:definition []
@@ -295,9 +296,10 @@ the `file.diagnostics` field, filling it with diagnostics."
                {:indeterminate nil &as result}
                (case (?. (navigate.getmetadata server result) :fnl/arglist)
                  signature
-                 (let [number-of-args (- (length ast) 1)
+                 (let [number-of-args (- (length ast) (if (and (sym? (. ast 1)) (string.find (tostring (. ast 1)) ".:"))
+                                                        0 1))
                        passes-extra-args (and (not= 1 (length ast)) (possibly-multival? (. ast (length ast))))
-                       (number-of-params accepts-extra-params) (faccumulate [(last-required-argument vararg) nil
+                       (min-params infinite-params?) (faccumulate [(last-required-argument vararg) nil
                                                                              i (length signature) 1 -1]
                                                                  (let [s (tostring (. signature i))
                                                                        m (or (= s "...") (= s "&"))]
@@ -309,14 +311,23 @@ the `file.diagnostics` field, filling it with diagnostics."
                                                                          (not= (string.sub s 1 1) "?")
                                                                          i)
                                                                      (or vararg m))))
-                       number-of-params (or number-of-params 0)]
-                   (if (and (< number-of-args number-of-params) (not passes-extra-args))
+                       ;; exception: (- a b) only needs 1 argument
+                       ;; exception: (/ a b) only needs 1 argument
+                       min-params (if (= result (docs.get-builtin server :-)) 1
+                                      (= result (docs.get-builtin server :/)) 1
+                                      ;; exception: fn only needs one argument
+                                      ;; TODO Fennel 1.5.4+ has `fn`'s arglist fixed.
+                                      (= result (docs.get-builtin server :fn)) 1
+                                      (or min-params 0))
+                       ;; exception: (table.insert table item) can take a third argument
+                       max-params (if (= result (. (docs.get-global server :table) :fields :insert)) 3 (length signature))]
+                   (if (and (< number-of-args min-params) (not passes-extra-args))
                        {:range (message.ast->range server file ast)
-                        :message (.. "not enough args. my analysis of the signature says you need at least " number-of-params " arguments but I only see " number-of-args)
+                        :message (.. "not enough args. my analysis of the signature says you need at least " min-params " arguments but I only see " number-of-args)
                         :severity message.severity.WARN}
-                       (and (< (length signature) number-of-args) (not accepts-extra-params))
+                       (and (< max-params number-of-args) (not infinite-params?))
                        {:range (message.ast->range server file ast)
-                        :message (.. "too many args. my analysis of the signature says we ignore any arguments past " number-of-params " arguments but you've provided " number-of-args)
+                        :message (.. "too many args. my analysis of the signature says we ignore any arguments past " min-params " arguments but you've provided " number-of-args)
                         :severity message.severity.WARN})))))})
 
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
