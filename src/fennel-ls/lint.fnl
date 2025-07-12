@@ -285,7 +285,8 @@ the `file.diagnostics` field, filling it with diagnostics."
                                   :newText "do"})]}}))})
 
 (fn possibly-multival? [ast]
-  (or (fennel.list? ast)
+  ;; operators all adjust to 1 value
+  (or (and (fennel.list? ast) (not (op? (. ast 1))) (not (sym? (. ast 1) :not)))
       (fennel.varg? ast)))
 
 (add-lint :mismatched-argument-count
