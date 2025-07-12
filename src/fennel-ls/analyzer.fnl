@@ -169,7 +169,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
                            (sym? head :λ)
                            (sym? head :hashfn))))
               (search-multival server file (. definition (length definition)) stack multival opts)
-              result result
+              result_ {:indeterminate true}
               _ (case (docs.get-builtin server (tostring (. call 1)))
                   {:metadata metadata_} {:indeterminate true})))))))
 
@@ -281,19 +281,19 @@ initialization-opts: {:stack ?list[ast]
                        _ child (ipairs ast)
                        &until result]
             (if (contains? child byte)
-                (recurse child byte)))
+                (recurse child)))
           (and (not (sym? ast)) (not (varg? ast)))
           (accumulate [(result _parent) nil
                        key value (pairs ast)
                        &until result]
             (if (contains? key byte)
-                (recurse key byte)
+                (recurse key)
                 (contains? value byte)
-                (recurse value byte)))))))
+                (recurse value)))))))
   (values
     (accumulate [result nil _ top-level-form (ipairs ast) &until result]
       (if (contains? top-level-form byte)
-        (recurse top-level-form byte)))
+        (recurse top-level-form)))
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 

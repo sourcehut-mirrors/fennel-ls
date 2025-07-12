@@ -201,18 +201,18 @@
   (assert-ok "(do (print :x) 11)")
   ;; unnecessary do
   (check "(do 9)"
-         [{:message "unnecessary do"
+         [{:message "unnecessary unary do"
            :code :unnecessary-unary
            :range {:start {:character 0 :line 0}
                    :end {:character 6 :line 0}}}])
   ;; unnecessary values
   (check "(print :hey (values :lol))"
          [{:code :unnecessary-unary
-           :message "unnecessary values"
+           :message "unnecessary unary values"
            :range {:start {:character 12 :line 0}
                    :end {:character 25 :line 0}}}])
   (check "(+ (* 3) (* 4 4))"
-         [{:message "unnecessary *"
+         [{:message "unnecessary unary *"
            :code :unnecessary-unary
            :range {:start {:character 3 :line 0}
                    :end {:character 8 :line 0}}}])

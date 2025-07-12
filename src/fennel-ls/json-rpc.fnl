@@ -23,7 +23,7 @@ Luckily, I'm testing with Neovim, so I can pretend these problems don't exist fo
              "" header ;; base case. empty line marks end of header
              line (let [(k v) (line:match "^(.-): (.-)$")]
                     (if (not (and k v))
-                      (error "fennel-ls encountered a malformed json-rpc header: \"" line "\""))
+                      (error (.. "fennel-ls encountered a malformed json-rpc header: \"" line "\"")))
                     (tset header k v)
                     (read-header in header))))))
 

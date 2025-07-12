@@ -8,6 +8,7 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
+(local navigate (require :fennel-ls.navigate))
 (local dkjson (require :dkjson))
 
 (local lints {:definition []
@@ -125,7 +126,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                     (. redundant-wrappers (tostring (. ast 1)))
                     (= (length ast) 2))
                {:range (message.ast->range server file ast)
-                :message (.. "unnecessary " (tostring (. ast 1)))
+                :message (.. "unnecessary unary " (tostring (. ast 1)))
                 :severity message.severity.WARN
                 :fix #{:title "Unwrap the expression"
                        :changes [{:range (message.ast->range server file ast)
@@ -247,14 +248,14 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (add-lint :inline-unpack
   {:type [:function-call :special-call]
-   :impl (fn [server file call]
+   :impl (fn [server file ast]
            "generally, values and unpack are signs that the user is trying to do
             something with multiple values. However, multiple values will get
             \"adjusted\" to one value if they don't come at the end of the call."
-           (faccumulate [f nil index 2 (length call) &until f]
-             (let [arg (. call index)]
-               (if (and (or (op? (. call 1)) (not (special? (. call 1))))
-                        (not= index (length call))
+           (faccumulate [f nil index 2 (length ast) &until f]
+             (let [arg (. ast index)]
+               (if (and (or (op? (. ast 1)) (not (special? (. ast 1))))
+                        (not= index (length ast))
                         (list? arg)
                         (or (sym? (. arg 1) :values)
                             (sym? (. arg 1) :unpack)
@@ -267,8 +268,8 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (add-lint :empty-let
   {:type :special-call
-   :impl (fn [server file call]
-           (case call
+   :impl (fn [server file ast]
+           (case ast
              (where [let* binding]
                     (sym? let* :let)
                     (fennel.sequence? binding)
@@ -281,6 +282,42 @@ the `file.diagnostics` field, filling it with diagnostics."
                                      {: end} (message.ast->range server file binding)]
                                  {:range {: start : end}
                                   :newText "do"})]}}))})
+
+(fn possibly-multival? [ast]
+  (or (fennel.list? ast)
+      (fennel.varg? ast)))
+
+(add-lint :mismatched-argument-count
+  {:type [:function-call :special-call :macro-call]
+   :disabled true
+   :impl (fn [server file ast]
+             (case (analyzer.search server file (. ast 1) {} {})
+               {:indeterminate nil &as result}
+               (case (?. (navigate.getmetadata server result) :fnl/arglist)
+                 signature
+                 (let [number-of-args (- (length ast) 1)
+                       passes-extra-args (and (not= 1 (length ast)) (possibly-multival? (. ast (length ast))))
+                       (number-of-params accepts-extra-params) (faccumulate [(last-required-argument vararg) nil
+                                                                             i (length signature) 1 -1]
+                                                                 (let [s (tostring (. signature i))
+                                                                       m (or (= s "...") (= s "&"))]
+                                                                   (values
+                                                                     (if m
+                                                                         nil
+                                                                         last-required-argument
+                                                                         last-required-argument
+                                                                         (not= (string.sub s 1 1) "?")
+                                                                         i)
+                                                                     (or vararg m))))
+                       number-of-params (or number-of-params 0)]
+                   (if (and (< number-of-args number-of-params) (not passes-extra-args))
+                       {:range (message.ast->range server file ast)
+                        :message (.. "not enough args. my analysis of the signature says you need at least " number-of-params " arguments but I only see " number-of-args)
+                        :severity message.severity.WARN}
+                       (and (< (length signature) number-of-args) (not accepts-extra-params))
+                       {:range (message.ast->range server file ast)
+                        :message (.. "too many args. my analysis of the signature says we ignore any arguments past " number-of-params " arguments but you've provided " number-of-args)
+                        :severity message.severity.WARN})))))})
 
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                 :__index #(. $1 :self $2)})

@@ -38,7 +38,7 @@ in the \"server\" object."
       (or (get-by-uri server uri)
           ;; if the cached uri isn't found, clear the cache and try again
           (do (tset modules module nil)
-              (get-by-module server module)))
+              (get-by-module server module macro?)))
       nil
       (case (searcher.lookup server module macro?)
         uri
