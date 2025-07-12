@@ -64,6 +64,7 @@ deps:
 
 selflint:
 	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(SRC)
+	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(shell find test -name "*.fnl")
 
 count:
 	cloc $(shell find src -name "*.fnl" | grep -v "generated")

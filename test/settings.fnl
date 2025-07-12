@@ -1,6 +1,5 @@
 (local faith (require :faith))
 (local {: create-client} (require :test.utils))
-(local fennel (require :fennel))
 
 (fn test-path []
   (let [{: client : uri : cursor :locations [location]}

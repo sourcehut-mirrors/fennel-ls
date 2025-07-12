@@ -240,7 +240,7 @@
   ;; nested pinning
   (assert-ok "(let [x 99]
             (match [{:x 32}]
-              [{: x}] (print x)))" [] [{}])
+              [{: x}] (print x)))")
   ;; values pattern
   (assert-ok "(let [x 99]
                 (match 49
