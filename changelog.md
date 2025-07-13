@@ -1,6 +1,8 @@
 # Changelog
 
 ### Features
+* Code action "Expand macro" lets you see what a macro expands to
+* Macro expansion is shown when hovering over a macro
 * New lint `empty-let` for replacing (let [] ...) with (do ...)
 * New lint `duplicate-table-keys` for detecting duplicate keys (eg. `{:a 1 :a 2}`)
 * New lint `mismatched-argument-count` for ensuring function calls have the right argument count
