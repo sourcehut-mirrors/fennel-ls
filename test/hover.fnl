@@ -10,9 +10,9 @@
       (faith.= ?response-string (?. message :result :contents :value)
                (.. "Invalid hover message\nfrom:    " (view file-contents)))
       (= (type ?response-string) :function)
-      (faith.is (?response-string (?. message :result :contents :value))
+      (faith.is (-?> (?. message :result :contents :value) ?response-string)
                (.. "Invalid hover message:\n"
-                   (?. message :result :contents :value)
+                   (or (?. message :result :contents :value) "nil")
                    "\nfrom:    " (view file-contents)))
 
 

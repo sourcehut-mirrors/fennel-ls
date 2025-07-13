@@ -3,5 +3,6 @@
 /lua*.html
 /build
 /src/fennel-ls/docs/generated/love2d.fnl
+/doc/lints.md
 /scratch.fnl
 /scratch-macros.fnl

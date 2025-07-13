@@ -21,11 +21,18 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (local all-lints [])
 
-(fn add-lint [code lint ...]
+(fn add-lint [name lint ...]
+  (when (not= (type lint.what-it-does) "string") (error (.. name " needs a description of what it does in :what-it-does")))
+  (when (not= (type lint.why-care?) "string") (error (.. name " needs a description of why the linted pattern is bad in :why-care?")))
+  (when (not= (type lint.example) "string") (error (.. name " needs an example of broken and fixed code in :example")))
+  (when (not= (type lint.since) "string") (error (.. name " needs version: :since " (view utils.version))))
+  (when (= nil lint.type) (error (.. name " needs a type. available types: " (view (icollect [k (pairs lints)] k)))))
+  ;; lint.limitations is optional
+
   (table.insert all-lints lint)
   (for [i 1 (select :# lint ...)]
     (let [lint (select i lint ...)]
-      (set lint.name code)
+      (set lint.name name)
       (if (= (type lint.type) :table)
         (each [_ t (ipairs lint.type)]
           (table.insert (assert (. lints t) (.. "unknown lint type " t)) lint))
