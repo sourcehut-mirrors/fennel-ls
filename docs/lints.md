@@ -13,7 +13,6 @@ remove the binding, or add an `_` to the variable name.
 (var value 100)
 (set value 10)
 ```
-
 Instead, use the value, remove it, or add `_` to the variable name.
 ```fnl
 (var value 100)
@@ -23,30 +22,32 @@ Instead, use the value, remove it, or add `_` to the variable name.
 ```
 
 ## Known limitations
-Fennel's pattern matching macros also check for leading `_` for symbol names.
-This means that adding an `_` can change the semantics of the code. In this
-situation, add the `_` to the end of the symbol to disable the lint without
-changing the pattern's meaning.
+Fennel's pattern matching macros also check for leading `_` in symbols.
+This means that adding `_` can change the semantics of the code. In this
+situation, the user needs to add the `_` to the **end** of the symbol
+to disable only the lint, without changing the pattern's meaning.
+Only use a trailing underscore when it's required to prevent code from
+changing meaning.
 ```fnl
+;; Original. Works, but `b` is flagged by the lint
 (match [10 nil]
-    ;; pattern works as intended, but triggers the lint
-    [a b] (print a "unintended")
-    _ (print "unintended"))
+  [a b] (print a "unintended")
+  _ (print "we want this one")) ;; Prints this one!
 
+;; Suppressing lint normally causes problems
 (match [10 nil]
-    ;; pattern matches when we don't want it to
-    [a _b] (print a "unintended")
-    _ (print "unintended"))
+  [a _b] (print a "unintended") ;; Uh oh, we're printing "unintended" now!
+  _ (print "we want this one"))
 
+;; Solution! Underscore at the end
 (match [10 nil]
-    ;; works as intended and doesn't trigger lint
-    [a b_] (print a "unintended")
-    _ (print "unintended"))
+  [a b_] (print a "unintended")
+  _ (print "we want this one")) ;; Prints the right one
 ```
 
-Think of it this way:
-`identifier` - must be used, and should be non-`nil`
+Think of the trailing underscore as the fourth possible sigil:
 `?identifier` - must be used, and can be `nil`
+`identifier` - must be used, and should be non-`nil`
 `_identifier` - may be unused, and can be `nil`
 `identifer_` - may be unused, but should be non-`nil`
 
@@ -228,7 +229,7 @@ Instead, use:
 ""
 ```
 
-## Note
+## Known limitations
 This lint isn't actually very useful.
 
 # no-decreasing-comparison (off by default)
@@ -277,13 +278,13 @@ Instead, use:
   _ "other")
 ```
 
-# inline-values
+# inline-unpack
 ## What it does
 Warns when multiple values from `values` or `unpack` are used in a non-final
 position of a function call, where only the first value will be used.
 
 ## Why is this bad?
-In Fennel (and Lua), multiple values are only preserved when they appear in the 
+In Fennel (and Lua), multiple values are only preserved when they appear in the
 final position of a function call. Using them elsewhere results in only the
 first value being used. This is likely not what was intended, since the use of
 `values` or `unpack` seems to imply that the code is interested in handling
@@ -304,7 +305,7 @@ Instead, use:
   (print a b c 4)
 ```
 
-## Limitations
+## Known limitations
 It doesn't make sense to flag *all* places where a multival is discarded, because
 discarding extra values is common in Lua. For example, in the standard library
 of Lua, `string.gsub` and `require` actually return two results, even though
@@ -314,6 +315,79 @@ This lint specifically flags discarding multivals from `values` and `unpack`,
 instead of flagging all discards, because these forms indicate that the user
 *intends* for something to happen with multivals.
 
-## Note
 You find more information about Lua's multivals in [Benaiah's excellent post explaining Lua's multivals](https://benaiah.me/posts/everything-you-didnt-want-to-know-about-lua-multivals),
 or by searching the word "adjust" in the [Lua Manual](https://www.lua.org/manual/5.4/manual.html#3.4.12).
+
+# empty-let
+## What it does
+Warns about `(let [] ...)` that should be `(do ...)`.
+
+## Why is this bad?
+Using `let` with no bindings is unnecessarily verbose when `do` serves the same purpose more clearly.
+
+## Example
+```fnl
+(let []
+  (print "hello")
+  (print "world"))
+```
+
+Instead, use:
+```fnl
+(do
+  (print "hello")
+  (print "world"))
+```
+
+# mismatched-argument-count (off by default)
+## What it does
+Checks if function calls have the correct number of arguments based on the function's signature.
+
+## Why is this bad?
+Calling functions with the wrong number of arguments can lead to runtime errors
+or unexpected behavior. This lint helps catch these issues early.
+
+## Example
+```fnl
+(string.sub "hello")  ; missing required arguments
+(string.sub "hello" 1 2 3)  ; too many arguments
+```
+
+Instead, use:
+```fnl
+(string.sub "hello" 1)  ; provide all required arguments
+(string.sub "hello" 1 2)  ; remove extra arguments
+```
+
+## Known limitations
+This lint is disabled by default because it can produce false positives.
+It assumes that all optional arguments are reliably annotated with a ? sigil,
+and any other arguments can be assumed to be required. This is reasonably
+accurate if the code follows Fennel conventions. Also this lint is very new and
+may have issues, so I'd like to let people try it on their own terms before
+enabling it by default.
+
+In the future I may split it into "too-many-arguments" (which is accurate regardless of code style)
+and "not-enough-arguments" (which needs the arglist to be annotated properly)
+
+# duplicate-table-keys
+## What it does
+Detects when the same key appears multiple times in a table literal.
+
+## Why is this bad?
+Duplicate keys in a table are usually a mistake and the later value will
+overwrite the earlier one, which can lead to bugs.
+
+## Example
+```fnl
+{:name "Alice"
+ :age 25
+ :name "Bob"}  ; "Alice" gets overwritten by "Bob"
+```
+
+Instead, use:
+```fnl
+{:name "Bob"
+ :age 25}
+```
+

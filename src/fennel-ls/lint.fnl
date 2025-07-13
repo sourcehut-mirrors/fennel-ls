@@ -2,7 +2,7 @@
 Provides the function (check server file), which goes through a file and mutates
 the `file.diagnostics` field, filling it with diagnostics."
 
-(local {: sym? : list? : table? : view
+(local {: sym? : list? : table? : varg? : view
         : sym : list &as fennel} (require :fennel))
 (local {: special? : op?} (require :fennel-ls.compiler))
 (local analyzer (require :fennel-ls.analyzer))
@@ -37,7 +37,56 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 
 (add-lint :unused-definition
-  {:type :definition
+  {:what-it-does
+   "Marks bindings that aren't read. Completely overwriting a value doesn't count
+    as reading it. A variable that starts or ends with an `_` will not trigger this
+    lint. Use this to suppress the lint."
+   :why-care?
+   "Unused definitions can lead to bugs and make code harder to understand. Either
+    remove the binding, or add an `_` to the variable name."
+   :example
+   "```fnl
+    (var value 100)
+    (set value 10)
+    ```
+    Instead, use the value, remove it, or add `_` to the variable name.
+    ```fnl
+    (var value 100)
+    (set value 10)
+    ;; use the value
+    (print value)
+    ```"
+   :limitations
+   "Fennel's pattern matching macros also check for leading `_` in symbols.
+    This means that adding `_` can change the semantics of the code. In this
+    situation, the user needs to add the `_` to the **end** of the symbol
+    to disable only the lint, without changing the pattern's meaning.
+    Only use a trailing underscore when it's required to prevent code from
+    changing meaning.
+    ```fnl
+    ;; Original. Works, but `b` is flagged by the lint
+    (match [10 nil]
+      [a b] (print a \"unintended\")
+      _ (print \"we want this one\")) ;; Prints this one!
+
+    ;; Suppressing lint normally causes problems
+    (match [10 nil]
+      [a _b] (print a \"unintended\") ;; Uh oh, we're printing \"unintended\" now!
+      _ (print \"we want this one\"))
+
+    ;; Solution! Underscore at the end
+    (match [10 nil]
+      [a b_] (print a \"unintended\")
+      _ (print \"we want this one\")) ;; Prints the right one
+    ```
+
+    Think of the trailing underscore as the fourth possible sigil:
+    `?identifier` - must be used, and can be `nil`
+    `identifier` - must be used, and should be non-`nil`
+    `_identifier` - may be unused, and can be `nil`
+    `identifer_` - may be unused, but should be non-`nil`"
+   :since "0.1.0"
+   :type :definition
    :impl (fn [server file symbol definition]
            "local variable that is defined but not used"
            (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
@@ -60,7 +109,7 @@ the `file.diagnostics` field, filling it with diagnostics."
   (accumulate [in? false call (pairs calls) &until in?]
     (and (sym? (. call 1) :or) (utils.find call symbol))))
 
-(fn module-field-helper [server file symbol ?ast ?stack]
+(fn unknown-module-field [server file symbol ?ast ?stack]
   "if ?ast is a module field that isn't known, return a diagnostic"
   (let [opts {}
         item (analyzer.search server file ?ast opts {:stack ?stack})]
@@ -74,19 +123,64 @@ the `file.diagnostics` field, filling it with diagnostics."
          :severity message.severity.WARN})))
 
 (add-lint :unknown-module-field
-  {:type :reference
+  {:what-it-does
+   "Looks for module fields that can't be statically determined to exist. This only
+    triggers if the module is found, but there's no definition of the field inside
+    of the module."
+   :why-care?
+   "This is probably a typo, or a missing function in the module."
+   :example
+   "```fnl
+    ;;; in `a.fnl`
+    {: print}
+
+    ;;; in `b.fnl`
+    (local a (require :a))
+    (a.printtt 100)
+    ```
+    Instead, use:
+    ```fnl
+    ;;; in `b.fnl`
+    (local a (require :a))
+    (a.print 100) ; typo fixed
+    ```"
+   :limitations
+   "Fennel-ls doesn't have a full type system, so we're not able to check every
+    multisym statically, but as a heuristic, usually modules are able to be
+    evaluated statically. If you have a module that can't be figured out, please
+    let us know on the bug tracker."
+   :since "0.1.0"
+   :type :reference
    :impl (fn [server file symbol]
+           ;; only multisyms, like `my-module.field`
            (if (. (utils.multi-sym-split symbol) 2)
-               (module-field-helper server file symbol symbol)))}
+               (unknown-module-field server file symbol symbol)))}
   {:type :definition
    :impl (fn [server file symbol definition]
+           ;; definitions, like `(local {: field} (require :my-module))`
            (if definition.keys
-               (module-field-helper server file symbol definition.definition
+               (unknown-module-field server file symbol definition.definition
                                     (fcollect [i (length definition.keys) 1 -1]
                                       (. definition.keys i)))))})
 
 (add-lint :unnecessary-method
-  {:type :special-call
+  {:what-it-does
+   "Checks for unnecessary uses of the `:` method call syntax when a simple multisym
+    would work."
+   :why-care?
+   "Using the method call syntax unnecessarily adds complexity and can make code
+    harder to understand."
+   :example
+   "```fnl
+    (: alien :shoot-laser {:x 10 :y 20})
+    ```
+
+    Instead, use:
+    ```fnl
+    (alien:shoot-laser {:x 10 :y 20})
+    ```"
+   :since "0.1.0"
+   :type :special-call
    :impl (fn [server file ast]
            "a call to the : builtin that could just be a multisym"
             (let [object (. ast 2)
@@ -99,7 +193,22 @@ the `file.diagnostics` field, filling it with diagnostics."
                  :severity message.severity.WARN})))})
 
 (add-lint :unnecessary-tset
-  {:type :special-call
+  {:what-it-does
+   "Identifies unnecessary uses of `tset` when a `set` with a multisym would be clearer."
+   :why-care?
+   "Using `tset` makes the code more verbose and harder to read when a simpler
+    alternative exists."
+   :example
+   "```fnl
+    (tset alien :health 1337)
+    ```
+
+    Instead, use:
+    ```fnl
+    (set alien.health 1337)
+    ```"
+   :since "0.2.0"
+   :type :special-call
    :impl (fn [server file ast]
            (let [all-rewritable? (faccumulate [syms true
                                                i 3 (- (length ast) 1)
@@ -122,7 +231,25 @@ the `file.diagnostics` field, filling it with diagnostics."
   {:do true :values true :+ true :* true :and true :or true :band true :bor true ".." true})
 
 (add-lint :unnecessary-unary
-  {:type :special-call
+  {:what-it-does
+   "Warns about unnecessary `do` or `values` forms that only contain a single expression."
+   :why-care?
+   "Extra forms that don't do anything add syntactic noise."
+   :example
+   "```fnl
+    (do (print \"hello\"))
+
+    (values (+ 1 2))
+    ```
+
+    Instead, use:
+    ```fnl
+    (print \"hello\")
+
+    (+ 1 2)
+    ```"
+   :since "0.2.0"
+   :type :special-call
    :impl (fn [server file ast]
            (if (and (sym? (. ast 1))
                     (. redundant-wrappers (tostring (. ast 1)))
@@ -138,7 +265,25 @@ the `file.diagnostics` field, filling it with diagnostics."
                            (values form body-form?)))
 
 (add-lint :redundant-do
-  {:type :special-call
+  {:what-it-does
+   "Identifies redundant `do` blocks within implicit do forms like `fn`, `let`, etc."
+   :why-care?
+   "Redundant `do` blocks add unnecessary nesting and make code harder to read."
+   :example
+   "```fnl
+    (fn [] (do
+      (print \"first\")
+      (print \"second\")))
+    ```
+
+    Instead, use:
+    ```fnl
+    (fn []
+      (print \"first\")
+      (print \"second\"))
+    ```"
+   :since "0.2.0"
+   :type :special-call
    :impl (fn [server file ast]
            (let [last-body (. ast (length ast))]
              (if (and (. implicit-do-forms (tostring (. ast 1)))
@@ -155,7 +300,29 @@ the `file.diagnostics` field, filling it with diagnostics."
                                               " ")}]}})))})
 
 (add-lint :bad-unpack
-  {:type :special-call
+  {:what-it-does
+   "Warns when `unpack` or `table.unpack` is used with operators that aren't
+    variadic at runtime."
+   :why-care?
+   "Fennel operators like `+`, `*`, etc. look like they should work with `unpack`,
+    but they don't actually accept a variable number of arguments at runtime."
+   :example
+   "```fnl
+    (+ 1 (unpack [2 3 4]))  ; Only adds 1 and 2
+    (.. (unpack [\"a\" \"b\" \"c\"]))  ; Only concatenates \"a\"
+    ```
+
+    Instead, use:
+    ```fnl
+    ;; For concatenation:
+    (table.concat [\"a\" \"b\" \"c\"])
+
+    ;; For other operators, use a loop:
+    (accumulate [sum 0 _ n (ipairs [1 2 3 4])]
+      (+ sum n))
+    ```"
+   :since "0.1.0"
+   :type :special-call
    :impl (fn [server file call]
            "an unpack call leading into an operator"
            (let [op (. call 1)
@@ -183,7 +350,24 @@ the `file.diagnostics` field, filling it with diagnostics."
                                         :newText (.. "(table.concat " (view (. last 2)) ")")}]})})))})
 
 (add-lint :var-never-set
-  {:type :definition
+  {:what-it-does
+   "Identifies variables declared with `var` that are never modified with `set`."
+   :why-care?
+   "If a `var` is never modified, it should be declared with `local` or `let` instead
+    for clarity."
+   :example
+   "```fnl
+    (var x 10)
+    (print x)
+    ```
+
+    Instead, use:
+    ```fnl
+    (let [x 10]
+      (print x))
+    ```"
+   :since "0.1.0"
+   :type :definition
    :impl (fn [server file symbol definition]
            (if (and definition.var? (not definition.var-set))
                ;; we can't provide a quickfix for this because the hooks don't give us
@@ -196,7 +380,29 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 
 (add-lint :op-with-no-arguments
-  {:type :special-call
+  {:what-it-does
+   "Warns when an operator is called with no arguments, which can be replaced with
+    an identity value."
+   :why-care?
+   "Calling operators with no arguments is less clear than using the identity value
+    directly."
+   :example
+   "```fnl
+    (+)  ; Returns 0
+    (*)  ; Returns 1
+    (..)  ; Returns \"\"
+    ```
+
+    Instead, use:
+    ```fnl
+    0
+    1
+    \"\"
+    ```"
+   :limitations
+   "This lint isn't actually very useful."
+   :since "0.1.1"
+   :type :special-call
    :impl (fn [server file ast]
            "A call like (+) that could be replaced with a literal"
            (let [op (. ast 1)
@@ -204,7 +410,7 @@ the `file.diagnostics` field, filling it with diagnostics."
              (if (and (op? op)
                       (= 1 (length ast))
                       (not= nil identity))
-                 {:range  (message.ast->range server file ast)
+                 {:range (message.ast->range server file ast)
                   :message (.. "write " (view identity) " instead of (" (tostring op) ")")
                   :severity message.severity.WARN
                   :fix #{:title (.. "Replace (" (tostring op) ") with " (view identity))
@@ -212,19 +418,37 @@ the `file.diagnostics` field, filling it with diagnostics."
                                     :newText (view identity)}]}})))})
 
 (add-lint :no-decreasing-comparison
-  {:type :special-call
+  {:what-it-does
+   "Suggests using increasing comparison operators (`<`, `<=`) instead of decreasing ones (`>`, `>=`)."
+   :why-care?
+   "Consistency in comparison direction makes code more readable and maintainable,
+    especially in languages with lisp syntax. You can think of `<` as a function that
+    tests if the arguments are in sorted order."
+   :example
+   "```fnl
+    (> a b)
+    (>= x y z)
+    ```
+
+    Instead, use:
+    ```fnl
+    (< b a)
+    (<= z y x)
+    ```"
+   :since "0.2.0"
+   :type :special-call
    :disabled true
    :impl (fn [server file ast]
            (let [op (. ast 1)]
              (if (or (sym? op :>) (sym? op :>=))
-                 {:range  (message.ast->range server file ast)
+                 {:range (message.ast->range server file ast)
                   :message "Use increasing operator instead of decreasing"
                   :severity message.severity.WARN
                   :fix #{:title "Reverse the comparison"
                          :changes [{:range (message.ast->range server file ast)
-                                    :newText (let [new (if (sym? op :>=) (fennel.sym :<=) (fennel.sym :<))
+                                    :newText (let [new (if (sym? op :>=) (sym :<=) (sym :<))
                                                    reversed (fcollect [i (length ast) 2 -1
-                                                                       &into (list (sym new))]
+                                                                       &into (list new)]
                                                               (. ast i))]
                                                (view reversed))}]}})))})
 
@@ -235,7 +459,29 @@ the `file.diagnostics` field, filling it with diagnostics."
         (match-reference? subast references))))
 
 (add-lint :match-should-case
-  {:type :macro-call
+  {:what-it-does
+   "Suggests using `case` instead of `match` when the meaning would not be altered."
+   :why-care?
+   "The `match` macro's meaning depends on the local variables in scope. When a
+    `match` call doesn't use the local variables, it can be replaced with the
+    `case` form."
+   :example
+   "```fnl
+    (match value
+      10 \"ten\"
+      20 \"twenty\"
+      _ \"other\")
+    ```
+
+    Instead, use:
+    ```fnl
+    (case value
+      10 \"ten\"
+      20 \"twenty\"
+      _ \"other\")
+    ```"
+   :since "0.2.0"
+   :type :macro-call
    :impl (fn [server {: references &as file} ast]
            (when (and (list? ast)
                       (sym? (. ast 1) :match)
@@ -249,7 +495,43 @@ the `file.diagnostics` field, filling it with diagnostics."
                                 :newText "case"}]}}))})
 
 (add-lint :inline-unpack
-  {:type [:function-call :special-call]
+  {:what-it-does
+   "Warns when multiple values from `values` or `unpack` are used in a non-final
+    position of a function call, where only the first value will be used."
+   :why-care?
+   "In Fennel (and Lua), multiple values are only preserved when they appear in the
+    final position of a function call. Using them elsewhere results in only the
+    first value being used. This is likely not what was intended, since the use of
+    `values` or `unpack` seems to imply that the code is interested in handling
+    multivals instead of discarding them."
+   :example
+   "```fnl
+    (print (values 1 2 3) 4)  ; confusingly prints \"1   4\"
+    ```
+
+    Instead, use:
+    ```fnl
+    ;; Try putting the multival at the end:
+    (print 4 (values 1 2 3))
+
+    ;; Try writing the logic out manually instead of using multival
+    (let [(a b c) (values 1 2 3)]
+      (print a b c 4)
+    ```"
+   :limitations
+   "It doesn't make sense to flag *all* places where a multival is discarded, because
+    discarding extra values is common in Lua. For example, in the standard library
+    of Lua, `string.gsub` and `require` actually return two results, even though
+    most of the time, only the first one is what's wanted.
+
+    This lint specifically flags discarding multivals from `values` and `unpack`,
+    instead of flagging all discards, because these forms indicate that the user
+    *intends* for something to happen with multivals.
+
+    You find more information about Lua's multivals in [Benaiah's excellent post explaining Lua's multivals](https://benaiah.me/posts/everything-you-didnt-want-to-know-about-lua-multivals),
+    or by searching the word \"adjust\" in the [Lua Manual](https://www.lua.org/manual/5.4/manual.html#3.4.12)."
+   :since "0.1.2"
+   :type [:function-call :special-call]
    :impl (fn [server file ast]
            "generally, values and unpack are signs that the user is trying to do
             something with multiple values. However, multiple values will get
@@ -269,7 +551,25 @@ the `file.diagnostics` field, filling it with diagnostics."
                   :severity message.severity.WARN}))))})
 
 (add-lint :empty-let
-  {:type :special-call
+  {:what-it-does
+   "Warns about `(let [] ...)` that should be `(do ...)`."
+   :why-care?
+   "Using `let` with no bindings is unnecessarily verbose when `do` serves the same purpose more clearly."
+   :example
+   "```fnl
+    (let []
+      (print \"hello\")
+      (print \"world\"))
+    ```
+
+    Instead, use:
+    ```fnl
+    (do
+      (print \"hello\")
+      (print \"world\"))
+    ```"
+   :since "0.2.2-dev"
+   :type :special-call
    :impl (fn [server file ast]
            (case ast
              (where [let* binding]
@@ -287,20 +587,51 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (fn possibly-multival? [ast]
   ;; operators all adjust to 1 value
-  (or (and (fennel.list? ast) (not (op? (. ast 1))) (not (sym? (. ast 1) :not)))
-      (fennel.varg? ast)))
+  (or (and (list? ast) (not (op? (. ast 1))) (not (sym? (. ast 1) :not)))
+      (varg? ast)))
 
 (add-lint :mismatched-argument-count
-  {:type [:function-call :special-call :macro-call]
+  {:what-it-does
+   "Checks if function calls have the correct number of arguments based on the function's signature."
+   :why-care?
+   "Calling functions with the wrong number of arguments can lead to runtime errors
+    or unexpected behavior. This lint helps catch these issues early."
+   :example
+   "```fnl
+    (string.sub \"hello\")  ; missing required arguments
+    (string.sub \"hello\" 1 2 3)  ; too many arguments
+    ```
+
+    Instead, use:
+    ```fnl
+    (string.sub \"hello\" 1)  ; provide all required arguments
+    (string.sub \"hello\" 1 2)  ; remove extra arguments
+    ```"
+   :limitations
+   "This lint is disabled by default because it can produce false positives.
+    It assumes that all optional arguments are reliably annotated with a ? sigil,
+    and any other arguments can be assumed to be required. This is reasonably
+    accurate if the code follows Fennel conventions. Also this lint is very new and
+    may have issues, so I'd like to let people try it on their own terms before
+    enabling it by default.
+
+    In the future I may split it into \"too-many-arguments\" (which is accurate regardless of code style)
+    and \"not-enough-arguments\" (which needs the arglist to be annotated properly)"
+   :since "0.2.2-dev"
+   :type [:function-call :special-call :macro-call]
    :disabled true
    :impl (fn [server file ast]
              (case (analyzer.search server file (. ast 1) {} {})
                {:indeterminate nil &as result}
                (case (?. (navigate.getmetadata server result) :fnl/arglist)
                  signature
-                 (let [number-of-args (- (length ast) (if (and (sym? (. ast 1)) (string.find (tostring (. ast 1)) ".:"))
-                                                        0 1))
-                       passes-extra-args (and (not= 1 (length ast)) (possibly-multival? (. ast (length ast))))
+                 (let [number-of-args (- (length ast)
+                                         (if (and (sym? (. ast 1))
+                                                  (string.find (tostring (. ast 1)) ".:"))
+                                           0
+                                           1))
+                       passes-extra-args (and (not= 1 (length ast))
+                                              (possibly-multival? (. ast (length ast))))
                        (min-params infinite-params?) (faccumulate [(last-required-argument vararg) nil
                                                                              i (length signature) 1 -1]
                                                                  (let [s (tostring (. signature i))
@@ -318,39 +649,64 @@ the `file.diagnostics` field, filling it with diagnostics."
                        ;; exception: (/ a b) only needs 1 argument
                        min-params (if (= result (docs.get-builtin server :-)) 1
                                       (= result (docs.get-builtin server :/)) 1
+                                      ;; TODO Fennel 1.5.4+ has `fn`'s arglist fixed
                                       ;; exception: fn only needs one argument
-                                      ;; TODO Fennel 1.5.4+ has `fn`'s arglist fixed.
                                       (= result (docs.get-builtin server :fn)) 1
                                       (or min-params 0))
                        ;; exception: (table.insert table item) can take a third argument
-                       max-params (if (= result (. (docs.get-global server :table) :fields :insert)) 3 (length signature))]
-                   (if (and (< number-of-args min-params) (not passes-extra-args))
+                       max-params (if (= result (. (docs.get-global server :table) :fields :insert))
+                                      3
+                                      (length signature))]
+                   (if (and (< number-of-args min-params)
+                            (not passes-extra-args))
                        {:range (message.ast->range server file ast)
                         :message (.. "not enough args. my analysis of the signature says you need at least " min-params " arguments but I only see " number-of-args)
                         :severity message.severity.WARN}
-                       (and (< max-params number-of-args) (not infinite-params?))
+                       (and (< max-params number-of-args)
+                            (not infinite-params?))
                        {:range (message.ast->range server file ast)
-                        :message (.. "too many args. my analysis of the signature says we ignore any arguments past " min-params " arguments but you've provided " number-of-args)
+                        :message (.. "too many args. my analysis of the signature says we ignore any arguments past " max-params " arguments but you've provided " number-of-args)
                         :severity message.severity.WARN})))))})
 
 (add-lint :duplicate-table-keys
-  {:type :other
+  {:what-it-does
+   "Detects when the same key appears multiple times in a table literal."
+   :why-care?
+   "Duplicate keys in a table are usually a mistake and the later value will
+    overwrite the earlier one, which can lead to bugs."
+   :example
+   "```fnl
+    {:name \"Alice\"
+     :age 25
+     :name \"Bob\"}  ; \"Alice\" gets overwritten by \"Bob\"
+    ```
+
+    Instead, use:
+    ```fnl
+    {:name \"Bob\"
+     :age 25}
+    ```"
+   :since "0.2.0"
+   :type :other
    :impl (fn [server file]
            (let [seen []]
              (each [ast (pairs file.lexical)]
                (when (table? ast)
                  (case (getmetatable ast)
-                   {: keys} (let [dkey (accumulate [_ 1 i v (ipairs keys) &until (. seen v)]
-                                         (do (set (. seen v) i)
-                                           (+ i 1)))]
-                              (when (. keys dkey)
-                                (coroutine.yield
-                                  {:code :duplicate-table-keys
-                                   :range (message.ast->range server file ast)
-                                   :message (.. "key " (tostring (. keys dkey)) " appears more than once")
-                                   :severity message.severity.WARN}))
-                              (each [k (pairs seen)]
-                                (set (. seen k) nil))))))))})
+                   {: keys}
+                   (let [dkey (accumulate [_ 1
+                                           i v (ipairs keys)
+                                           &until (. seen v)]
+                                (do (set (. seen v) i)
+                                  (+ i 1)))]
+                     (when (. keys dkey)
+                       (coroutine.yield
+                         {:code :duplicate-table-keys
+                          :range (message.ast->range server file ast)
+                          :message (.. "key " (tostring (. keys dkey)) " appears more than once")
+                          :severity message.severity.WARN}))
+                     (each [k (pairs seen)]
+                       (set (. seen k) nil))))))))})
 
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                 :__index #(. $1 :self $2)})

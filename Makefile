@@ -24,7 +24,7 @@ endif
 .PHONY: all clean test repl install docs docs-love2d ci selflint \
 	deps count testall check-deps check-docs
 
-all: $(EXE)
+all: $(EXE) docs/lints.md
 
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
@@ -47,6 +47,9 @@ src/fennel-ls/docs/generated/%.fnl:
 	mkdir -p build/
 	mkdir -p src/fennel-ls/docs/generated/
 	$(FENNEL) $(FENNELFLAGS) tools/generate-lua-docs.fnl ${*} > $@
+
+docs/lints.md: src/fennel-ls/lint.fnl
+	$(FENNEL) $(FENNELFLAGS) tools/extract-lint-docs.fnl > $@
 
 docs-love2d:
 	@echo "This has moved to a separate source. Please see the wiki:"
@@ -108,9 +111,10 @@ clean:
 # Steps to release a new fennel-ls version
 
 # 0. run `make test` and `make selflint`, and/or check builds.sr.ht to ensure things are working.
-# 1. Ensure fennel is up to date
-# 2. Ensure dkjson is up to date
-# 3. Remove "-dev" suffix in version src/fennel-ls/utils.fnl
+# 1. Ensure fennel and dkjson are up to date with `make check-deps`
+# 2. Ensure lua documentation is up to date with `make check-docs`.
+#    (occasionally, lua devs fix typos or change wording of their reference)
+# 3. Remove "-dev" suffix in version src/fennel-ls/utils.fnl, and in :since fields in src/fennel-ls/lint.fnl
 # 4. Add the version to changelog.md
 # 5. Create a commit titled "Release 0.2.2"
 # 6. git tag --sign --annotate 0.2.2
