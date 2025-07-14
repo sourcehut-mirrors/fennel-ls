@@ -1,9 +1,9 @@
-"Settings
+"Config
 This module is in charge of setting up the default settings.
 
-Settings can be read without requiring this module: just look in `server.configuration`.
-There are no global settings. They're all stored in the `server` object.
-"
+Settings are stored in `server.configuration`.
+config.reload should be the only function that ever writes
+to server.configuration. Every other use case should be read-only."
 
 ;; TODO: Settings to set the warning levels of lints
 ;; Setting to allow all globals

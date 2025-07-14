@@ -1,10 +1,5 @@
-"State
-This module keeps track of the state of the language server:
-* Settings
-* Loaded files
-
-There is no global state in this project: all state is stored
-in the \"server\" object."
+"Files
+This module has high level helpers for creating/getting \"file\" objects."
 
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))

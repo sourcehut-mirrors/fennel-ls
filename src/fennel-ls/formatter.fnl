@@ -1,7 +1,7 @@
 "Formatter
-This module is for formatting code that needs to be shown to the client
-in tooltips and other notification messages. It is NOT for formatting
-user code. Fennel-ls doesn't support user-code formatting as of now."
+This module is for converting various objects to markdown that needs to be
+shown to the client in tooltips and other notification messages. It is NOT for
+formatting user code. Fennel-ls doesn't support user-code formatting as of now."
 
 (local {: sym?
         : view

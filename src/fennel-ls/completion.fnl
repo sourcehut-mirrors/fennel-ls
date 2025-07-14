@@ -1,3 +1,33 @@
+"Completion
+
+LSP Spec:
+> * to achieve consistency across languages and to honor different clients
+>   usually the client is responsible for filtering and sorting. This has also
+>   the advantage that client can experiment with different filter and sorting
+>   models.
+
+Because of this, fennel-ls' job in completions is to report every single
+possible completion, without being clever about filtering. To do this, we
+iterate over the current scope, and recursively explore every field of every
+variable.
+
+This creates large completion messages, so we have an optimization trick:
+
+LSP says that clients need to support resolving documentation/detail for
+completion items lazily. This lazy resolution is very important because we
+can skip sending the documentation for every possible completion until client
+until it asks for each one. The documentation ends up being significantly more
+than half of the completion response.
+
+Although clients always support this lazy resolution, fennel-ls can only provide
+it if it receives enough information in the completionItem/resolve request to
+actually recover the original completion. If the client supports both
+CompletionClientCapabilites.completionList.itemDefaults.editRange and
+CompletionClientCapabilites.completionList.itemDefaults.data, then we can ask
+the client to forward information to the resolve request by setting the `data`
+to {: uri : byte}. When this capability exists, `server.can-do-good-completions?`
+is set to true and we report that we support completionItem/resolve."
+
 (local files (require :fennel-ls.files))
 (local utils (require :fennel-ls.utils))
 (local analyzer (require :fennel-ls.analyzer))
@@ -14,7 +44,11 @@
    :true {:metadata {:fnl/docstring "A boolean value representing truth."
                      :fls/itemKind "Keyword"}}
    :false {:metadata {:fnl/docstring "A boolean value representing falsehood."
-                      :fls/itemKind "Keyword"}}})
+                      :fls/itemKind "Keyword"}}
+   :.nan {:metadata {:fnl/docstring "NaN"
+                     :fls/itemKind "Constant"}}
+   :.inf {:metadata {:fnl/docstring "inf"
+                     :fls/itemKind "Constant"}}})
 
 (λ textDocument/completion [server _send {: position :textDocument {: uri}}]
   ;; get the file

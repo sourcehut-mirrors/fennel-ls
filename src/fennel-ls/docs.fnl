@@ -1,3 +1,10 @@
+"Docs
+
+Handles grabbing the documentation from sources other than fennel code;
+* Lua Standard Library (generated from the lua manuals)
+* Fennel's special forms and macros (taken from internal `fennel.compiler` API)
+* external user docsets (from the user's filesystem)"
+
 (local {: path-join} (require :fennel-ls.utils))
 (local fennel (require :fennel))
 (local {:metadata METADATA

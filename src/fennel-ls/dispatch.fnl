@@ -4,8 +4,7 @@ to a given LSP request from the client.
 
 In general, this involves:
 * determining the type of the message
-* calling the appropriate handler in the :fennel-ls.handlers module.
-"
+* calling the appropriate handler in the :fennel-ls.handlers module."
 
 (local handlers (require :fennel-ls.handlers))
 (local message (require :fennel-ls.message))

@@ -6,7 +6,7 @@ Go into `src/fennel-ls/lint.fnl` and create a new call to add-lint.
 ## Writing your lint
 Now, the fun part: writing your lint function.
 
-The goal is to check whether the given arguments should emit a warning, and
+A lint checks whether the given arguments should emit a warning, and
 what message to show. You can request that your lint is called for every
 * function-call (Every time the user calls a function)
 * special-call (Every time the user calls a special)
