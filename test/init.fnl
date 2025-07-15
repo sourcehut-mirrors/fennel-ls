@@ -27,4 +27,5 @@
        :test.code-action
        :test.rename
        :test.misc
-       :test.cli]))
+       :test.cli
+       :test.meta]))

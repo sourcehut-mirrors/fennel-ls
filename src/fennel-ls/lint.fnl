@@ -22,10 +22,6 @@ the `file.diagnostics` field, filling it with diagnostics."
 (local all-lints [])
 
 (fn add-lint [name lint ...]
-  (when (not= (type lint.what-it-does) "string") (error (.. name " needs a description of what it does in :what-it-does")))
-  (when (not= (type lint.why-care?) "string") (error (.. name " needs a description of why the linted pattern is bad in :why-care?")))
-  (when (not= (type lint.example) "string") (error (.. name " needs an example of broken and fixed code in :example")))
-  (when (not= (type lint.since) "string") (error (.. name " needs version: :since " (view utils.version))))
   (when (= nil lint.type) (error (.. name " needs a type. available types: " (view (icollect [k (pairs lints)] k)))))
   ;; lint.limitations is optional
 
@@ -635,8 +631,8 @@ the `file.diagnostics` field, filling it with diagnostics."
                  (let [number-of-args (- (length ast)
                                          (if (and (sym? (. ast 1))
                                                   (string.find (tostring (. ast 1)) ".:"))
-                                           0
-                                           1))
+                                           0 ; method call; the head counts as an argument
+                                           1)) ; function call; the head doesn't count as an argument
                        passes-extra-args (and (not= 1 (length ast))
                                               (possibly-multival? (. ast (length ast))))
                        (min-params infinite-params?) (faccumulate [(last-required-argument vararg) nil
@@ -693,8 +689,8 @@ the `file.diagnostics` field, filling it with diagnostics."
     {:name \"Bob\"
      :age 25}
     ```"
-   :since "0.2.0"
    :type :other
+   :since :0.2.2-dev
    :impl (fn [server file]
            (let [seen []]
              (each [ast (pairs file.lexical)]
@@ -708,7 +704,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                                   (+ i 1)))]
                      (when (. keys dkey)
                        (coroutine.yield
-                         {:code :duplicate-table-keys
+                         {:code :duplicate-table-keys ; TODO we should fix `other` type lints so the code isn't necessary
                           :range (message.ast->range server file ast)
                           :message (.. "key " (tostring (. keys dkey)) " appears more than once")
                           :severity message.severity.WARN}))
