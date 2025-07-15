@@ -101,18 +101,23 @@ Handles grabbing the documentation from sources other than fennel code;
   (or (. specials builtin-name)
       (. macros* builtin-name)))
 
-(λ validate-config [configuration invalid]
-  (when (not (. lua-versions configuration.lua-version))
-    (invalid (.. "fennel-ls doesn't know about lua version "
-                 configuration.lua-version
-                 "\nThe known versions are: "
-                 (table.concat (icollect [k (pairs lua-versions)] k) ", "))
-             :WARN))
-  (each [library-name (pairs configuration.libraries)]
+(λ validate-lua-version [lua-version invalid]
+  (case (. lua-versions lua-version)
+   version_ lua-version
+   _ (invalid (.. "fennel-ls doesn't know about lua version "
+                  lua-version
+                  "\nThe known versions are: "
+                  (fennel.view (doto (icollect [k (pairs lua-versions)] k)
+                                     table.sort))))))
+
+(λ validate-libraries [libraries invalid]
+  (collect [library-name (pairs libraries)]
     (case (get-library library-name)
-      {:status :not-found : msg} (invalid msg :WARN))))
+      {:status :not-found : msg} (invalid msg)
+      _ (values library-name true))))
 
 {: get-global
  : get-builtin
  : get-all-globals
- : validate-config}
+ : validate-lua-version
+ : validate-libraries}

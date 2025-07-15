@@ -68,12 +68,18 @@
         [_init show] client.initialize-response]
     (faith.= "window/showMessage" show.method)
     (faith.match "doesn't know about lua version lua5.0" show.params.message))
-  (let [client (create-client {:main.fnl ""
-                               :flsproject.fnl "{:libraries {:nasilemak true}}"})
-        [_init show] client.initialize-response]
+  (let [{: initialize-response : client} (create-client {:main.fnl ""
+                                                         :flsproject.fnl "{:libraries {:nasilemak true}}"})
+        [_init show] initialize-response]
+    ;; showMessage
     (faith.= "window/showMessage" show.method)
     (faith.match "Could not find docset for library nasilemak"
-                 show.params.message)))
+                 show.params.message)
+    ;; diagnostic
+    (let [[diagnostics] (client:open-file! (.. client.server.root-uri "/" :flsproject.fnl) "{:libraries {:nasilemak true}}")]
+      (faith.= "textDocument/publishDiagnostics" diagnostics.method)
+      (faith.match "Could not find docset for library nasilemak" (. diagnostics.params.diagnostics 1 :message))))
+  nil)
 
 {: test-path
  : test-extra-globals

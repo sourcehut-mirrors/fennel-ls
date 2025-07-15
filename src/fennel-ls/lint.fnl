@@ -689,8 +689,8 @@ the `file.diagnostics` field, filling it with diagnostics."
     {:name \"Bob\"
      :age 25}
     ```"
-   :type :other
    :since :0.2.2-dev
+   :type :other
    :impl (fn [server file]
            (let [seen []]
              (each [ast (pairs file.lexical)]
@@ -710,6 +710,38 @@ the `file.diagnostics` field, filling it with diagnostics."
                           :severity message.severity.WARN}))
                      (each [k (pairs seen)]
                        (set (. seen k) nil))))))))})
+
+(add-lint :invalid-flsproject-settings
+  {:what-it-does
+   "Checks if the flsproject file's settings are valid."
+   :why-care?
+   "Invalid settings in flsproject.fnl won't configuree fennel-ls."
+   :example
+   "```fnl
+    {:fennel-macro-path \"macros/?.mfnl\"}
+    ```
+    Instead, use:
+    ```fnl
+    {:macro-path \"macros/?.mfnl\"}
+    ```"
+   :since :0.2.2-dev
+   :type :other
+   :impl (fn [server file]
+           (when (and (= file.uri (-?> server.root-uri
+                                       utils.uri->path
+                                       (utils.path-join "flsproject.fnl")
+                                       utils.path->uri))
+                      (not (. file.diagnostics 1)))
+             ;; circular dependency! don't tell anyone ^_^
+             (let [config (require :fennel-ls.config)]
+               (config.make-configuration (. file.ast 1)
+                                          #(coroutine.yield {:code :invalid-flsproject-settings
+                                                             :range (or (message.ast->range server file $2)
+                                                                        (message.ast->range server file $3)
+                                                                        message.unknown-range)
+                                                             :message $
+                                                             :severity message.severity.WARN}))))
+           nil)})
 
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                 :__index #(. $1 :self $2)})

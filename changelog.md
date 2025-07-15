@@ -7,6 +7,7 @@
 * New lint `duplicate-table-keys` for detecting duplicate keys (eg. `{:a 1 :a 2}`)
 * New lint `mismatched-argument-count` for ensuring function calls have the right argument count
     * Disabled by default because it gives false positives when your arglist doesn't follow fennel's naming conventions
+* New lint `invalid-flsproject-settings` checks your `flsproject.fnl` file as you edit it
 
 ### Changes
 * Updated to dkjson 2.8

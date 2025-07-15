@@ -12,10 +12,16 @@ to server.configuration. Every other use case should be read-only."
 (local docs (require :fennel-ls.docs))
 (local utils (require :fennel-ls.utils))
 (local lint (require :fennel-ls.lint))
+(local message (require :fennel-ls.message))
+(local {: view} (require :fennel))
 
 (local option-mt {})
-(fn option [default-value] (doto [default-value] (setmetatable option-mt)))
+(fn option [default-value ?validate]
+  "A flsproject.fnl configuration option. The user can provide any value that matches the type of default-value"
+  (setmetatable {: default-value :validate ?validate} option-mt))
 
+;; this default configuration gets merged with the user-provided ones
+;; the (option) values can be overridden by the user, instead of doing the merge logic
 (local default-configuration
   {:fennel-path (option "./?.fnl;./?/init.fnl;src/?.fnl;src/?/init.fnl")
    :macro-path (option (table.concat ["./?.fnlm" "./?/init.fnlm"
@@ -24,30 +30,54 @@ to server.configuration. Every other use case should be read-only."
                                       "src/?.fnlm" "src/?/init.fnlm"
                                       "src/?.fnl" "src/?/init-macros.fnl"
                                       "src/?/init.fnl"] ";"))
-   :lua-version (option "lua54")
+   :lua-version (option "lua54" docs.validate-lua-version)
    :lints (collect [_ lint (ipairs lint.list)]
             lint.name (option (not lint.disabled)))
-   :libraries (option {})
+   :libraries (option {} docs.validate-libraries)
    :extra-globals (option "")})
 
-(fn make-configuration-from-template [default ?user ?parent]
-  (if (= option-mt (getmetatable default))
-      (let [setting
-             (case-try ?user
-               nil (?. ?parent :all)
-               nil (. default 1))]
-        (assert (= (type (. default 1)) (type setting)))
-        setting)
-      (= :table (type default))
-      (collect [k _ (pairs default)]
-          k (make-configuration-from-template
-              (. default k)
-              (?. ?user k)
-              ?user))
-      (error "This is a bug with fennel-ls: default-configuration has a key that isn't a table or option")))
+(fn extend-path [?root extra]
+  (if (not= (type extra) :string) ?root
+      ?root (.. ?root "." extra)
+      extra))
 
-(λ make-configuration [?c]
-  (make-configuration-from-template default-configuration ?c))
+(fn make-configuration-from-template [template ?user ?parent ?path invalid]
+  (if (= (getmetatable template) option-mt)
+      (let [setting (case-try ?user
+                      nil (?. ?parent :all)
+                      nil template.default-value)]
+        (if (not= (type setting) (type template.default-value))
+            (do (invalid (.. (or ?path "flsproject.fnl") " must be a " (type template.default-value)) ?user ?parent)
+                template.default-value)
+            template.validate
+            (case-try (template.validate setting #(invalid $ ?user ?parent))
+                      nil template.default-value)
+            setting))
+      (= :table (type template))
+      (case (type ?user)
+        (where (or :table :nil))
+        (do
+          (when (= (type ?user) :table)
+            (each [k (pairs ?user)]
+              (when (not (. template k))
+                (invalid (.. "didn't expect " (or (extend-path ?path k) "flsproject.fnl") "\n"
+                             "valid keys: " (view (doto (icollect [k (pairs template)] k)
+                                                        table.sort)))
+                         (. ?user k)
+                         ?user))))
+          (collect [k (pairs template)]
+              k (make-configuration-from-template
+                  (. template k)
+                  (?. ?user k)
+                  ?user
+                  (extend-path ?path k)
+                  invalid)))
+        _ (do (invalid (.. "expected " (or ?path "flsproject.fnl") " to be a table") ?user ?parent)
+              (make-configuration-from-template template nil ?parent ?path invalid)))
+      (error (.. "This is a bug with fennel-ls: default-configuration has a key that isn't a table or option: " ?path))))
+
+(λ make-configuration [?c invalid]
+  (make-configuration-from-template default-configuration ?c nil nil invalid))
 
 (λ choose-position-encoding [init-params]
   "fennel-ls natively uses utf-8, so the goal is to choose positionEncoding=\"utf-8\".
@@ -65,23 +95,33 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
      :utf-8
      :utf-16)))
 
-(λ try-parsing [{: text : uri}]
+(λ parse-flsconfig [{: text : uri}]
   (local fennel (require :fennel))
   (local [ok? _err result] [(pcall (fennel.parser text uri))])
   (if ok? result))
 
-(λ load-config [server]
+(λ load-config [server invalid]
   "This is where we can put anything that needs to react to config changes"
-
   (make-configuration
-    (when server.root-uri
-      (-?> (files.read-file server (utils.path->uri (utils.path-join (utils.uri->path server.root-uri) "flsproject.fnl")))
-           try-parsing))))
+    (-?> server.root-uri
+         utils.uri->path
+         (utils.path-join "flsproject.fnl")
+         utils.path->uri
+         (->> (files.read-file server))
+         parse-flsconfig)
+    invalid))
 
 (λ reload [server]
-  (set server.configuration (load-config server)))
+  (set server.configuration
+    (load-config server
+      ;; according to the spec it is valid to send showMessage during initialization
+      ;; but eglot will only flash the message briefly before replacing it with
+      ;; another message, and probably other clients will do similarly. so queue
+      ;; up the warnings to send *after* the initialization is complete. cheesy, eh?
+      #(table.insert server.queue (message.show-message $1 :WARN)))))
 
 (λ initialize [server params]
+  (set server.queue [])
   (set server.files {})
   (set server.modules {})
   (set server.macro-modules {})
@@ -95,18 +135,6 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
                                          (accumulate [found nil _ v (ipairs completion-item-defaults) &until found] (= v :data)))))
   (reload server))
 
-(λ validate [{: configuration} invalid]
-  (when (not= :string (type configuration.fennel-path))
-    (invalid "fennel-path should be string"))
-  (when (not= :string (type configuration.macro-path))
-    (invalid "macro-path should be string"))
-  (if (not= :table (type configuration.lints))
-      (invalid "lints should be table")
-      (each [lint (pairs configuration.lints)]
-        (when (not (. default-configuration.lints lint))
-          (invalid (.. "unknown lint: " lint) :WARN))))
-  (docs.validate-config configuration invalid))
-
 {: initialize
  : reload
- : validate}
+ : make-configuration}

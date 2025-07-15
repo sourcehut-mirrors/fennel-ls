@@ -88,9 +88,9 @@ LSP json objects."
   (let [params-count (length signature.parameters)]
     {:signatures [signature]
      :activeSignature 0 ; we only ever have one signature
-     :activeParameter (if (>= active-parameter params-count)
+     :activeParameter (if (<= params-count active-parameter)
                           (- params-count 1)
-                          (>= active-parameter 0)
+                          (<= 0 active-parameter)
                           active-parameter)}))
 
 (λ multisym->range [server file ast n]
