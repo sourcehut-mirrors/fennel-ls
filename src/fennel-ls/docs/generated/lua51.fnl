@@ -1045,7 +1045,7 @@ See function `next` for the caveats of modifying
 the table during its traversal."}}
  :pcall {:binding "pcall"
          :metadata {:fls/itemKind "Function"
-                    :fnl/arglist ["f" "arg1" "..."]
+                    :fnl/arglist ["f" "?arg1" "..."]
                     :fnl/docstring "Calls function `f` with
 the given arguments in *protected mode*.
 This means that any error inside `f` is not propagated;

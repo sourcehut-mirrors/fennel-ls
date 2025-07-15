@@ -128,6 +128,11 @@
         signature (if (signature:find "table%.insert")
                       (signature:gsub "%[pos -%]" "")
                       signature)
+        signature (if (signature:find "pcall .* arg1")
+                    (do
+                      (table.insert optional-args "arg1")
+                      (signature:gsub "arg1" "?arg1"))
+                    signature)
         ;; For some reason, they use an html middot, but we want to use periods.
         signature (signature:gsub "&middot;&middot;&middot;" "...")
         ;; fix parens
