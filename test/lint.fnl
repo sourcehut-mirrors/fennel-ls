@@ -287,33 +287,38 @@
   (assert-ok "(let [x 5] (<= 1 x 4))")
   (assert-ok "(let [x 5] (> 4 x 1))")
   (assert-ok "(let [x 5] (>= 4 x 1))")
-  (assert-ok {:main.fnl "(let [x 5] (< 1 x 4))"
-              :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"})
-  (assert-ok {:main.fnl "(let [x 5] (<= 1 x 4))"
-              :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"})
-  (check {:main.fnl "(let [x 5] (> 4 x 1))"
-          :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"}
-         [{:message "Use increasing operator instead of decreasing"
-           :code :no-decreasing-comparison
-           :range {:start {:character 11 :line 0}
-                   :end {:character 20 :line 0}}}])
-  (check {:main.fnl "(let [x 5] (>= 4 x 1))"
-          :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"}
-         [{:message "Use increasing operator instead of decreasing"
-           :code :no-decreasing-comparison
-           :range {:start {:character 11 :line 0}
-                   :end {:character 21 :line 0}}}])
-  nil)
+  (let [add-opts #{:main.fnl $ :flsproject.fnl "{:lints {:no-decreasing-comparison true}}"}]
+    (assert-ok (add-opts "(let [x 5] (< 1 x 4))"))
+    (assert-ok (add-opts "(let [x 5] (<= 1 x 4))"))
+    (check (add-opts "(let [x 5] (> 4 x 1))")
+           [{:message "Use increasing operator instead of decreasing"
+             :code :no-decreasing-comparison
+             :range {:start {:character 11 :line 0}
+                     :end {:character 20 :line 0}}}])
+    (check (add-opts "(let [x 5] (>= 4 x 1))")
+           [{:message "Use increasing operator instead of decreasing"
+             :code :no-decreasing-comparison
+             :range {:start {:character 11 :line 0}
+                     :end {:character 21 :line 0}}}])
+    nil))
 
 (fn test-arg-count []
   ;; methods
-  (assert-ok {:main.fnl "(let [f :hi] (f:byte))"
-              :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
-  (assert-ok {:main.fnl "(let [foo 10] (fn [] foo))"
-              :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
-  (assert-ok {:main.fnl "(fn [])"
-              :flsproject.fnl "{:lints {:mismatched-argument-count true}}"})
-  nil)
+  (let [add-opts #{:main.fnl $ :flsproject.fnl "{:lints {:not-enough-arguments true}}"}]
+    (check     (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2)")
+               [{:code :not-enough-arguments}])
+    (assert-ok (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2 3)"))
+    (assert-ok (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2 3 4 5)"))
+    (check     (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2 3 4 5 6)")
+               [{:code :too-many-arguments}])
+    (assert-ok (add-opts "(let [f :hi] (f:byte))"))
+    (check     (add-opts "(let [f :hi] (f:sub))")
+               [{:code :not-enough-arguments}])
+    (check     (add-opts "(let [f :hi] (f:sub 1 2 3))")
+               [{:code :too-many-arguments}])
+    (assert-ok (add-opts "(let [foo 10] (fn [] foo))"))
+    (assert-ok (add-opts "(fn [])"))
+    nil))
 
 (fn test-duplicate-keys []
   (assert-ok "{:a 1 :b 2}")

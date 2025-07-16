@@ -3,10 +3,11 @@
 ### Features
 * Code action "Expand macro" lets you see what a macro expands to
 * Macro expansion is shown when hovering over a macro
-* New lint `empty-let` for replacing (let [] ...) with (do ...)
+* New lint `empty-let` for replacing `(let [] ...)` with `(do ...)`
 * New lint `duplicate-table-keys` for detecting duplicate keys (eg. `{:a 1 :a 2}`)
-* New lint `mismatched-argument-count` for ensuring function calls have the right argument count
-    * Disabled by default because it gives false positives when your arglist doesn't follow fennel's naming conventions
+* New lint `too-many-arguments` for function calls that provide extra, useless arguments
+* New lint `not-enough-arguments` for ensuring you don't accidentally implicitly pass nil
+    * Disabled by default because it requires following fennel's optional argument naming conventions
 * New lint `invalid-flsproject-settings` checks your `flsproject.fnl` file as you edit it
 
 ### Changes

@@ -593,22 +593,20 @@ the `file.diagnostics` field, filling it with diagnostics."
   (or (and (list? ast) (not (op? (. ast 1))) (not (sym? (. ast 1) :not)))
       (varg? ast)))
 
-(add-lint :mismatched-argument-count
+(add-lint :not-enough-arguments
   {:what-it-does
-   "Checks if function calls have the correct number of arguments based on the function's signature."
+   "Checks if function calls have enough number of arguments based on the function's signature."
    :why-care?
-   "Calling functions with the wrong number of arguments can lead to runtime errors
-    or unexpected behavior. This lint helps catch these issues early."
+   "Calling functions without all the arguments fills in the extra arguments with `nil` which
+    can cause unexpected behavior. This lint helps catch these issues early."
    :example
    "```fnl
     (string.sub \"hello\")  ; missing required arguments
-    (string.sub \"hello\" 1 2 3)  ; too many arguments
     ```
 
     Instead, use:
     ```fnl
     (string.sub \"hello\" 1)  ; provide all required arguments
-    (string.sub \"hello\" 1 2)  ; remove extra arguments
     ```"
    :limitations
    "This lint is disabled by default because it can produce false positives.
@@ -616,10 +614,7 @@ the `file.diagnostics` field, filling it with diagnostics."
     and any other arguments can be assumed to be required. This is reasonably
     accurate if the code follows Fennel conventions. Also this lint is very new and
     may have issues, so I'd like to let people try it on their own terms before
-    enabling it by default.
-
-    In the future I may split it into \"too-many-arguments\" (which is accurate regardless of code style)
-    and \"not-enough-arguments\" (which needs the arglist to be annotated properly)"
+    enabling it by default."
    :since "0.2.2-dev"
    :type [:function-call :special-call :macro-call]
    :disabled true
@@ -635,19 +630,15 @@ the `file.diagnostics` field, filling it with diagnostics."
                                            1)) ; function call; the head doesn't count as an argument
                        passes-extra-args (and (not= 1 (length ast))
                                               (possibly-multival? (. ast (length ast))))
-                       (min-params infinite-params?) (faccumulate [(last-required-argument vararg) nil
-                                                                             i (length signature) 1 -1]
-                                                                 (let [s (tostring (. signature i))
-                                                                       m (or (= s "...") (= s "&"))]
-                                                                   (values
-                                                                     (if m
-                                                                         nil
-                                                                         last-required-argument
-                                                                         last-required-argument
-                                                                         (let [first-char (string.sub s 1 1)]
-                                                                           (and (not= first-char "?") (not= first-char "_")))
-                                                                         i)
-                                                                     (or vararg m))))
+                       min-params (accumulate [last-required-argument nil
+                                                i arg (ipairs signature)
+                                                &until (let [s (tostring arg)]
+                                                         (or (= s "...")
+                                                             (= s "&")))]
+                                     (let [first-char (string.sub (tostring arg) 1 1)]
+                                       (if (and (not= first-char "?") (not= first-char "_"))
+                                           i
+                                           last-required-argument)))
                        ;; exception: (- a b) only needs 1 argument
                        ;; exception: (/ a b) only needs 1 argument
                        min-params (if (= result (docs.get-builtin server :-)) 1
@@ -655,17 +646,62 @@ the `file.diagnostics` field, filling it with diagnostics."
                                       ;; TODO Fennel 1.5.4+ has `fn`'s arglist fixed
                                       ;; exception: fn only needs one argument
                                       (= result (docs.get-builtin server :fn)) 1
-                                      (or min-params 0))
-                       ;; exception: (table.insert table item) can take a third argument
-                       max-params (if (= result (. (docs.get-global server :table) :fields :insert))
-                                      3
-                                      (length signature))]
+                                      (or min-params 0))]
                    (if (and (< number-of-args min-params)
                             (not passes-extra-args))
                        {:range (message.ast->range server file ast)
                         :message (.. "not enough args. my analysis of the signature says you need at least " min-params " arguments but I only see " number-of-args)
-                        :severity message.severity.WARN}
-                       (and (< max-params number-of-args)
+                        :severity message.severity.WARN})))))})
+
+(add-lint :too-many-arguments
+  {:what-it-does
+   "Checks if function calls have the correct number of arguments based on the function's signature."
+   :why-care?
+   "Calling functions with the wrong number of arguments can lead to runtime errors
+    or unexpected behavior. This lint helps catch these issues early."
+   :example
+   "```fnl
+    (string.sub \"hello\" 1 2 3) ; too many arguments
+
+    (assert (< x y)
+            (.. \"x=\"
+                (tostring x)) ; mismatched parens can cause too many arguments to a function
+                \" is less than y=\"
+                (tostring y))
+    ```
+
+    Instead, use:
+    ```fnl
+    (string.sub \"hello\" 1 2) ; remove extra arguments
+
+    (assert (< x y)
+            (.. \"x=\"
+                (tostring x)
+                \" is less than y=\"
+                (tostring y))) ; fixed parens
+    ```"
+   :since "0.2.2-dev"
+   :type [:function-call :special-call :macro-call]
+   :impl (fn [server file ast]
+             (case (analyzer.search server file (. ast 1) {} {})
+               {:indeterminate nil &as result}
+               (case (?. (navigate.getmetadata server result) :fnl/arglist)
+                 signature
+                 (let [number-of-args (- (length ast)
+                                         (if (and (sym? (. ast 1))
+                                                  (string.find (tostring (. ast 1)) ".:"))
+                                           0 ; method call; the head counts as an argument
+                                           1)) ; function call; the head doesn't count as an argument
+                       (infinite-params?) (accumulate [vararg nil
+                                                       _ arg (ipairs signature)
+                                                       &until vararg]
+                                            (let [s (tostring arg)]
+                                              (or (= s "...") (= s "&"))))
+                       ;; exception: (table.insert table item) can take a third argument
+                       max-params (if (= result (. (docs.get-global server :table) :fields :insert))
+                                      3
+                                      (length signature))]
+                   (if (and (< max-params number-of-args)
                             (not infinite-params?))
                        {:range (message.ast->range server file ast)
                         :message (.. "too many args. my analysis of the signature says we ignore any arguments past " max-params " arguments but you've provided " number-of-args)
