@@ -9,62 +9,77 @@
    :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
    :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
-(fn find [completions e]
-  (accumulate [result nil
-               i c (ipairs completions)
-               &until result]
-    (if (or (and (= (type e) :string)
-                 (= c.label e))
-          (and (= (type e) :table)
-               (or (= e.label nil)
-                   (and (= (type e.label) :string) (= e.label c.label))
-                   (and (= (type e.label) :function) (e.label c.label)))
-               (or (= e.kind nil)
-                   (and (= (type e.kind) :number) (= e.kind c.kind))
-                   (and (= (type e.kind) :function) (e.kind c.kind)))
-               (or (= e.filterText nil)
-                   (and (= (type e.filterText) :string) (= e.filterText c.filterText))
-                   (and (= (type e.filterText) :function) (e.filterText c.filterText)))
-               (or (= e.insertText nil)
-                   (and (= (type e.insertText) :string) (= e.insertText c.insertText))
-                   (and (= (type e.insertText) :function) (e.insertText c.insertText)))
-               (or (= e.documentation nil)
-                   (and (= (type e.documentation) :string) (= e.documentation c.documentation))
-                   (and (= (type e.documentation) :function) (e.documentation c.documentation))
-                   (and (= e.documentation true) (not= nil c.documentation)))
-               (or (= e.textEdit nil)
-                   (and (= (type e.textEdit) :table)
-                        (= e.textEdit.range.start.line      c.textEdit.range.start.line)
-                        (= e.textEdit.range.start.character c.textEdit.range.start.character)
-                        (= e.textEdit.range.end.line        c.textEdit.range.end.line)
-                        (= e.textEdit.range.end.character   c.textEdit.range.end.character)
-                        (= e.textEdit.newText c.textEdit.newText))
-                   (and (= (type e.textEdit) :function) (e.textEdit c.textEdit)))))
-      i)))
+(fn find [client params e]
+  (let [completions (or params.items params)]
+    (accumulate [result nil
+                 i c (ipairs completions)
+                 &until result]
+      (let [c (if params.itemDefaults
+                (collect [k v (pairs params.itemDefaults) &into (collect [k v (pairs c)] k v)] k v)
+                c)]
+        (if (or (and (= (type e) :string)
+                     (= c.label e))
+                (and (= (type e) :table)
+                     (or (= e.label nil)
+                         (and (= (type e.label) :string) (= e.label c.label))
+                         (and (= (type e.label) :function) (e.label c.label)))
+                     (or (= e.kind nil)
+                         (and (= (type e.kind) :number) (= e.kind c.kind))
+                         (and (= (type e.kind) :function) (e.kind c.kind)))
+                     (or (= e.filterText nil)
+                         (and (= (type e.filterText) :string) (= e.filterText c.filterText))
+                         (and (= (type e.filterText) :function) (e.filterText c.filterText)))
+                     (or (= e.insertText nil)
+                         (and (= (type e.insertText) :string) (= e.insertText c.insertText))
+                         (and (= (type e.insertText) :function) (e.insertText c.insertText)))
+                     (or (= e.documentation nil)
+                         (let [c (if params.items (-> (client:completion-item-resolve c)
+                                                      (. 1 :result))
+                                                  c)]
+                          (or
+                            (and (= (type e.documentation) :string) (= e.documentation c.documentation))
+                            (and (= (type e.documentation) :function) (e.documentation c.documentation))
+                            (and (= e.documentation true) (not= nil c.documentation)))))
+                     (or (= e.textEdit nil)
+                         (let [c-textEdit (or c.textEdit {:range c.editRange :newText (or c.insertText c.label)})]
+                           (and (= (type e.textEdit) :table)
+                                (= e.textEdit.range.start.line      c-textEdit.range.start.line)
+                                (= e.textEdit.range.start.character c-textEdit.range.start.character)
+                                (= e.textEdit.range.end.line        c-textEdit.range.end.line)
+                                (= e.textEdit.range.end.character   c-textEdit.range.end.character)
+                                (= e.textEdit.newText c-textEdit.newText)))
+                         (and (= (type e.textEdit) :function) (e.textEdit c.textEdit)))))
+          i)))))
 
-(fn check [file-contents expected unexpected ?client-opts]
-  (let [{: client : uri : cursor : text} (create-client file-contents ?client-opts)
+(fn check [file-contents expected unexpected ?bad-completions?]
+  (let [{: client : uri : cursor : text} (create-client file-contents (if (not ?bad-completions?)
+                                                                          {:capabilities
+                                                                           {:textDocument
+                                                                            {:completion
+                                                                             {:completionList
+                                                                              {:itemDefaults
+                                                                               [:editRange :data]}}}}}))
         [{:result ?result}] (client:completion uri
                               (or cursor
                                   (position-past-end-of-text text)))
         completions (or ?result [])]
 
     (each [_ e (ipairs unexpected)]
-      (let [i (find completions e)]
+      (let [i (find client completions e)]
         (faith.= nil i (.. "Got unexpected completion: " (view e) "\n"
                            "from:    " (view file-contents) "\n"
-                           (view (. completions i) {:escape-newlines? true})))))
+                           (view (. (or completions.items completions) i) {:escape-newlines? true})))))
 
     (if (= (type expected) :table)
       (each [_ e (ipairs expected)]
-        (let [i (find completions e)]
+        (let [i (find client completions e)]
           (faith.is i (.. "Didn't get completion: " (view e) "\n"
                           "from:    " (view file-contents) "\n"
                           (if (= (type e) :table)
-                            (let [candidate (find completions {:label e.label})]
+                            (let [candidate (find client completions {:label e.label})]
                               (if candidate
                                 (.. "Candidate that didn't match:\n"
-                                    (view (. completions candidate)
+                                    (view (. (or completions.items completions) candidate)
                                           {:escape-newlines? true}))
                                 ""))
                             "")))))
@@ -111,7 +126,7 @@
   (check "(local x {:field 100})\n(if x.fi" [:x.field] [])
   (check "(let [x 10] (let [x 10] x"
          (fn [completions]
-           (faith.= 1 (accumulate [number-of-x 0 _ completion (ipairs completions)]
+           (faith.= 1 (accumulate [number-of-x 0 _ completion (ipairs completions.items)]
                         (if (= completion.label :x)
                           (+ number-of-x 1)
                           number-of-x))))
@@ -185,36 +200,9 @@
   nil)
 
 (fn test-docs []
-  (check "(fn xyzzy [x y z] \"docstring\" nil)\n(xyzz"
-         [{:label :xyzzy :kind kinds.Function :documentation true}]
-         [])
-
   ;; things that aren't present in lua5.4 but are in other versions, I guess??
   (local things-that-are-allowed-to-have-missing-docs
     {:lua 1 :set-forcibly! 1}) ;:unpack 1 :setfenv 1 :getfenv 1 :module 1 :newproxy 1 :gcinfo 1 :loadstring 1 :bit 1 :jit 1 :bit32 1})
-
-  (check "("
-    [;; builtin specials
-     {:label :local
-      :kind kinds.Operator
-      :documentation true
-      :textEdit {:range {:start {:line 0 :character 1}
-                         :end   {:line 0 :character 1}}
-                 :newText :local}}
-     ;; builtin macros
-     {:label :-?>
-      :kind kinds.Keyword
-      :documentation true}
-     ;; builtin globals
-     {:label :table
-      :kind kinds.Module
-      :documentation true}
-     {:label :_G
-      :kind kinds.Variable
-      :documentation true}]
-    [{:documentation #(= nil $) :label #(not (. things-that-are-allowed-to-have-missing-docs $))}
-     {:kind #(= nil $)          :label #(not (. things-that-are-allowed-to-have-missing-docs $))}
-     {:label #(= nil $)}])
 
   (check "(let [x (fn x [a b c]
                     \"docstring\"
@@ -226,16 +214,40 @@
      {:kind #(= nil $)}
      {:label #(= nil $)}])
 
-  (check "(let [x :hi]
-            (x:|))"
-    [:x:gsub
-     :x:match
-     :x:match
-     :x:sub
-     :x:len
-     :x:find]
-    [{:documentation #(= nil $)}])
-
+  (each [_ mode (ipairs [true false])]
+    (check "(fn x [a b c]
+            \"docstring\"
+            nil)
+          (let [str :hi]
+            (|))"
+      [;; builtin specials
+       {:label :local
+        :kind kinds.Operator
+        :documentation true}
+       ;; builtin macros
+       {:label :-?>
+        :kind kinds.Keyword
+        :documentation true}
+       ;; builtin globals
+       {:label :table
+        :kind kinds.Module
+        :documentation true}
+       {:label :_G
+        :kind kinds.Variable
+        :documentation true}
+       ;; method fields
+       {:label :str:gsub :kind kinds.Method :documentation true}
+       {:label :str:match :kind kinds.Method :documentation true}
+       {:label :str:match :kind kinds.Method :documentation true}
+       {:label :str:sub :kind kinds.Method :documentation true}
+       {:label :str:len :kind kinds.Method :documentation true}
+       {:label :str:find :kind kinds.Method :documentation true}
+       ;; things in scope
+       {:label :x :kind kinds.Function :documentation true}]
+      [{:documentation #(= nil $) :label #(not (. things-that-are-allowed-to-have-missing-docs $))}
+       {:kind #(= nil $)          :label #(not (. things-that-are-allowed-to-have-missing-docs $))}
+       {:label #(= nil $)}]
+      mode))
   nil)
 
 (fn test-module []

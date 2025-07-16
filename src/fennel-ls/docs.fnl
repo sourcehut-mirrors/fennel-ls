@@ -97,9 +97,22 @@ Handles grabbing the documentation from sources other than fennel code;
   (or (get-library-global server global-name)
       (. (get-lua-version server.configuration.lua-version) global-name)))
 
+(local hardcoded-special-items
+  {:nil {:metadata {:fnl/docstring "Represents the absence of a useful value."
+                    :fls/itemKind "Keyword"}}
+   :true {:metadata {:fnl/docstring "A boolean value representing truth."
+                     :fls/itemKind "Keyword"}}
+   :false {:metadata {:fnl/docstring "A boolean value representing falsehood."
+                      :fls/itemKind "Keyword"}}
+   :.nan {:metadata {:fnl/docstring "NaN"
+                     :fls/itemKind "Constant"}}
+   :.inf {:metadata {:fnl/docstring "inf"
+                     :fls/itemKind "Constant"}}})
+
 (fn get-builtin [_server builtin-name]
   (or (. specials builtin-name)
-      (. macros* builtin-name)))
+      (. macros* builtin-name)
+      (. hardcoded-special-items builtin-name)))
 
 (λ validate-lua-version [lua-version invalid]
   (case (. lua-versions lua-version)

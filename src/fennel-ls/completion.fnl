@@ -38,18 +38,6 @@ is set to true and we report that we support completionItem/resolve."
 (local compiler (require :fennel-ls.compiler))
 (local {:metadata METADATA} (require :fennel.compiler))
 
-(local hardcoded-completions
-  {:nil {:metadata {:fnl/docstring "Represents the absence of a useful value."
-                    :fls/itemKind "Keyword"}}
-   :true {:metadata {:fnl/docstring "A boolean value representing truth."
-                     :fls/itemKind "Keyword"}}
-   :false {:metadata {:fnl/docstring "A boolean value representing falsehood."
-                      :fls/itemKind "Keyword"}}
-   :.nan {:metadata {:fnl/docstring "NaN"
-                     :fls/itemKind "Constant"}}
-   :.inf {:metadata {:fnl/docstring "inf"
-                     :fls/itemKind "Constant"}}})
-
 (λ textDocument/completion [server _send {: position :textDocument {: uri}}]
   ;; get the file
   (let [file (files.get-by-uri server uri)
@@ -80,7 +68,7 @@ is set to true and we report that we support completionItem/resolve."
       "add the completion. also recursively adds the fields' completions"
       (when (not (. seen definition))
         (set (. seen definition) true)
-        (add-completion! name definition "Value")
+        (add-completion! name definition)
         (each [field def ?string-method (navigate.iter-fields server definition)]
           (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
                   ?string-method
@@ -97,11 +85,7 @@ is set to true and we report that we support completionItem/resolve."
         (set (. seen definition) false)))
 
     (fn expression-completions []
-      (each [name documentation (pairs hardcoded-completions)]
-        (add-completion! name documentation))
-
       (local seen-manglings {})
-
       (each [_ global* (ipairs file.allowed-globals)]
         (when (not (. seen-manglings global*))
           (set (. seen-manglings global*) true)
@@ -156,14 +140,13 @@ is set to true and we report that we support completionItem/resolve."
 
 (fn completionItem/resolve [server _send completion-item]
   (let [result
-        (or (. hardcoded-completions completion-item.name)
-            (let [{: uri : byte} completion-item.data
-                  file (files.get-by-uri server uri)
-                  (_symbol parents) (analyzer.find-symbol file.ast byte)
-                  scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
-                              (. file.scopes parent))
-                            file.scope)]
-              (analyzer.search-name-and-scope server file completion-item.label scope)))]
+        (let [{: uri : byte} completion-item.data
+              file (files.get-by-uri server uri)
+              (_symbol parents) (analyzer.find-symbol file.ast byte)
+              scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
+                          (. file.scopes parent))
+                        file.scope)]
+          (analyzer.search-name-and-scope server file completion-item.label scope))]
     (when result
       (set completion-item.documentation (format.hover-format server completion-item.label result)))
     completion-item))

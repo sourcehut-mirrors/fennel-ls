@@ -73,7 +73,7 @@
               (icollect [_ range (ipairs ranges) &into highlights]
                 {: range :kind 1}))
 
-          params {:capabilities {:general {:positionEncodings (un-nil (or opts.position-encodings [default-encoding]))}}
+          params {:capabilities (or opts.capabilities {:general {:positionEncodings [default-encoding]}})
                   :clientInfo (un-nil (or opts.client-info {:name "Neovim" :version "0.7.2"}))
                   :initializationOptions opts.initialization-options
                   :processId 16245

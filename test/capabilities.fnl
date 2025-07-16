@@ -8,7 +8,7 @@
          : encoding
          :locations [{:range {: start : end}}]
          : initialize-response} (create-client "(let [==𐐀𐐀== 100] 𐐀𐐀|)"
-                                  {:position-encodings [:utf-16]
+                                  {:capabilities {:general {:positionEncodings [:utf-16]}}
                                    :markup-encoding :utf-16})
         [response] (client:definition uri cursor)]
     (faith.= :utf-16 encoding)
@@ -23,8 +23,8 @@
          : encoding
          :locations [{:range {: start : end}}]
          : initialize-response} (create-client "(let [==𐐀𐐀== 100] 𐐀𐐀|)"
-                                   {:position-encodings [:utf-8]
-                                    :markup-encoding :utf-8})
+                                  {:capabilities {:general {:positionEncodings [:utf-8]}}
+                                   :markup-encoding :utf-8})
         [response] (client:definition uri cursor)]
       (faith.= :utf-8 encoding)
       (faith.= :utf-8 (. initialize-response 1 :result :capabilities :positionEncoding))
@@ -33,13 +33,13 @@
       (faith.= end response.result.range.end))
 
   ;; utf-16 is the fallback
-  (let [{: initialize-response} (create-client "" {:position-encodings NIL})]
+  (let [{: initialize-response} (create-client "" {:capabilities {:general {}}})]
     (faith.= :utf-16 (. initialize-response 1 :result :capabilities :positionEncoding)))
 
-  (let [{: initialize-response} (create-client "" {:position-encodings [:some-unknown-encoding]})]
+  (let [{: initialize-response} (create-client "" {:capabilities {:general {:positionEncodings [:some-unknown-encoding]}}})]
     (faith.= :utf-16 (. initialize-response 1 :result :capabilities :positionEncoding)))
 
-  (let [{: initialize-response} (create-client "" {:position-encodings [:utf-8 :utf-16]})]
+  (let [{: initialize-response} (create-client "" {:capabilities {:general {:positionEncodings [:utf-8 :utf-16]}}})]
     (faith.= :utf-8 (. initialize-response 1 :result :capabilities :positionEncoding)))
 
   nil)
