@@ -9,6 +9,7 @@
 * New lint `not-enough-arguments` for ensuring you don't accidentally implicitly pass nil
     * Disabled by default because it requires following fennel's optional argument naming conventions
 * New lint `invalid-flsproject-settings` checks your `flsproject.fnl` file as you edit it
+* Renamed lint `unnecessary-do-values` to `unnecessary-unary` and made it apply to many more forms
 
 ### Changes
 * Updated to dkjson 2.8

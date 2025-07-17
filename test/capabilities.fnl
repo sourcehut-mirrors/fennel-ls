@@ -1,5 +1,5 @@
 (local faith (require :faith))
-(local {: create-client : NIL} (require :test.utils))
+(local {: create-client} (require :test.utils))
 
 (fn test-offset-encoding []
   (let [{: client
