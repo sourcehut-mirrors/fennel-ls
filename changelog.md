@@ -10,6 +10,7 @@
     * Disabled by default because it requires following fennel's optional argument naming conventions
 * New lint `invalid-flsproject-settings` checks your `flsproject.fnl` file as you edit it
 * Renamed lint `unnecessary-do-values` to `unnecessary-unary` and made it apply to many more forms
+* New lint `nested-associative-operator` checks for nested operations that could be flattened (eg. `(+ 1 2 (+ 3 4) 5)`)
 
 ### Changes
 * Updated to dkjson 2.8

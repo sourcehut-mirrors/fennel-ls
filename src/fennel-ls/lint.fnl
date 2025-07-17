@@ -782,6 +782,54 @@ You can read more about how to add lints in docs/linting.md"
                                                              :severity message.severity.WARN}))))
            nil)})
 
+(local associative-ops {:and true :or true :+ true :* true :band true :bor true :.. true})
+
+(add-lint :nested-associative-operator
+  {:what-it-does
+   "Identifies forms that could be written in a flattr way, like `(and foo (and bar baz))`."
+   :why-care?
+   "Collapsing nested forms reduces unnecessary nesting and makes code more readable and idiomatic."
+   :example
+   "```fnl
+    (and foo bar (and baz buzz) xyz)
+    (+ a (+ b c) d)
+    (or x (or y z))
+    ```
+
+    Instead, use:
+    ```fnl
+    ;; Flattened forms:
+    (and foo bar baz buzz xyz)
+    (+ a b c d)
+    (or x y z)
+    ```"
+   :since "0.2.2-dev"
+   :type :special-call
+   :impl (fn [server file ast]
+           (let [op (. ast 1)]
+             (when (and (sym? op)
+                        (. associative-ops (tostring op)))
+               (faccumulate [diagnostic nil
+                             i 2 (length ast)
+                             &until diagnostic]
+                 (let [arg (. ast i)
+                       op-str (tostring op)]
+                   (when (and (list? arg) (= op (. arg 1)))
+                     {:range (message.ast->range server file arg)
+                      :message (.. "nested " op-str " can be collapsed")
+                      :severity message.severity.WARN
+                      :fix #(let [new-form (list (. ast 1))]
+                              (for [j 2 (length ast)]
+                                (let [item (. ast j)]
+                                  (if (and (list? item)
+                                           (sym? (. item 1) op-str))
+                                      (fcollect [k 2 (length item) &into new-form]
+                                        (. item k))
+                                      (table.insert new-form item))))
+                              {:title (.. "Collapse all nested " op-str)
+                               :changes [{:range (message.ast->range server file ast)
+                                          :newText (view new-form)}]})}))))))})
+
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                 :__index #(. $1 :self $2)})
 

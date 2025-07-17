@@ -347,6 +347,29 @@
 
 ;; unused variable, when a function binding is only used in its body, and the function value is discarded
 
+(fn test-nested-associative-operator []
+  (check "(and foo (and bar baz) xyz)"
+         [{:message "nested and can be collapsed"
+           :code :nested-associative-operator}])
+
+  (check "(+ a (+ b c) d)"
+         [{:message "nested + can be collapsed"
+           :code :nested-associative-operator}])
+
+  (check "(or x (or y z))"
+         [{:message "nested or can be collapsed"
+           :code :nested-associative-operator}])
+
+  (check "(and foo (and bar baz) (and this that))"
+         [{:message "nested and can be collapsed"
+           :code :nested-associative-operator}])
+
+  (assert-ok "(and true false true)") ; no nesting
+  (assert-ok "(+ 1 2 3)") ; no nesting
+  (assert-ok "(* (+ 1 2) 3)") ; different operations
+  (assert-ok "(and true (or false true))") ; different operators
+  nil)
+
 {: test-unused
  : test-ampersand
  : test-unknown-module-field
@@ -362,4 +385,5 @@
  : test-empty-let
  : test-decreasing-comparison
  : test-arg-count
- : test-duplicate-keys}
+ : test-duplicate-keys
+ : test-nested-associative-operator}
