@@ -14,15 +14,15 @@ I suspect this file may be gone after a bit of refactoring."
   (let [result []]
     (each [path (path:gmatch "[^;]+")]
       (if (absolute-path? path)
-        (table.insert result path)
-        (each [_ workspace (ipairs (or ?workspaces []))]
-          (table.insert result (path-join (uri->path workspace) path)))))
+          (table.insert result path)
+          (icollect [_ workspace (ipairs (or ?workspaces [])) &into result]
+            (path-join (uri->path workspace) path))))
     (table.concat result ";")))
 
 (fn file-exists? [server uri]
-   (or (?. server.preload uri)
-       (case (io.open (uri->path uri))
-         f (do (f:close) true))))
+  (or (?. server.preload uri)
+      (case (io.open (uri->path uri))
+        f (do (f:close) true))))
 
 (λ lookup [{:configuration {: fennel-path : macro-path} :root-uri ?root-uri &as server} mod macro?]
   "Use the configured path to find a file on disk"

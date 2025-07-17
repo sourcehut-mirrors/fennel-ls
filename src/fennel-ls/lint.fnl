@@ -1,6 +1,8 @@
-"Diagnostics
-Provides the function (check server file), which goes through a file and mutates
-the `file.diagnostics` field, filling it with diagnostics."
+"Lint
+Provides the function (add-lint-diagnostics server file), which goes through
+a file and fills the `file.diagnostics` field with diagnostics.
+
+You can read more about how to add lints in docs/linting.md"
 
 (local {: sym? : list? : table? : varg? : view
         : sym : list &as fennel} (require :fennel))
@@ -23,8 +25,6 @@ the `file.diagnostics` field, filling it with diagnostics."
 
 (fn add-lint [name lint ...]
   (when (= nil lint.type) (error (.. name " needs a type. available types: " (view (icollect [k (pairs lints)] k)))))
-  ;; lint.limitations is optional
-
   (table.insert all-lints lint)
   (for [i 1 (select :# lint ...)]
     (let [lint (select i lint ...)]
@@ -265,7 +265,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                                   :newText (view (. ast 2))}]}}))})
 
 (local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
-                           (values form body-form?)))
+                           form body-form?))
 
 (add-lint :redundant-do
   {:what-it-does
@@ -629,6 +629,8 @@ the `file.diagnostics` field, filling it with diagnostics."
                                            0 ; method call; the head counts as an argument
                                            1)) ; function call; the head doesn't count as an argument
                        passes-extra-args (and (not= 1 (length ast))
+                                              (not (special? (. ast 1)))
+                                              (not (. file.macro-calls ast))
                                               (possibly-multival? (. ast (length ast))))
                        min-params (accumulate [last-required-argument nil
                                                 i arg (ipairs signature)
@@ -646,6 +648,7 @@ the `file.diagnostics` field, filling it with diagnostics."
                                       ;; TODO Fennel 1.5.4+ has `fn`'s arglist fixed
                                       ;; exception: fn only needs one argument
                                       (= result (docs.get-builtin server :fn)) 1
+                                      (= result (docs.get-builtin server :collect)) 2
                                       (or min-params 0))]
                    (if (and (< number-of-args min-params)
                             (not passes-extra-args))
@@ -797,9 +800,8 @@ the `file.diagnostics` field, filling it with diagnostics."
           (table.insert file.diagnostics
             (wrap (doto diagnostic
                         (tset :code lint.name))))))))
-  (each [diagnostic (coroutine.wrap #(run lints.other server file))]
-    (table.insert file.diagnostics
-      (wrap diagnostic)))
+  (icollect [diagnostic (coroutine.wrap #(run lints.other server file)) &into file.diagnostics]
+    (wrap diagnostic))
   (each [symbol definition (pairs file.definitions)]
     (when (. file.lexical symbol)
       (run lints.definition server file symbol definition)))

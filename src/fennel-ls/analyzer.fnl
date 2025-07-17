@@ -116,8 +116,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
     (if (= 0 (length stack))
       {:definition symbol : file}
       nil)
-    (if (. file.references symbol)
-      (search-reference server file (. file.references symbol) (stack-add-multisym! stack symbol) opts))))
+    (. file.references symbol)
+    (search-reference server file (. file.references symbol) (stack-add-multisym! stack symbol) opts)))
 
 (λ search-table [server file tbl stack opts]
   (if (. tbl (. stack (length stack)))
@@ -304,8 +304,8 @@ returns the called symbol and the number of the argument closest to byte"
   (λ find-list [[call & parents]]
     (if (. file.calls call)
         call
-        (if (next parents)
-            (find-list parents))))
+        (next parents)
+        (find-list parents)))
 
   (λ arg-index [call byte]
     ;; TODO: special handling for binding forms so we can point to the

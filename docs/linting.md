@@ -112,5 +112,8 @@ The return value should have these fields:
   add a "fix" field with the code to generate a quickfix. See the other lints
   for examples.
 
-### Testing:
-I will think about this later. :) For now see examples in `test/lint.fnl`.
+### Other places:
+At some point I want to add doc-testing of the :example documentation, but for
+now, you have to add your tests manually to `test/lint.fnl`.
+
+If you add a lint, also add it to changelog.md.
