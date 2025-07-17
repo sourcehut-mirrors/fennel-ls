@@ -376,6 +376,7 @@ identifiers are declared / referenced in which places."
                 :allowedGlobals allowed-globals
                 :useMetadata true
                 :requireAsInclude false
+                :useBitLib (not ((or _G.loadstring _G.load) "return 1&1"))
                 : warn
                 : scope}
           filter-errors (fn _filter-errors [component ...]
