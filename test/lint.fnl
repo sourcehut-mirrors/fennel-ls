@@ -306,16 +306,23 @@
   ;; methods
   (let [add-opts #{:main.fnl $ :flsproject.fnl "{:lints {:not-enough-arguments true}}"}]
     (check     (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2)")
-               [{:code :not-enough-arguments}])
+               [{:code :not-enough-arguments
+                 :message "foo expects at least 3 argument(s); found 2"}])
     (assert-ok (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2 3)"))
     (assert-ok (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2 3 4 5)"))
     (check     (add-opts "(fn foo [a b c ?d ?e] (print a b c ?d ?e))\n(foo 1 2 3 4 5 6)")
-               [{:code :too-many-arguments}])
+               [{:code :too-many-arguments
+                 :message "foo expects at most 5 argument(s); found 6"}])
     (assert-ok (add-opts "(let [f :hi] (f:byte))"))
     (check     (add-opts "(let [f :hi] (f:sub))")
-               [{:code :not-enough-arguments}])
+               [{:code :not-enough-arguments
+                 :message "f:sub expects at least 1 argument(s); found 0"}])
     (check     (add-opts "(let [f :hi] (f:sub 1 2 3))")
-               [{:code :too-many-arguments}])
+               [{:code :too-many-arguments
+                 :message "f:sub expects at most 2 argument(s); found 3"}])
+    (check     (add-opts "(let [obj {:field (fn foo [])}] (obj:field))")
+               [{:code :too-many-arguments
+                 :message "obj.field expects 0 arguments; found 1"}])
     (assert-ok (add-opts "(let [foo 10] (fn [] foo))"))
     (assert-ok (add-opts "(fn [])"))
     nil))

@@ -623,24 +623,11 @@ You can read more about how to add lints in docs/linting.md"
                {:indeterminate nil &as result}
                (case (?. (navigate.getmetadata server result) :fnl/arglist)
                  signature
-                 (let [number-of-args (- (length ast)
-                                         (if (and (sym? (. ast 1))
-                                                  (string.find (tostring (. ast 1)) ".:"))
-                                           0 ; method call; the head counts as an argument
-                                           1)) ; function call; the head doesn't count as an argument
+                 (let [number-of-args (- (length ast) 1)
                        passes-extra-args (and (not= 1 (length ast))
                                               (not (special? (. ast 1)))
                                               (not (. file.macro-calls ast))
                                               (possibly-multival? (. ast (length ast))))
-                       min-params (accumulate [last-required-argument nil
-                                                i arg (ipairs signature)
-                                                &until (let [s (tostring arg)]
-                                                         (or (= s "...")
-                                                             (= s "&")))]
-                                     (let [first-char (string.sub (tostring arg) 1 1)]
-                                       (if (and (not= first-char "?") (not= first-char "_"))
-                                           i
-                                           last-required-argument)))
                        ;; exception: (- a b) only needs 1 argument
                        ;; exception: (/ a b) only needs 1 argument
                        min-params (if (= result (docs.get-builtin server :-)) 1
@@ -649,11 +636,23 @@ You can read more about how to add lints in docs/linting.md"
                                       ;; exception: fn only needs one argument
                                       (= result (docs.get-builtin server :fn)) 1
                                       (= result (docs.get-builtin server :collect)) 2
-                                      (or min-params 0))]
+                                      (or (accumulate [last-required-param nil
+                                                       i arg (ipairs signature)
+                                                       &until (let [s (tostring arg)]
+                                                                (or (= s "...")
+                                                                    (= s "&")))]
+                                            (let [first-char (string.sub (tostring arg) 1 1)]
+                                              (if (and (not= first-char "?") (not= first-char "_"))
+                                                  i
+                                                  last-required-param)))
+                                          0))
+                       method-call? (and (sym? (. ast 1))
+                                         (string.find (tostring (. ast 1)) ".:"))
+                       min-params (- min-params (if method-call? 1 0))]
                    (if (and (< number-of-args min-params)
                             (not passes-extra-args))
                        {:range (message.ast->range server file ast)
-                        :message (.. "not enough args. my analysis of the signature says you need at least " min-params " arguments but I only see " number-of-args)
+                        :message (.. (view (. ast 1)) " expects at least " min-params " argument(s); found " number-of-args)
                         :severity message.severity.WARN})))))})
 
 (add-lint :too-many-arguments
@@ -690,25 +689,33 @@ You can read more about how to add lints in docs/linting.md"
                {:indeterminate nil &as result}
                (case (?. (navigate.getmetadata server result) :fnl/arglist)
                  signature
-                 (let [number-of-args (- (length ast)
-                                         (if (and (sym? (. ast 1))
-                                                  (string.find (tostring (. ast 1)) ".:"))
-                                           0 ; method call; the head counts as an argument
-                                           1)) ; function call; the head doesn't count as an argument
-                       (infinite-params?) (accumulate [vararg nil
-                                                       _ arg (ipairs signature)
-                                                       &until vararg]
-                                            (let [s (tostring arg)]
-                                              (or (= s "...") (= s "&"))))
+                 (let [number-of-args (- (length ast) 1)
+                       infinite-params? (accumulate [vararg nil
+                                                      _ arg (ipairs signature)
+                                                      &until vararg]
+                                          (let [s (tostring arg)]
+                                            (or (= s "...") (= s "&"))))
                        ;; exception: (table.insert table item) can take a third argument
                        max-params (if (= result (. (docs.get-global server :table) :fields :insert))
                                       3
-                                      (length signature))]
+                                      (length signature))
+                       method-call? (and (sym? (. ast 1))
+                                         (string.find (tostring (. ast 1)) ".:"))
+                       max-params (- max-params (if method-call? 1 0))]
+
                    (if (and (< max-params number-of-args)
                             (not infinite-params?))
-                       {:range (message.ast->range server file ast)
-                        :message (.. "too many args. my analysis of the signature says we ignore any arguments past " max-params " arguments but you've provided " number-of-args)
-                        :severity message.severity.WARN})))))})
+                     (let [range-of-call (message.ast->range server file ast)
+                           first-bad-argument (. ast (+ 1 max-params))
+                           ?range-of-first-bad-argument (message.ast->range server file first-bad-argument)
+                           range {:start (or (?. ?range-of-first-bad-argument :start) range-of-call.start)
+                                  :end range-of-call.end}]
+                       {: range
+                        :message (if (= max-params -1)
+                                     ;; this is when you call a 0 argument function using a `:`
+                                     (.. (: (view (. ast 1)) :gsub ":" ".") " expects 0 arguments; found 1")
+                                     (.. (view (. ast 1)) " expects at most " max-params " argument(s); found " number-of-args))
+                        :severity message.severity.WARN}))))))})
 
 (add-lint :duplicate-table-keys
   {:what-it-does
