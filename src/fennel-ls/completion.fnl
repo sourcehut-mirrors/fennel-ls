@@ -62,7 +62,8 @@ is set to true and we report that we support completionItem/resolve."
         seen {}]
 
     (fn add-completion! [name definition ?kind]
-      (table.insert results (format.completion-item-format server name definition range ?kind)))
+      (when (and symbol (not= name (tostring symbol)))
+        (table.insert results (format.completion-item-format server name definition range ?kind))))
 
     (fn add-completion-recursively! [name definition]
       "add the completion. also recursively adds the fields' completions"

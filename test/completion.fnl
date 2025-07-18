@@ -290,15 +290,22 @@
   nil)
 
 (fn test-no-completion []
+  ;; comment
   (check "; ("
     []
     [:math])
+  ;; inside of a string
   (check "\" (|\n\""
     []
     [:math])
+  ;; inside of a string, but the starting quote is on a different line
   (check "\"\n(|\""
     []
     [:math])
+
+  (check "(fn foo|)"
+    []
+    ["foo|"])
   nil)
 
 ;; ;; Future tests / features
