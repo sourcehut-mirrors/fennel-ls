@@ -22,9 +22,9 @@
                (when (or (= (type key) :string) (= (type key) :number))
                  (coroutine.yield key value))))))))
 
-(λ get-field [server definition key]
+(λ _get-field [server definition key]
   (let [fields (or definition.fields
-                   (when (type definition.definition) :string
+                   (when (= (type definition.definition) :string)
                      (. docs.get-global server :string)))]
     (or (?. fields key)
         (when (fennel.table? definition.definition)
@@ -51,6 +51,6 @@
         (set definition.metadata metadata)
         metadata)))
 
-{: get-field
+{: _get-field
  : iter-fields
  : getmetadata}
