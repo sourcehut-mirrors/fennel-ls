@@ -100,7 +100,8 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
              (not (varg? ?definition))
              (= 1 (or 1 ?multival))
              (not (sym? ?definition))
-             (= 0 (length stack)))
+             (= 0 (length stack))
+             (= nil (?. ?keys 1)))
         definition
 
         (search-multival server file ?definition (stack-add-keys! stack ?keys) (or ?multival 1) opts))))

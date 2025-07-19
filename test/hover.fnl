@@ -190,7 +190,14 @@ except that it sets a new message handler `msgh`.")
                          #($:find "eat your files")
                          {:libraries {:evil true}})
               true false
-              _ true)))
+              _ true))
+  nil)
+
+(fn test-destructure []
+  (check "(local {: field} {:field {:foo :bar}})
+          field|"
+         "```fnl\n{:foo :bar}\n```")
+  nil)
 
 {: test-literals
  : test-builtins
@@ -202,4 +209,5 @@ except that it sets a new message handler `msgh`.")
  : test-multival
  : test-macro
  : test-reader
- : test-libraries}
+ : test-libraries
+ : test-destructure}
