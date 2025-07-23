@@ -92,19 +92,21 @@ You can read more about how to add lints in docs/linting.md"
    :type :definition
    :impl (fn [server file symbol definition]
            "local variable that is defined but not used"
-           (if (not (or (= "_" (: (tostring symbol) :sub 1 1))
-                        (= "_" (: (tostring symbol) :sub -1 -1))
-                        (accumulate [reference false
-                                     _ ref (ipairs definition.referenced-by)
-                                     &until reference]
-                          (or (= ref.ref-type :read)
-                              (= ref.ref-type :mutate)))))
-             {:range (message.ast->range server file symbol)
-              :message (.. "unused definition: " (tostring symbol))
-              :severity message.severity.WARN
-              :fix #{:title (.. "Replace " (tostring symbol) " with _" (tostring symbol))
-                     :changes [{:range (message.ast->range server file symbol)
-                                :newText (.. "_" (tostring symbol))}]}}))})
+           (let [symname (tostring symbol)]
+             (if (not (or (and (= "_" (symname:sub 1 1))
+                               (not= "__" (symname:sub 1 2)))
+                          (= "_" (symname:sub -1 -1))
+                          (accumulate [reference false
+                                       _ ref (ipairs definition.referenced-by)
+                                       &until reference]
+                            (or (= ref.ref-type :read)
+                                (= ref.ref-type :mutate)))))
+               {:range (message.ast->range server file symbol)
+                :message (.. "unused definition: " symname)
+                :severity message.severity.WARN
+                :fix #{:title (.. "Replace " symname " with _" symname)
+                       :changes [{:range (message.ast->range server file symbol)
+                                  :newText (.. "_" symname)}]}})))})
 
 ;; this is way too specific; it's also safe to do this inside an `if` or `case`
 (fn in-or? [calls symbol]
@@ -793,7 +795,7 @@ You can read more about how to add lints in docs/linting.md"
 
 (add-lint :nested-associative-operator
   {:what-it-does
-   "Identifies forms that could be written in a flattr way, like `(and foo (and bar baz))`."
+   "Identifies forms that could be written in a flatter way, like `(and foo (and bar baz))`."
    :why-care?
    "Collapsing nested forms reduces unnecessary nesting and makes code more readable and idiomatic."
    :example
