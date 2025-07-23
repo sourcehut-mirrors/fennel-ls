@@ -775,13 +775,11 @@ You can read more about how to add lints in docs/linting.md"
    :since :0.2.2-dev
    :type :other
    :impl (fn [server file]
-           (when (and (= file.uri (-?> server.root-uri
-                                       utils.uri->path
-                                       (utils.path-join "flsproject.fnl")
-                                       utils.path->uri))
-                      (not (. file.diagnostics 1)))
-             ;; circular dependency! don't tell anyone ^_^
-             (let [config (require :fennel-ls.config)]
+           (let [config-module :fennel-ls.config
+                 config (require config-module)]
+             (when (and (= file.uri (config.flsproject-path server))
+                        (not (. file.diagnostics 1)))
+               ;; circular dependency! don't tell anyone ^_^
                (config.make-configuration (. file.ast 1)
                                           #(coroutine.yield {:code :invalid-flsproject-settings
                                                              :range (or (message.ast->range server file $2)

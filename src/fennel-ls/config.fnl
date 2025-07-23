@@ -13,7 +13,7 @@ to server.configuration. Every other use case should be read-only."
 (local utils (require :fennel-ls.utils))
 (local lint (require :fennel-ls.lint))
 (local message (require :fennel-ls.message))
-(local {: view} (require :fennel))
+(local {: view &as fennel} (require :fennel))
 
 (local option-mt {})
 (fn option [default-value ?validate]
@@ -41,43 +41,43 @@ to server.configuration. Every other use case should be read-only."
       ?root (.. ?root "." extra)
       extra))
 
-(fn make-configuration-from-template [template ?user ?parent ?path invalid]
-  (if (= (getmetatable template) option-mt)
-      (let [setting (case-try ?user
+(fn apply-default-configuration [default ?flsproject ?parent ?name invalid]
+  (if (= (getmetatable default) option-mt)
+      (let [setting (case-try ?flsproject
                       nil (?. ?parent :all)
-                      nil template.default-value)]
-        (if (not= (type setting) (type template.default-value))
-            (do (invalid (.. (or ?path "flsproject.fnl") " must be a " (type template.default-value)) ?user ?parent)
-                template.default-value)
-            template.validate
-            (case-try (template.validate setting #(invalid $ ?user ?parent))
-                      nil template.default-value)
+                      nil default.default-value)]
+        (if (not= (type setting) (type default.default-value))
+            (do (invalid (.. (or ?name "flsproject.fnl") " must be a " (type default.default-value)) ?flsproject ?parent)
+                default.default-value)
+            default.validate
+            (case-try (default.validate setting #(invalid $ ?flsproject ?parent))
+                      nil default.default-value)
             setting))
-      (= :table (type template))
-      (case (type ?user)
+      (= :table (type default))
+      (case (type ?flsproject)
         (where (or :table :nil))
         (do
-          (when (= (type ?user) :table)
-            (each [k (pairs ?user)]
-              (when (not (. template k))
-                (invalid (.. "didn't expect " (or (extend-path ?path k) "flsproject.fnl") "\n"
-                             "valid keys: " (view (doto (icollect [k (pairs template)] k)
+          (when (= (type ?flsproject) :table)
+            (each [k (pairs ?flsproject)]
+              (when (not (. default k))
+                (invalid (.. "didn't expect " (or (extend-path ?name k) "flsproject.fnl") "\n"
+                             "valid keys: " (view (doto (icollect [k (pairs default)] k)
                                                         table.sort)))
-                         (. ?user k)
-                         ?user))))
-          (collect [k (pairs template)]
-              k (make-configuration-from-template
-                  (. template k)
-                  (?. ?user k)
-                  ?user
-                  (extend-path ?path k)
+                         (. ?flsproject k)
+                         ?flsproject))))
+          (collect [k (pairs default)]
+              k (apply-default-configuration
+                  (. default k)
+                  (?. ?flsproject k)
+                  ?flsproject
+                  (extend-path ?name k)
                   invalid)))
-        _ (do (invalid (.. "expected " (or ?path "flsproject.fnl") " to be a table") ?user ?parent)
-              (make-configuration-from-template template nil ?parent ?path invalid)))
-      (error (.. "This is a bug with fennel-ls: default-configuration has a key that isn't a table or option: " ?path))))
+        _ (do (invalid (.. "expected " (or ?name "flsproject.fnl") " to be a table") ?flsproject ?parent)
+              (apply-default-configuration default nil ?parent ?name invalid)))
+      (error (.. "This is a bug with fennel-ls: default-configuration has a key that isn't a table or option: " ?name))))
 
-(λ make-configuration [?c invalid]
-  (make-configuration-from-template default-configuration ?c nil nil invalid))
+(λ make-configuration [?flsproject invalid]
+  (apply-default-configuration default-configuration ?flsproject nil nil invalid))
 
 (λ choose-position-encoding [init-params]
   "fennel-ls natively uses utf-8, so the goal is to choose positionEncoding=\"utf-8\".
@@ -92,28 +92,26 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
                 (= encoding :utf8)))
           false)]
     (if utf8?
-     :utf-8
-     :utf-16)))
+      :utf-8
+      :utf-16)))
 
-(λ parse-flsconfig [{: text : uri}]
-  (local fennel (require :fennel))
-  (local [ok? _err result] [(pcall (fennel.parser text uri))])
-  (if ok? result))
-
-(λ load-config [server invalid]
-  "This is where we can put anything that needs to react to config changes"
-  (make-configuration
-    (-?> server.root-uri
-         utils.uri->path
-         (utils.path-join "flsproject.fnl")
-         utils.path->uri
-         (->> (files.read-file server))
-         parse-flsconfig)
-    invalid))
+(fn flsproject-path [server]
+  (-?> server.root-uri
+       utils.uri->path
+       (utils.path-join "flsproject.fnl")
+       utils.path->uri))
 
 (λ reload [server]
+  ;; clear out macros from fennel
+  (each [k (pairs fennel.macro-loaded)]
+    (tset fennel.macro-loaded k nil))
   (set server.configuration
-    (load-config server
+    (make-configuration
+      (case-try (flsproject-path server)
+        path (files.read-file server path)
+        {: text : uri} (let [[ok? _err result] [(pcall (fennel.parser text uri))]]
+                         (if ok? result))
+        (catch _ nil))
       ;; according to the spec it is valid to send showMessage during initialization
       ;; but eglot will only flash the message briefly before replacing it with
       ;; another message, and probably other clients will do similarly. so queue
@@ -137,4 +135,5 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 
 {: initialize
  : reload
- : make-configuration}
+ : make-configuration
+ : flsproject-path}

@@ -21,7 +21,9 @@ Every time the client sends a message, it gets handled by a function in the corr
   (config.initialize server params)
   (let [capabilities
         {:positionEncoding server.position-encoding
-         :textDocumentSync {:openClose true :change 2}
+         :textDocumentSync {:openClose true
+                            :change 2
+                            :save true}
          ;; :notebookDocumentSync nil
          :completionProvider {:workDoneProgress false
                               :resolveProvider server.can-do-good-completions?
@@ -229,9 +231,8 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ notifications.textDocument/didSave [server _send {:textDocument {: uri}}]
   (when (utils.endswith uri "flsproject.fnl")
     (config.reload server))
-
   ;; TODO recompute for files when macro is changed
-  (set fennel.macro-loaded []))
+  (each [k (pairs fennel.macro-loaded)] (tset fennel.macro-loaded k nil)))
 
 (λ notifications.textDocument/didClose [server _send {:textDocument {: uri}}]
   (local file (files.get-by-uri server uri))
