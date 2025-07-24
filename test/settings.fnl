@@ -63,9 +63,9 @@
   nil)
 
 (fn test-config-validation []
-  (let [client (create-client {:main.fnl ""
-                               :flsproject.fnl "{:lua-version \"lua5.0\"}"})
-        [_init show] client.initialize-response]
+  (let [{: initialize-response} (create-client {:main.fnl ""
+                                                :flsproject.fnl "{:lua-version \"lua5.0\"}"})
+        [_init show] initialize-response]
     (faith.= "window/showMessage" show.method)
     (faith.match "doesn't know about lua version lua5.0" show.params.message))
   (let [{: initialize-response : client} (create-client {:main.fnl ""
@@ -81,8 +81,22 @@
       (faith.match "Could not find docset for library nasilemak" (. diagnostics.params.diagnostics 1 :message))))
   nil)
 
+(fn test-infinite-macro []
+  (when (not debug.debug)
+    (faith.skip))
+  (let [{: diagnostics} (create-client {:main.fnl "(macro infinite [] (while true nil))\n(infinite)\n"
+                                        :flsproject.fnl "{:compiler-instruction-limit 25000}"})]
+    (faith.= "instruction limit reached"
+             (?. diagnostics 1 :message)))
+  (let [{: diagnostics} (create-client {:main.fnl "(macro finite [] (while false nil))\n(finite)\n"
+                                        :flsproject.fnl "{:compiler-instruction-limit 25000}"})]
+    (faith.= [] diagnostics))
+  nil)
+    
+
 {: test-path
  : test-extra-globals
  : test-lints
  : test-config-validation
- : test-editing-settings}
+ : test-editing-settings
+ : test-infinite-macro}

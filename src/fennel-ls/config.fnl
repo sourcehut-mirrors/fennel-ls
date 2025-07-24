@@ -34,6 +34,7 @@ to server.configuration. Every other use case should be read-only."
    :lints (collect [_ lint (ipairs lint.list)]
             lint.name (option (not lint.disabled)))
    :libraries (option {} docs.validate-libraries)
+   :compiler-instruction-limit (option -1)
    :extra-globals (option "")})
 
 (fn extend-path [?root extra]

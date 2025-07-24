@@ -11,6 +11,7 @@ identifiers are declared / referenced in which places."
 (local message (require :fennel-ls.message))
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
+(local print print)
 
 (local nil* (sym :nil))
 
@@ -396,7 +397,7 @@ identifiers are declared / referenced in which places."
 
           ast (parse-ast parser)]
 
-      (λ parsed [ast]
+      (λ traverse [ast]
         "runs on every ast tree that was parsed"
         (if (sym? ast)
           (case (values (tostring ast) (file.text:sub ast.bytestart ast.bytestart))
@@ -411,8 +412,8 @@ identifiers are declared / referenced in which places."
         ;; recursive call
         (when (or (table? ast) (list? ast))
           (each [k v (iter ast)]
-            (parsed k)
-            (parsed v)))
+            (traverse k)
+            (traverse v)))
         (when (and (list? ast)
                    (or (sym? (. ast 1) :λ)
                        (sym? (. ast 1) :lambda)))
@@ -420,26 +421,38 @@ identifiers are declared / referenced in which places."
             (tset ast 1 (sym :fn))
             (table.insert defer #(tset ast 1 old-sym)))))
 
-      (parsed ast)
+      (traverse ast)
 
-      ;; This is bad; we have to mutate fennel.macro-path to use fennel's native macro loader
-      (let [old-macro-path fennel.macro-path
-            print* _G.print]
+      ;; Currently, we mutate fennel.macro-path and use fennel's native macro loader
+      (when ?root-uri
+        (let [old-macro-path fennel.macro-path]
+          (set fennel.macro-path (searcher.add-workspaces-to-path macro-path [?root-uri]))
+          (table.insert defer #(set fennel.macro-path old-macro-path))))
 
-        (when ?root-uri
-          (set fennel.macro-path
-               (searcher.add-workspaces-to-path macro-path [?root-uri])))
+      ;; Don't allow macros to print things out
+      (set _G.print #(values))
+      (table.insert defer #(set _G.print print))
 
-        ;; don't allow macros to print during compilation
-        (set _G.print #nil)
-        ;; compile
-        (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
-          (filter-errors :compiler (xpcall #(fennel.compile form opts)
-                                           fennel.traceback)))
-        (set _G.print print*)
-
-        (when ?root-uri
-          (set fennel.macro-path old-macro-path)))
+      (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
+        (filter-errors :compiler
+                       ;; this entire block of code is for making the instruction limit work
+                       (xpcall #(let [limiting? (not= server.configuration.compiler-instruction-limit -1)]
+                                  (when limiting?
+                                    (fn hook []
+                                      (debug.sethook nil nil)
+                                      (if _G.jit (_G.jit.on))
+                                      (table.insert diagnostics
+                                        {:range message.unknown-range
+                                         :message "instruction limit reached"
+                                         :severity message.severity.ERROR})
+                                      (error "__NOT_AN_ERROR"))
+                                    (if _G.jit (_G.jit.off))
+                                    (debug.sethook hook "" server.configuration.compiler-instruction-limit))
+                                  (fennel.compile form opts)
+                                  (when limiting?
+                                    (debug.sethook nil nil)
+                                    (if _G.jit (_G.jit.on))))
+                               fennel.traceback)))
 
       (each [_ cmd (ipairs defer)]
         (cmd))
