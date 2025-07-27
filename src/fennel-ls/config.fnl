@@ -132,6 +132,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
        (case (?. params :capabilities :textDocument :completion :completionList :itemDefaults)
           completion-item-defaults  (and (accumulate [found nil _ v (ipairs completion-item-defaults) &until found] (= v :editRange))
                                          (accumulate [found nil _ v (ipairs completion-item-defaults) &until found] (= v :data)))))
+  (set server.can-do-insert-replace-completions? (?. params :capabilities :textDocument :completion :completionItem :insertReplaceSupport))
   (reload server))
 
 {: initialize

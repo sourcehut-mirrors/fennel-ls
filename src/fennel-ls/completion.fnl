@@ -136,7 +136,11 @@ is set to true and we report that we support completionItem/resolve."
           (expression-completions)))
 
     (if server.can-do-good-completions?
-      {:itemDefaults {:editRange range :data {: uri : byte}}
+      {:itemDefaults {:editRange (if server.can-do-insert-replace-completions?
+                                     {:insert {:start range.start :end position}
+                                      :replace range}
+                                     range)
+                      :data {: uri : byte}}
        :items results}
       results)))
 
