@@ -215,6 +215,10 @@ WARNING: this is only used in the test code, not in the real language server"
                              suffix)]
         (.. clean-path clean-suffix))))
 
+(fn valid-sym-field? [str]
+  (and (= :string (type str))
+       (not (str:find "[^!#$%&*+/0-9<=>?A-Z\\^_a-z|\128-\255-]"))))
+
 (fn find [t x ?k]
   (match (next t ?k) (k x) k (k y_) (find t x k)))
 
@@ -235,4 +239,5 @@ WARNING: this is only used in the test code, not in the real language server"
  : path-join
  : path-sep
  : endswith
- : find}
+ : find
+ : valid-sym-field?}

@@ -191,7 +191,9 @@
   ;; Lint only triggers on keys that can be written as a sym
   (check "(local tbl {}) (tset tbl \"hello-world\" 249)"
          [{:code :unnecessary-tset}])
-  (assert-ok "(local tbl {}) (tset tbl \"01234567\" 249)")
+  ;; symbols like tbl.01234567 *are* valid >:)
+  (check "(local tbl {}) (tset tbl \"01234567\" 249)"
+         [{:code :unnecessary-tset}])
   (assert-ok "(local tbl {}) (tset tbl \"hello world\" 1)")
   (assert-ok "(local tbl {}) (tset tbl \"0123.4567\" 1)")
   nil)

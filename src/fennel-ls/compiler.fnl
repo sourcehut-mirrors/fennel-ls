@@ -346,15 +346,8 @@ identifiers are declared / referenced in which places."
                &into allowed-globals]
       extra-global)
 
-    (fn parse-ast [parser]
-      (icollect [ok ast parser &until (not ok)] ast))
-
-    (fn macro-file? [file]
-      (or (file.uri:match "%.fnlm$")
-          (= (file.text:sub 1 24) ";; fennel-ls: macro-file")))
-
-    ;; TODO clean up this code. It's awful now that there is error handling
-    (let [macro-file? (macro-file? file)
+    (let [macro-file? (or (file.uri:match "%.fnlm$")
+                          (= (file.text:sub 1 24) ";; fennel-ls: macro-file"))
           plugin
           {:name "fennel-ls"
            :versions ["1.4.1" "1.4.2" "1.5.0" "1.5.1" "1.5.3" "1.5.4"]
@@ -395,7 +388,7 @@ identifiers are declared / referenced in which places."
                    (fn _p1 [p2 p3]
                      (filter-errors :parser (xpcall #(p p2 p3) fennel.traceback))))
 
-          ast (parse-ast parser)]
+          ast (icollect [ok ast parser &until (not ok)] ast)]
 
       (λ traverse [ast]
         "runs on every ast tree that was parsed"

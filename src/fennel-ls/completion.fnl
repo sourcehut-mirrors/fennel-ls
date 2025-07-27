@@ -71,18 +71,19 @@ is set to true and we report that we support completionItem/resolve."
         (set (. seen definition) true)
         (add-completion! name definition)
         (each [field def ?string-method (navigate.iter-fields server definition)]
-          (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
-                  ?string-method
-                  (and (fennel.list? def.definition)
-                       (or (fennel.sym? (. def.definition 1) "fn")
-                           (fennel.sym? (. def.definition 1) "λ"))
-                       (or (and (fennel.table? (. def.definition 2))
-                                (fennel.sym? (. def.definition 2 1) "self"))
-                           (and (fennel.sym? (. def.definition 2))
-                                (fennel.table? (. def.definition 3))
-                                (fennel.sym? (?. def.definition 3 1) "self")))))
-              (add-completion-recursively! (.. name ":" field) def)
-              (add-completion-recursively! (.. name "." field) def)))
+          (when (utils.valid-sym-field? field)
+            (if (or (= :self (tostring (?. def :metadata :fnl/arglist 1)))
+                    ?string-method
+                    (and (fennel.list? def.definition)
+                         (or (fennel.sym? (. def.definition 1) "fn")
+                             (fennel.sym? (. def.definition 1) "λ"))
+                         (or (and (fennel.table? (. def.definition 2))
+                                  (fennel.sym? (. def.definition 2 1) "self"))
+                             (and (fennel.sym? (. def.definition 2))
+                                  (fennel.table? (. def.definition 3))
+                                  (fennel.sym? (?. def.definition 3 1) "self")))))
+                (add-completion-recursively! (.. name ":" field) def)
+                (add-completion-recursively! (.. name "." field) def))))
         (set (. seen definition) false)))
 
     (fn expression-completions []

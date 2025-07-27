@@ -34,11 +34,6 @@ You can read more about how to add lints in docs/linting.md"
           (table.insert (assert (. lints t) (.. "unknown lint type " t)) lint))
         (table.insert (assert (. lints lint.type) (.. "unknown lint type " lint.type)) lint)))))
 
-(fn could-be-rewritten-as-sym? [str]
-  (and (= :string (type str)) (not (str:find "^%d"))
-       (not (str:find "[^!$%*+/0-9<=>?A-Z\\^_a-z|\128-\255-]"))))
-
-
 (add-lint :unused-definition
   {:what-it-does
    "Marks bindings that aren't read. Completely overwriting a value doesn't count
@@ -192,7 +187,7 @@ You can read more about how to add lints in docs/linting.md"
                   method (. ast 3)]
               (if (and (sym? (. ast 1) ":")
                        (sym? object)
-                       (could-be-rewritten-as-sym? method))
+                       (utils.valid-sym-field? method))
                 {:range (message.ast->range server file ast)
                  :message (.. "unnecessary : call: use (" (tostring object) ":" method ")")
                  :severity message.severity.WARN})))})
@@ -218,7 +213,7 @@ You can read more about how to add lints in docs/linting.md"
            (let [all-rewritable? (faccumulate [syms true
                                                i 3 (- (length ast) 1)
                                                &until (not syms)]
-                                    (could-be-rewritten-as-sym? (. ast i)))]
+                                    (utils.valid-sym-field? (. ast i)))]
              (if (and (sym? (. ast 1) "tset")
                       (sym? (. ast 2))
                       all-rewritable?)
