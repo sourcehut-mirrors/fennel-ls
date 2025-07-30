@@ -27,7 +27,11 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :notebookDocumentSync nil
          :completionProvider {:workDoneProgress false
                               :resolveProvider server.can-do-good-completions?
-                              :triggerCharacters ["(" "[" "{"]
+                              :triggerCharacters ["(" "[" "{"
+                                                  ;; The LSP spec claims that "characters that make up identifiers don't need to be listed here"
+                                                  ;; > https://github.com/microsoft/language-server-protocol/blob/4a4ff53db00d8c5e57630ff364dedf1918cbb612/_specifications/lsp/3.18/language/completion.md?plain=1#L205
+                                                  ;; but many editors don't consider these to be identifier characters, even though they are
+                                                  "." "!" "^" "$" "%" "&" "*" "+" "/" "<" "=" ">" "?"]
                               :completionItem {:labelDetailsSupport false}}
          :hoverProvider {:workDoneProgress false}
          :signatureHelpProvider {:workDoneProgress false
