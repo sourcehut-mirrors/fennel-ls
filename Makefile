@@ -1,10 +1,9 @@
 LUA ?= lua
 # If ./fennel is present, use `lua fennel` to run the locally vendored fennel
 # otherwise
-FENNEL=$(if $(wildcard fennel),$(LUA) fennel,fennel)
 EXE=fennel-ls
 
-SRC:=$(shell find src -name "*.fnl" | grep -v "/generated/")
+SRC:=$(shell find src -name "*.fnl" ! -path "*/generated/*")
 TOOLS:=$(shell find tools -name "*.fnl")
 
 DESTDIR ?=
@@ -15,11 +14,13 @@ MANDIR ?= $(PREFIX)/share/man/man1
 VENDOR ?= true
 
 ifeq ($(VENDOR), true)
+	FENNEL ?= $(LUA) fennel
 	FENNELFLAGS ?= --add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
-	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler
+	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler,fennel.specials
 else
+	FENNEL ?= fennel
 	FENNELFLAGS ?= --add-fennel-path "src/?.fnl"
-	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler,fennel,dkjson
+	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler,fennel.specials,fennel,dkjson
 endif
 
 .PHONY: all clean test repl install docs docs-love2d ci selflint \
@@ -76,7 +77,7 @@ selflint:
 	$(FENNEL) $(FENNELFLAGS) src/fennel-ls.fnl --lint $(SRC) $(shell find test -name "*.fnl")
 
 count:
-	cloc $(shell find src -name "*.fnl" | grep -v "generated")
+	cloc $(shell find src -name "*.fnl" ! -path "*/generated/*")
 
 repl:
 	DEV=y $(FENNEL) $(FENNELFLAGS)
