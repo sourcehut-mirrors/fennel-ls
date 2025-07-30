@@ -4,7 +4,8 @@ LUA ?= lua
 FENNEL=$(if $(wildcard fennel),$(LUA) fennel,fennel)
 EXE=fennel-ls
 
-SRC:=$(shell find src -name "*.fnl")
+SRC:=$(shell find src -name "*.fnl" | grep -v "/generated/")
+TOOLS:=$(shell find tools -name "*.fnl")
 
 DESTDIR ?=
 PREFIX ?= /usr/local
@@ -41,12 +42,18 @@ install: $(EXE) build/fennel-ls.1
 docs: src/fennel-ls/docs/generated/lua51.fnl \
 	src/fennel-ls/docs/generated/lua52.fnl \
 	src/fennel-ls/docs/generated/lua53.fnl \
-	src/fennel-ls/docs/generated/lua54.fnl
+	src/fennel-ls/docs/generated/lua54.fnl \
+	src/fennel-ls/docs/generated/compiler-env.fnl
 
-src/fennel-ls/docs/generated/%.fnl:
+src/fennel-ls/docs/generated/lua%.fnl: $(TOOLS)
 	mkdir -p build/
 	mkdir -p src/fennel-ls/docs/generated/
-	$(FENNEL) $(FENNELFLAGS) tools/generate-lua-docs.fnl ${*} > $@
+	$(FENNEL) $(FENNELFLAGS) tools/generate-lua-docs.fnl lua${*} > $@
+
+src/fennel-ls/docs/generated/compiler-env.fnl: $(TOOLS)
+	mkdir -p build/
+	mkdir -p src/fennel-ls/docs/generated/
+	$(FENNEL) $(FENNELFLAGS) tools/generate-compiler-env-docs.fnl ${*} > $@
 
 docs/lints.md: src/fennel-ls/lint.fnl
 	$(FENNEL) $(FENNELFLAGS) tools/extract-lint-docs.fnl > $@
