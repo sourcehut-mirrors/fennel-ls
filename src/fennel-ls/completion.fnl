@@ -102,7 +102,8 @@ is set to true and we report that we support completionItem/resolve."
                   (add-completion! global* def)
                   (add-completion-recursively! global* def))
             _ (do
-                (io.stderr:write "BAD!!!! undocumented global: " (tostring global*) "\n")
+                (when (not file.macro-file?)
+                  (io.stderr:write "BAD!!!! undocumented global: " (tostring global*) "\n"))
                 (add-completion! global* {})))))
 
       (each [k v (pairs docs.literals)]

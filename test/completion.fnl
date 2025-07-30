@@ -263,7 +263,12 @@
 (fn test-compiler-env []
   (check ";; fennel-ls: macro-file\n("
       [:sym :sym? :list :quote :icollect :math]
-      [:os]))
+      [:os])
+  ;; TODO #73
+  ; (check "(macro foo [] (|"
+  ;     [:sym :sym? :list :quote :icollect :math]
+  ;     [:os])
+  nil)
 
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
