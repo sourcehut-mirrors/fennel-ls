@@ -81,12 +81,8 @@ Every time the client sends a message, it gets handled by a function in the corr
         byte (utils.position->byte file.text position server.position-encoding)]
     (case-try (analyzer.find-symbol file.ast byte)
       (symbol [parent])
-      (if
-        ;; require call
-        (. file.require-calls parent)
-        (analyzer.search server file parent {:stop-early? true} {})
-        ;; regular symbol
-        (analyzer.search server file symbol {:stop-early? true} {: byte}))
+      (let [search-target (if (. file.require-calls parent) parent symbol)]
+        (analyzer.search server file search-target {:stop-early? true} {: byte}))
       result
       (if result.file
         (message.range-and-uri server result.file (or result.binding result.definition)))
