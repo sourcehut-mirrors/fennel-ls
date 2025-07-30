@@ -703,7 +703,7 @@ You can read more about how to add lints in docs/linting.md"
                    (if (and (< max-params number-of-args)
                             (not infinite-params?))
                      (let [range-of-call (message.ast->range server file ast)
-                           first-bad-argument (. ast (+ 1 max-params))
+                           first-bad-argument (. ast (+ 2 max-params))
                            ?range-of-first-bad-argument (message.ast->range server file first-bad-argument)
                            range {:start (or (?. ?range-of-first-bad-argument :start) range-of-call.start)
                                   :end range-of-call.end}]
