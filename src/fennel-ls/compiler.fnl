@@ -112,6 +112,7 @@ identifiers are declared / referenced in which places."
 
     (λ symbol-to-expression [ast scope ?reference?]
       (assert (sym? ast) "symbols only")
+      (tset scopes ast scope)
       (reference ast scope (if ?reference?
                              :read
                              (not (multisym? ast))

@@ -178,6 +178,11 @@
      {:kind #(= nil $)}
      {:label #(= nil $)}])
 
+  (check "(case {}
+            identifier |"
+         [:identifier]
+         []) ; TODO [{:documentation #(= nil $)}])
+
   (each [_ mode (ipairs [true false])]
     (check "(fn x [a b c]
             \"docstring\"

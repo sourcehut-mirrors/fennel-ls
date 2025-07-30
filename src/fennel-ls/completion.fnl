@@ -57,7 +57,8 @@ is set to true and we report that we support completionItem/resolve."
                                            &until ?find]
                                 (= (. ast 1) symbol)))
         ;; find the first parent that contains a scope
-        scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
+        scope (or (. file.scopes symbol)
+                  (accumulate [?find nil _ parent (ipairs parents) &until ?find]
                     (. file.scopes parent))
                   file.scope)
         range (case (message.ast->range server file symbol)
@@ -157,7 +158,8 @@ is set to true and we report that we support completionItem/resolve."
   (let [{: uri : byte} completion-item.data
         file (files.get-by-uri server uri)
         (_symbol parents) (analyzer.find-symbol file.ast byte)
-        scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
+        scope (or (. file.scopes _symbol)
+                  (accumulate [?find nil _ parent (ipairs parents) &until ?find]
                     (. file.scopes parent))
                   file.scope)
         result (analyzer.search-name-and-scope server file completion-item.label scope)]
