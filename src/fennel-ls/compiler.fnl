@@ -16,9 +16,9 @@ identifiers are declared / referenced in which places."
 
 (local print print)
 
-(local macro-globals
-  (icollect [k (pairs (make-compiler-env))]
-    k))
+(local compiler-env (make-compiler-env))
+(local compiler-globals (icollect [k (pairs compiler-env)] k))
+(set compiler-env._G._FENNEL_LS true)
 
 (local nil* (sym :nil))
 
@@ -352,7 +352,7 @@ identifiers are declared / referenced in which places."
 
     (let [macro-file? (or (file.uri:match "%.fnlm$")
                           (= (file.text:sub 1 24) ";; fennel-ls: macro-file"))
-          allowed-globals (if macro-file? macro-globals
+          allowed-globals (if macro-file? compiler-globals
                             (icollect [extra-global (server.configuration.extra-globals:gmatch "[^ ]+")
                                        &into (docs.get-all-globals server)]
                               extra-global))
@@ -372,17 +372,16 @@ identifiers are declared / referenced in which places."
            :pre-each compile-each
            :pre-fn compile-fn
            :pre-do compile-do}
-          scope (if macro-file?
-                  (fennel.scope compiler-scope)
-                  (fennel.scope))
+          scope (fennel.scope (if macro-file? compiler-scope))
           opts {:filename file.uri
                 :plugins [plugin]
                 :allowedGlobals allowed-globals
                 :useMetadata true
                 :requireAsInclude false
                 :useBitLib (not ((or _G.loadstring _G.load) "return 1&1"))
-                : warn
-                : scope}
+                : scope
+                : compiler-env
+                : warn}
           filter-errors (fn _filter-errors [component ...]
                           (case ...
                             (true ?item1 ?item2) (values ?item1 ?item2)
