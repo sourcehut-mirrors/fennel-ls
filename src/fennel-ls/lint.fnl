@@ -6,13 +6,36 @@ You can read more about how to add lints in docs/linting.md"
 
 (local {: sym? : list? : table? : varg? : view
         : sym : list &as fennel} (require :fennel))
-(local {: special? : op?} (require :fennel-ls.compiler))
+(local {:scopes {:global {:specials SPECIALS}}} (require :fennel.compiler))
+
 (local analyzer (require :fennel-ls.analyzer))
 (local message (require :fennel-ls.message))
 (local utils (require :fennel-ls.utils))
 (local navigate (require :fennel-ls.navigate))
 (local docs (require :fennel-ls.docs))
 (local dkjson (require :dkjson))
+
+
+(fn special? [item]
+  (and (sym? item)
+       (. SPECIALS (tostring item))
+       item))
+
+(local ops {"+" 1 "-" 1 "*" 1 "/" 1 "//" 1 "%" 1 "^" 1 ">" 1 "<" 1 ">=" 1
+            "<=" 1 "=" 1 "not=" 1 ".." 1 "." 1 "and" 1 "or" 1 "band" 1
+            "bor" 1 "bxor" 1 "bnot" 1 "lshift" 1 "rshift" 1})
+
+(fn op? [item]
+  (and (sym? item)
+       (. ops (tostring item))
+       item))
+
+(local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
+(local associative-ops {:+ true :* true :and true :or true :band true :bor true :.. true})
+(local redundant-wrappers {:+ true :* true :and true :or true :band true :bor true :.. true :do true :values true})
+(local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
+                           form body-form?))
+
 
 (local lints {:definition []
               :reference []
@@ -227,9 +250,6 @@ You can read more about how to add lints in docs/linting.md"
                                                             (table.concat ast "." 3 (- (length ast) 1))
                                                             (view (. ast (length ast))))}]}})))})
 
-(local redundant-wrappers
-  {:do true :values true :+ true :* true :and true :or true :band true :bor true ".." true})
-
 (add-lint :unnecessary-unary
   {:what-it-does
    "Warns about unnecessary `do` or `values` forms that only contain a single expression."
@@ -260,9 +280,6 @@ You can read more about how to add lints in docs/linting.md"
                 :fix #{:title "Unwrap the expression"
                        :changes [{:range (message.ast->range server file ast)
                                   :newText (view (. ast 2))}]}}))})
-
-(local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
-                           form body-form?))
 
 (add-lint :redundant-do
   {:what-it-does
@@ -376,8 +393,6 @@ You can read more about how to add lints in docs/linting.md"
                 :message (.. "var is never set: " (tostring symbol)
                              " Consider using (local) instead of (var)")
                 :severity message.severity.WARN}))})
-
-(local op-identity-value {:+ 0 :* 1 :and true :or false :band -1 :bor 0 :.. ""})
 
 (add-lint :op-with-no-arguments
   {:what-it-does
@@ -783,8 +798,6 @@ You can read more about how to add lints in docs/linting.md"
                                                              :message $
                                                              :severity message.severity.WARN}))))
            nil)})
-
-(local associative-ops {:and true :or true :+ true :* true :band true :bor true :.. true})
 
 (add-lint :nested-associative-operator
   {:what-it-does
