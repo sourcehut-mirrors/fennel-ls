@@ -153,14 +153,13 @@ is set to true and we report that we support completionItem/resolve."
       results)))
 
 (fn completionItem/resolve [server _send completion-item]
-  (let [result
-        (let [{: uri : byte} completion-item.data
-              file (files.get-by-uri server uri)
-              (_symbol parents) (analyzer.find-symbol file.ast byte)
-              scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
-                          (. file.scopes parent))
-                        file.scope)]
-          (analyzer.search-name-and-scope server file completion-item.label scope))]
+  (let [{: uri : byte} completion-item.data
+        file (files.get-by-uri server uri)
+        (_symbol parents) (analyzer.find-symbol file.ast byte)
+        scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
+                    (. file.scopes parent))
+                  file.scope)
+        result (analyzer.search-name-and-scope server file completion-item.label scope)]
     (when result
       (set completion-item.documentation (format.hover-format server completion-item.label result)))
     completion-item))
