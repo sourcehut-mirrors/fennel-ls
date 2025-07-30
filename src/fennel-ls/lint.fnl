@@ -693,7 +693,7 @@ You can read more about how to add lints in docs/linting.md"
                                           (let [s (tostring arg)]
                                             (or (= s "...") (= s "&"))))
                        ;; exception: (table.insert table item) can take a third argument
-                       max-params (if (= result (. (docs.get-global server :table) :fields :insert))
+                       max-params (if (= result (. (docs.get-global server nil :table) :fields :insert))
                                       3
                                       (length signature))
                        method-call? (and (sym? (. ast 1))

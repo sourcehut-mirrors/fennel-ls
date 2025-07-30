@@ -183,7 +183,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
           (if (sym? ast)            (search-symbol server file ast stack opts)
               (= 0 (length stack))  {:definition ast : file} ;; BASE CASE !!
               (= :table (type ast)) (search-table server file ast stack opts)
-              (= :string (type ast)) (search-document server (docs.get-global server :string) stack opts))
+              (= :string (type ast)) (search-document server (docs.get-global server nil :string) stack opts))
           nil))))
 
 
@@ -239,7 +239,7 @@ initialization-opts: {:stack ?list[ast]
       metadata (search-document server metadata stack opts)
       _ (case (find-local-definition file base-name scope)
           def (search-definition server file def stack opts)
-          _ (case (docs.get-global server base-name)
+          _ (case (docs.get-global server scope base-name)
               metadata (search-document server metadata stack opts))))))
 
 (λ past? [?ast byte]

@@ -14,6 +14,8 @@ This module has high level helpers for creating/getting \"file\" objects."
                  {: uri : text})
         _ (case (io.open (utils.uri->path uri) "r")
             file (let [text (file:read :*a)]
+                   (when (not text)
+                     (error (.. "could not read file:" (utils.uri->path uri))))
                    (file:close)
                    {: uri : text})))))
 

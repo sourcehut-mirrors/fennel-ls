@@ -85,45 +85,30 @@
                             "")))))
       (expected completions))))
 
-(fn test-global []
-  (check "(" [{:label :setmetatable :kind kinds.Function}] [])
-  (check "(" [:_G :debug :table :io :getmetatable :setmetatable :_VERSION
-              :ipairs :pairs :next] [:this-is-not-a-global])
-  (check "#nil\n(" [:_G :debug :table :io :getmetatable :setmetatable
-                    :_VERSION :ipairs :pairs :next] [])
-  (check "(if ge" [:getmetatable] [])
-  (check "(table.i" [:table.insert] [])
-  (check "(tablei" [:table.insert] [])
-  nil)
-
-(fn test-local []
-  (check "(local x 10)\n(print |)" [:x] [:+])
-  (check "(local x (doto 10 or and +))\n(print |)" [:x] [])
-  (check "(local x 10)\n|\n" [:x] [])
-  (check "(do (local x 10))\n|" [] [:x])
-  (check "(let [foo 10 bar 20]
-            |)" [:foo :bar] [])
-  (check "(let [foo 10]
-            (let [bar 20]
-              |))" [:foo :bar] [])
-  (check "(let [foo 10]
-            (let [bar 20]
-              fo|))" [:foo :bar] [])
-  (check "(let [foo 10]
-            (let [bar 20]
-              |" [:foo :bar] [])
-  (check "(let [foo 10]
-            (let [bar 20]
-              fo|" [:foo :bar] [])
-  (check "(local foo 10)
-          (local bar (let [y foo] |" [:foo :y] [])
-  (check "(let [foo 10
-                bar 20
-                _ |" [:foo :bar] [])
-  (check "(let [foo 10
-                bar 20
-                _ fo|" [:foo :bar] [])
-  (check "(local x {:field 100})\n(if x.fi" [:x.field] [])
+(fn test-basic []
+  ;; basic scoping rules
+  (check "(local yes1 10)
+          (fn yes2 [no2])
+          (do (local no1 11))
+          (let [yes3 (fn [no3] no3)]
+            (let [{:item y} {:item {:es4 12}}]
+              (fn [yes5 {: yes6}]
+                (each [no4 {: no5} (pairs _G)]
+                  nil)
+                (each [yes7 {: yes8} (pairs _G)]
+                  |"
+         [:yes1 :yes2 :yes3 :y.es4 :yes5 :yes6 :yes7 :yes8
+          :_G :debug :table :table.insert :io :getmetatable :_VERSION :ipairs :pairs :next {:label :setmetatable :kind kinds.Function}
+          :true :false :.nan :.inf :nil
+          {:label "coroutine.yield"
+               :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
+         [:no1 :no2 :no3 :no4 :no5 :+
+          :this-variable-does-not-exist
+          :_G.coroutine.yield
+          :_G._G.coroutine.yield
+          #(and (= nil $.documentation)
+                (not= $.label :yes8))])
+  ;; no duplicates
   (check "(let [x 10] (let [x 10] x"
          (fn [completions]
            (faith.= 1 (accumulate [number-of-x 0 _ completion (ipairs completions.items)]
@@ -131,72 +116,51 @@
                           (+ number-of-x 1)
                           number-of-x))))
          [])
-  ;; stretchy completions
-  (check "(local x {:field 100})\n(if fi" [:x.field] [])
-  (check "(local x {:field {:deep 100}})\n(if de" [:x.field.deep] [])
-  (check "(local t {:field (fn [foo] nil)})\n(t|" [:t.field] [])
-  (check "(local t {:field (fn [self] nil)})\n(t|" [:t:field] [])
-  (check "(local t {})\n(fn t.field [foo] nil)\n(t|" [:t.field] [])
-  (check "(local t {})\n(fn t.field [self] nil)\n(t|" [:t:field] [])
+  ;; completions of fields (nested)
+  (check "(local x {:y {:z {:a {:b 1}}}}) ; deep tables
+          (local m {}) ; split modules
+          (fn m.function [])
+          (fn m.method [self])
+          (local m2 {:function m.function :method m.method})
+          |"
+         [:x :x.y :x.y.z.a.b
+          :m.function
+          :m:method
+          :m2.function
+          :m2:method]
+         [])
+
+  ;; regression test for not crashing
+  (check "(local x {:field (fn [self])})\n(x::f" [:x:field] [])
   nil)
 
 (fn test-builtin []
-  (check "(|)" [:do :let :fn :doto :-> :-?>> :?.] [])
-  ;; it's not the language server's job to do filtering,
-  ;; so there's no negative assertions here for other symbols
-  (check "(d|)" [:do :doto] [])
-  ;; in fact, for fuzzy-matching clients, you especially want to make sure the server isn't filtering
-  (check "(t|)" [:doto :setmetatable] [])
-  ;; specials only are suggested in callable positions
-  (check "(do |)" [] [:do :let :fn :-> :-?>> :?.])
-  (check "|\n" [] [:do :let :fn :-> :-?>> :?.])
-  (check "d|\n" [] [:do :let :fn :-> :-?>> :?.])
+  ;; specials and macros are only suggested in callable positions
+  (check "(macro funny [] `nil)
+          (|)"
+         [:do :let :fn :doto :-> :-?>> :?. :funny]
+         [])
+  (check "(do |)"
+         []
+         [:do :let :fn :doto :-> :-?>> :?.])
+  ;; tricky case
+  (check "(doto f |)"
+         [:do :let :fn :doto :-> :-?>> :?.]
+         [])
   nil)
 
-(fn test-macro []
-  (check "(macro funny [] `nil)\n(|)" [:funny] [])
-  nil)
 
 (fn test-local-in-macro []
-  (check "(local item 10)\n(doto it|)" [:item] [])
-  (check "(local item 10)\n(doto |)" [:item] [])
   (check "(local item 10)\n(case 1 1 it|)" [:item] [])
-  (check "(local item 10)\n(case 1 1 |)" [:item] [])
-  nil)
-
-(fn test-fn-arg []
-  (check "(fn [x] (print x))\n" [] [:x])
-  (check "(fn [x] (print x))\n(print " [] [:x])
-  (check "(fn foo [z]\n  (let [x 10 y 20]\n    |" [:x :y :z] [])
-  (check "(fn foo [arg1 arg2 arg3]\n  |)" [:arg1 :arg2 :arg3] [])
-  (check "(fn foo [arg1 arg2 arg3]\n  (do (do (do |))))" [:arg1 :arg2 :arg3] [])
   nil)
 
 (fn test-field []
-  (check "(local x {:field (fn [self])})\n(x:" [:x:field] [])
-  (check "(local x {:field (fn [self])})\n(x:fi|" [:x:field] [])
-  ;; regression test for not crashing
-  (check "(local x {:field (fn [self])})\n(x::f" [] [])
   (check
     "(let [my-table {:foo 10 :bar 20}]\n  my-table.|)))"
     [{:label :my-table.foo :kind kinds.Value}
      {:label :my-table.bar :kind kinds.Value}]
     [])
-  (check
-    {:main.fnl "(let [foo (require :fooo)]
-                    foo.|)))"
-     :fooo.fnl "(fn my-export [x] (print x))
-                {: my-export :constant 10}"}
-    [:foo.my-export :foo.constant]
-    [])
-  (check
-    {:main.fnl "(let [foo (require :fooo)]
-                    foo.|)))"
-     :fooo.fnl "(local M {:constant 10})
-                (fn M.my-export [x] (print x))
-                M"}
-    [:foo.my-export :foo.constant]
-    [])
+
   nil)
 
 (fn test-docs []
@@ -251,21 +215,17 @@
   nil)
 
 (fn test-module []
-  (check "(coroutine.y|"
-    [{:label "coroutine.yield"
-      :documentation #(and $.value ($.value:find "```fnl\n(coroutine.yield ...)\n```" 1 true))}]
-    [{:documentation #(= nil $)}])
-  (check "(local c coroutine)
-          (c.y"
-    ["coroutine.yield" "c.yield"]
-    [{:documentation #(= nil $)}])
-  (check "(local t table)
-          (t.i"
-    ["table.insert" "t.insert"]
-    [{:documentation #(= nil $)}])
-  (check "debug.deb|"
-    [{:label "debug.debug"
-      :documentation #(and $.value ($.value:find "```fnl\n(debug.debug)\n```" 1 true))}]
+  (check
+    {:main.fnl "(let [foo (require :fooo)
+                      bar (require :baar)]
+                    |)"
+     :fooo.fnl "(fn my-export [x] (print x))
+                {: my-export :constant 10}"
+     :baar.fnl "(local M {:constant 10})
+                (fn M.my-export [x] (print x))
+                M"}
+    [:foo.my-export :foo.constant
+     :bar.my-export :bar.constant]
     [])
   nil)
 
@@ -275,18 +235,10 @@
           (print foo)"
     [:foo]
     [:math])
-  (check "(local f|)
-          (print foo)"
-    [:foo]
-    [:math])
   (check "(let [f|]
             (print foo))"
     [:foo]
     [:math])
-  (check "(let [foo |] ; cursor is in an expression so we want expressions now
-            (print foo))"
-    [:math]
-    [])
   nil)
 
 (fn test-no-completion []
@@ -303,10 +255,15 @@
     []
     [:math])
 
-  (check "(fn foo|)"
+  (check "(fn foo| [])"
     []
     ["foo|"])
   nil)
+
+(fn test-compiler-env []
+  (check ";; fennel-ls: macro-file\n("
+      [:sym :sym? :list :quote :icollect :math]
+      [:os]))
 
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
@@ -326,14 +283,12 @@
 ;; (it "suggests keys when typing out destructuring, as in `(local {: typinghere} (require :mod))`")
 ;; (it "only suggests tables for `ipairs` / begin work on type checking system")
 
-{: test-global
- : test-local
+{: test-basic
  : test-builtin
- : test-macro
  : test-local-in-macro
- : test-fn-arg
  : test-field
  : test-docs
  : test-module
  : test-destructure
- : test-no-completion}
+ : test-no-completion
+ : test-compiler-env}

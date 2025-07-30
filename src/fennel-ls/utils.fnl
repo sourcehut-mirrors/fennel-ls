@@ -160,9 +160,7 @@ WARNING: this is only used in the test code, not in the real language server"
 
 (fn multi-sym-split [symbol ?offset]
   (local symbol (tostring symbol))
-  (if (or (= symbol ".")
-          (= symbol "..")
-          (= symbol "...")
+  (if (or (symbol:find "^%.")
           (= symbol ":")
           (= symbol "?."))
     [symbol]

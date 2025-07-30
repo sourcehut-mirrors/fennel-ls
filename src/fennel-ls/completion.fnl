@@ -28,15 +28,17 @@ the client to forward information to the resolve request by setting the `data`
 to {: uri : byte}. When this capability exists, `server.can-do-good-completions?`
 is set to true and we report that we support completionItem/resolve."
 
+(local fennel (require :fennel))
+(local {:metadata METADATA} (require :fennel.compiler))
+
 (local files (require :fennel-ls.files))
 (local utils (require :fennel-ls.utils))
 (local analyzer (require :fennel-ls.analyzer))
-(local fennel (require :fennel))
 (local message (require :fennel-ls.message))
 (local format (require :fennel-ls.formatter))
 (local navigate (require :fennel-ls.navigate))
 (local compiler (require :fennel-ls.compiler))
-(local {:metadata METADATA} (require :fennel.compiler))
+(local docs (require :fennel-ls.docs))
 
 (λ textDocument/completion [server _send {: position :textDocument {: uri}}]
   ;; get the file
@@ -49,9 +51,12 @@ is set to true and we report that we support completionItem/resolve."
         ;; find what ast objects are under the cursor
         (symbol parents) (analyzer.find-symbol file.ast byte)
         ;; check what context I'm in
-        in-call-position? (and (fennel.list? (. parents 1))
-                               (= symbol (. parents 1 1)))
-        ;; find the first one that contains a scope
+        in-call-position? (or (and (fennel.list? (. parents 1))
+                                   (= symbol (. parents 1 1)))
+                              (accumulate [?find nil ast (pairs file.calls)
+                                           &until ?find]
+                                (= (. ast 1) symbol)))
+        ;; find the first parent that contains a scope
         scope (or (accumulate [?find nil _ parent (ipairs parents) &until ?find]
                     (. file.scopes parent))
                   file.scope)
@@ -99,6 +104,9 @@ is set to true and we report that we support completionItem/resolve."
             _ (do
                 (io.stderr:write "BAD!!!! undocumented global: " (tostring global*) "\n")
                 (add-completion! global* {})))))
+
+      (each [k v (pairs docs.literals)]
+        (add-completion! k v))
 
       (var scope scope)
       (while scope

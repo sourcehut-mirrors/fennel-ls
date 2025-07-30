@@ -6,12 +6,19 @@ compiler's plugin hook callbacks. It stores lexical info about which
 identifiers are declared / referenced in which places."
 
 (local {: sym? : list? : sequence? : table? : varg? : sym : view &as fennel} (require :fennel))
-(local {:scopes {:global {: specials}}} (require :fennel.compiler))
+(local {:scopes {:global {: specials} :compiler compiler-scope}} (require :fennel.compiler))
+(local {: make-compiler-env} (require :fennel.specials))
+
 (local docs (require :fennel-ls.docs))
 (local message (require :fennel-ls.message))
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
+
 (local print print)
+
+(local macro-globals
+  (icollect [k (pairs (make-compiler-env))]
+    k))
 
 (local nil* (sym :nil))
 
@@ -38,10 +45,6 @@ identifiers are declared / referenced in which places."
     (= (type candidate.manglings) :table)
     (= (type candidate.specials) :table)
     (= (type candidate.gensyms) :table)))
-
-(λ ast->macro-ast [ast]
-  [(fennel.list (sym :eval-compiler)
-                ((or (. table :unpack) _G.unpack) ast))])
 
 (λ multisym? [t]
   ;; check if t is a symbol with multiple parts, eg. foo.bar.baz
@@ -97,7 +100,7 @@ identifiers are declared / referenced in which places."
       ;; find reference
       (let [name (string.match (tostring symbol) "[^%.:]+")]
         (case (or (find-definition (tostring name) scope)
-                  (docs.get-global server name))
+                  (docs.get-global server scope name))
           target (let [ref {: symbol : target : ref-type}]
                    (tset references symbol ref)
                    (when target.referenced-by
@@ -214,12 +217,16 @@ identifiers are declared / referenced in which places."
       ;; handle the definitions of a function
       (define-function-name ast scope))
 
-    (λ compile-for [_ast scope binding]
-       (define nil* binding scope))
+    (λ compile-for [ast scope binding]
+      (tset scopes ast scope)
+      (define nil* binding scope))
 
-    (λ compile-each [_ast scope bindings]
+    (λ compile-each [ast scope bindings]
+      (tset scopes ast scope)
       (each [_ binding (ipairs bindings)]
-        (define nil* binding scope)))
+        (if (and (sym? binding)
+                 (not (. scope.gensyms (tostring binding))))
+          (define nil* binding scope))))
 
     (λ compile-fn [ast scope]
       (tset scopes ast scope)
@@ -231,7 +238,8 @@ identifiers are declared / referenced in which places."
     (λ call [ast scope]
       "every list that is a call to a special or function"
       (tset calls ast true)
-      (tset scopes ast scope)
+      (when (not (. scopes ast))
+        (tset scopes ast scope))
       ;; Most calls aren't interesting, but here's the list of the ones that are:
       (let [head (. ast 1)]
         (case (and (sym? head) (tostring head))
@@ -341,13 +349,13 @@ identifiers are declared / referenced in which places."
            :severity message.severity.WARN
            :code :compiler-warning})))
 
-    (local allowed-globals (docs.get-all-globals server))
-    (icollect [extra-global (server.configuration.extra-globals:gmatch "[^ ]+")
-               &into allowed-globals]
-      extra-global)
 
     (let [macro-file? (or (file.uri:match "%.fnlm$")
                           (= (file.text:sub 1 24) ";; fennel-ls: macro-file"))
+          allowed-globals (if macro-file? macro-globals
+                            (icollect [extra-global (server.configuration.extra-globals:gmatch "[^ ]+")
+                                       &into (docs.get-all-globals server)]
+                              extra-global))
           plugin
           {:name "fennel-ls"
            :versions ["1.4.1" "1.4.2" "1.5.0" "1.5.1" "1.5.3" "1.5.4"]
@@ -364,7 +372,9 @@ identifiers are declared / referenced in which places."
            :pre-each compile-each
            :pre-fn compile-fn
            :pre-do compile-do}
-          scope (fennel.scope)
+          scope (if macro-file?
+                  (fennel.scope compiler-scope)
+                  (fennel.scope))
           opts {:filename file.uri
                 :plugins [plugin]
                 :allowedGlobals allowed-globals
@@ -426,7 +436,7 @@ identifiers are declared / referenced in which places."
       (set _G.print #(values))
       (table.insert defer #(set _G.print print))
 
-      (each [_i form (ipairs (if macro-file? (ast->macro-ast ast) ast))]
+      (each [_i form (ipairs ast)]
         (filter-errors :compiler
                        ;; this entire block of code is for making the instruction limit work
                        (xpcall #(let [limiting? (not= server.configuration.compiler-instruction-limit -1)]

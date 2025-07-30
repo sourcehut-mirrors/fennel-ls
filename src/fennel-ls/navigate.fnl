@@ -6,7 +6,7 @@
   "TODO name this thing"
   (coroutine.wrap
     #(if (= (type definition.definition) :string)
-         (each [key value (pairs (-> (docs.get-global server :string) (. :fields)))]
+         (each [key value (pairs (-> (docs.get-global server nil :string) (. :fields)))]
            (when (or (= (type key) :string) (= (type key) :number))
              (coroutine.yield key value true)))
          (do
@@ -22,10 +22,15 @@
                (when (or (= (type key) :string) (= (type key) :number))
                  (coroutine.yield key value))))))))
 
+(λ has-fields [server_ definition]
+  (or (= (type definition.definition) :string)
+      (fennel.table? definition.definition)
+      definition.fields))
+
 (λ _get-field [server definition key]
   (let [fields (or definition.fields
                    (when (= (type definition.definition) :string)
-                     (. docs.get-global server :string)))]
+                     (. (docs.get-global server nil :string) :fields)))]
     (or (?. fields key)
         (when (fennel.table? definition.definition)
           (analyzer.search server definition.file definition.definition {} {:stack [key]})))))
@@ -53,4 +58,5 @@
 
 {: _get-field
  : iter-fields
+ : has-fields
  : getmetadata}

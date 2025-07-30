@@ -9,7 +9,8 @@ Handles grabbing the documentation from sources other than fennel code;
 (local fennel (require :fennel))
 (local {:metadata METADATA
         :scopes {:global {:specials SPECIALS
-                          :macros MACROS}}}
+                          :macros MACROS}
+                 :compiler compiler-scope}}
   (require :fennel.compiler))
 
 (local docset-ext ".lua")
@@ -93,26 +94,36 @@ Handles grabbing the documentation from sources other than fennel code;
                &until g]
     (and enabled? (. (get-library library-name) global-name))))
 
-(fn get-global [server global-name]
+(fn get-global [server ?scope global-name]
   (or (get-library-global server global-name)
-      (. (get-lua-version server.configuration.lua-version) global-name)))
+      (. (get-lua-version server.configuration.lua-version) global-name)
+      (if (do (var x ?scope)
+             (while (and x (not= x compiler-scope))
+               (set x x.parent))
+             (= x compiler-scope))
+        (. (require :fennel-ls.docs.generated.compiler-env) global-name))))
 
-(local hardcoded-special-items
-  {:nil {:metadata {:fnl/docstring "Represents the absence of a useful value."
+(local literals
+  {:nil {:definition (fennel.sym :nil)
+         :metadata {:fnl/docstring "Represents the absence of a useful value."
                     :fls/itemKind "Keyword"}}
-   :true {:metadata {:fnl/docstring "A boolean value representing truth."
+   :true {:definition true
+          :metadata {:fnl/docstring "A boolean value representing truth."
                      :fls/itemKind "Keyword"}}
-   :false {:metadata {:fnl/docstring "A boolean value representing falsehood."
+   :false {:definition false
+           :metadata {:fnl/docstring "A boolean value representing falsehood."
                       :fls/itemKind "Keyword"}}
-   :.nan {:metadata {:fnl/docstring "NaN"
+   :.nan {:definition .nan
+          :metadata {:fnl/docstring "NaN"
                      :fls/itemKind "Constant"}}
-   :.inf {:metadata {:fnl/docstring "inf"
+   :.inf {:definition .inf
+          :metadata {:fnl/docstring "inf"
                      :fls/itemKind "Constant"}}})
 
 (fn get-builtin [_server builtin-name]
   (or (. specials builtin-name)
       (. macros* builtin-name)
-      (. hardcoded-special-items builtin-name)))
+      (. literals builtin-name)))
 
 (λ validate-lua-version [lua-version invalid]
   (case (. lua-versions lua-version)
@@ -133,4 +144,5 @@ Handles grabbing the documentation from sources other than fennel code;
  : get-builtin
  : get-all-globals
  : validate-lua-version
- : validate-libraries}
+ : validate-libraries
+ : literals}
