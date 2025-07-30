@@ -17,7 +17,11 @@ identifiers are declared / referenced in which places."
 (local print print)
 
 (local compiler-env (make-compiler-env))
-(local compiler-globals (icollect [k (pairs compiler-env)] k))
+(local compiler-globals
+  (let [pairs (case (getmetatable compiler-env)
+                {:__pairs mtpairs} mtpairs
+                _ pairs)]
+    (icollect [k (pairs compiler-env)] k)))
 (set compiler-env._G._FENNEL_LS true)
 
 (local nil* (sym :nil))
