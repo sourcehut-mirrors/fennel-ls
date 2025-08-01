@@ -770,6 +770,23 @@ You can read more about how to add lints in docs/linting.md"
                      (each [k (pairs seen)]
                        (set (. seen k) nil))))))))})
 
+(fn zero-indexed [server file [callee tbl key &as ast]]
+  (if (and (sym? callee ".") (= 0 key) (not (sym? tbl :arg)))
+      {:range (message.ast->range server file ast)
+       :message "indexing a table with 0; did you forget that Lua is 1-indexed?"
+       :severity message.severity.WARN}))
+
+(add-lint :zero-indexed
+  {:what-it-does "Checks for accidentally treating tables as zero-indexed."
+   :why-care? "For new Fennel learners, this is a common mistake."
+   :example
+   "```fnl
+    (print (. inputs 0))
+    ```"
+   :since "0.2.2-dev"
+   :type :special-call
+   :impl zero-indexed})
+
 (add-lint :invalid-flsproject-settings
   {:what-it-does
    "Checks if the flsproject file's settings are valid."
