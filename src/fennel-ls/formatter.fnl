@@ -188,17 +188,33 @@ fntype is one of fn or λ or lambda"
   :Snippet 15 :Color 16 :File 17 :Reference 18 :Folder 19 :EnumMember 20
   :Constant 21 :Struct 22 :Event 23 :Operator 24 :TypeParameter 25})
 
+(fn int-to-str [int]
+  (string.char (math.min 126 (+ 32 int))))
+
+(fn sort-text [name kind]
+  (let [parts (-> (name:gsub "[.:]+$" #($:gsub "." "x"))
+                  (: :gmatch "[^.:]+"))
+        part-scores (icollect [part parts]
+                      (int-to-str (length part)))
+        count (length part-scores)
+        kind (if (= kind 1) 100 kind)]
+    (table.insert part-scores (math.max 1 count) (int-to-str kind))
+    (.. (int-to-str count) (table.concat part-scores))))
+
 (λ completion-item-format [server name definition range ?kind]
   "Makes a completion item"
-  {:label name
-   :documentation (when (not server.can-do-good-completions?) (hover-format server name definition))
-   :textEdit (when (not server.can-do-good-completions?) {:newText name : range})
-   :kind (or (?. kinds ?kind)
-             (if (name:find ".:") kinds.Method)
-             (case (navigate.getmetadata server definition)
-               metadata (?. kinds metadata.fls/itemKind))
-             kinds.Value)})
+  (let [kind (or (?. kinds ?kind)
+                 (if (name:find ".:") kinds.Method)
+                 (case (navigate.getmetadata server definition)
+                   metadata (?. kinds metadata.fls/itemKind))
+                 (if (name:find "%.") kinds.Field kinds.Value))]
+    {:label name
+     :documentation (when (not server.can-do-good-completions?) (hover-format server name definition))
+     :sortText (sort-text name kind)
+     :textEdit (when (not server.can-do-good-completions?) {:newText name : range})
+     : kind}))
 
 {: signature-help-format
  : hover-format
- : completion-item-format}
+ : completion-item-format
+ : sort-text}

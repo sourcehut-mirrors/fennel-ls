@@ -157,8 +157,8 @@
 (fn test-field []
   (check
     "(let [my-table {:foo 10 :bar 20}]\n  my-table.|)))"
-    [{:label :my-table.foo :kind kinds.Value}
-     {:label :my-table.bar :kind kinds.Value}]
+    [{:label :my-table.foo :kind kinds.Field}
+     {:label :my-table.bar :kind kinds.Field}]
     [])
 
   nil)
