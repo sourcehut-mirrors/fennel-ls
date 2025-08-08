@@ -537,7 +537,7 @@ You can read more about how to add lints in docs/linting.md"
     or by searching the word \"adjust\" in the [Lua Manual](https://www.lua.org/manual/5.4/manual.html#3.4.12)."
    :since "0.1.2"
    :type [:function-call :special-call]
-   :impl (fn [server file ast]
+   :impl (fn [_server _file ast]
            "generally, values and unpack are signs that the user is trying to do
             something with multiple values. However, multiple values will get
             \"adjusted\" to one value if they don't come at the end of the call."

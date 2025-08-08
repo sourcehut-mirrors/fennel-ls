@@ -3,6 +3,9 @@
 ### Features
 * Code action "Expand macro" lets you see what a macro expands to
 * Macro expansion is shown when hovering over a macro
+* Added support for pull diagnostics, which should help with out of date lints
+* Completions can complete missing variable names in binding contexts
+    * For example, a completion of `hello-there` if the file contains `(local | 100) (print hello-there)` where `|` represents the cursor.
 * New lint `empty-let` for replacing `(let [] ...)` with `(do ...)`
 * New lint `duplicate-table-keys` for detecting duplicate keys (eg. `{:a 1 :a 2}`)
 * New lint `too-many-arguments` for function calls that provide extra, useless arguments
