@@ -12,6 +12,10 @@
     (faith.= location response.result
       "error message")))
 
+(fn get-diagnostics [file-contents]
+  (let [{: uri : client} (create-client file-contents)]
+    (. (client:diagnostic uri) 1 :result :items)))
+
   ;; TODO fix macros to use a custom searcher
   ; (let [{: diagnostics}
   ;       (create-client
@@ -29,10 +33,10 @@
   ;;   (local client (doto [] ({:settings {:fennel-ls {:fennel-path "./?/?/?/?.fnl"}}))))
 
 (fn test-extra-globals []
-  (let [{:diagnostics good} (create-client {:main.fnl "(foo-100 bar :baz)"
-                                            :flsproject.fnl "{:extra-globals \"foo-100 bar\"}"})
-        {:diagnostics bad} (create-client {:main.fnl "(foo-100 bar :baz)"
-                                           :flsproject.fnl "{}"})]
+  (let [good (get-diagnostics {:main.fnl "(foo-100 bar :baz)"
+                               :flsproject.fnl "{:extra-globals \"foo-100 bar\"}"})
+        bad (get-diagnostics {:main.fnl "(foo-100 bar :baz)"
+                              :flsproject.fnl "{}"})]
     (faith.= [] good)
     (faith.not= [] bad))
   nil)
@@ -44,10 +48,10 @@
   ;;   (local client (doto [] (setup-server {:fennel-ls {:diagnostics {:E202 "warning"}}})))))
 
 (fn test-lints []
-  (let [{:diagnostics good} (create-client {:main.fnl "(local x 10)"
-                                            :flsproject.fnl "{:lints {:unused-definition false}}"})
-        {:diagnostics bad} (create-client {:main.fnl "(local x 10)"
-                                           :flsproject.fnl "{}"})]
+  (let [good (get-diagnostics {:main.fnl "(local x 10)"
+                               :flsproject.fnl "{:lints {:unused-definition false}}"})
+        bad (get-diagnostics {:main.fnl "(local x 10)"
+                              :flsproject.fnl "{}"})]
     (faith.= [] good)
     (faith.not= [] bad))
   nil)
@@ -76,20 +80,20 @@
     (faith.match "Could not find docset for library nasilemak"
                  show.params.message)
     ;; diagnostic
-    (let [[diagnostics] (client:open-file! (.. client.server.root-uri "/" :flsproject.fnl) "{:libraries {:nasilemak true}}")]
-      (faith.= "textDocument/publishDiagnostics" diagnostics.method)
-      (faith.match "Could not find docset for library nasilemak" (. diagnostics.params.diagnostics 1 :message))))
+    (client:open-file! (.. client.server.root-uri "/" :flsproject.fnl) "{:libraries {:nasilemak true}}")
+    (let [[diagnostics] (client:diagnostic (.. client.server.root-uri "/" :flsproject.fnl))]
+      (faith.match "Could not find docset for library nasilemak" (. diagnostics.result.items 1 :message))))
   nil)
 
 (fn test-infinite-macro []
   (when (not debug.debug)
     (faith.skip))
-  (let [{: diagnostics} (create-client {:main.fnl "(macro infinite [] (while true nil))\n(infinite)\n"
-                                        :flsproject.fnl "{:compiler-instruction-limit 25000}"})]
+  (let [diagnostics (get-diagnostics {:main.fnl "(macro infinite [] (while true nil))\n(infinite)\n"
+                                      :flsproject.fnl "{:compiler-instruction-limit 25000}"})]
     (faith.= "instruction limit reached"
              (?. diagnostics 1 :message)))
-  (let [{: diagnostics} (create-client {:main.fnl "(macro finite [] (while false nil))\n(finite)\n"
-                                        :flsproject.fnl "{:compiler-instruction-limit 25000}"})]
+  (let [diagnostics (get-diagnostics {:main.fnl "(macro finite [] (while false nil))\n(finite)\n"
+                                      :flsproject.fnl "{:compiler-instruction-limit 25000}"})]
     (faith.= [] diagnostics))
   nil)
     

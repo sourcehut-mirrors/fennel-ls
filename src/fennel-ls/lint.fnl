@@ -14,6 +14,7 @@ You can read more about how to add lints in docs/linting.md"
 (local navigate (require :fennel-ls.navigate))
 (local docs (require :fennel-ls.docs))
 (local dkjson (require :dkjson))
+(local compiler (require :fennel-ls.compiler))
 
 
 (fn special? [item]
@@ -855,30 +856,33 @@ You can read more about how to add lints in docs/linting.md"
     (setmetatable {: self : fix} lint-mt)))
 
 (λ add-lint-diagnostics [server file]
-  (fn run [lints ...]
-    (each [_ lint (ipairs lints)]
-      (when (. server.configuration.lints lint.name)
-        (case (lint.impl ...)
-          diagnostic
-          (table.insert file.diagnostics
-            (wrap (doto diagnostic
-                        (tset :code lint.name))))))))
-  (icollect [diagnostic (coroutine.wrap #(run lints.other server file)) &into file.diagnostics]
-    (wrap diagnostic))
-  (each [symbol definition (pairs file.definitions)]
-    (when (. file.lexical symbol)
-      (run lints.definition server file symbol definition)))
-  (each [symbol (pairs file.references)]
-    (when (. file.lexical symbol)
-      (run lints.reference server file symbol)))
-  (each [[head &as ast] (pairs file.calls)]
-    (when (and (. file.lexical ast) (not= nil head))
-      (run (if (special? head) lints.special-call lints.function-call)
-          server file ast)))
-  (each [ast macroexpanded (pairs file.macro-calls)]
-    (when (. file.lexical ast)
-      (run lints.macro-call
-           server file ast macroexpanded))))
+  (when (not file.diagnostics)
+    (compiler.compile server file)
+    (set file.diagnostics file.compile-errors)
+    (fn run [lints ...]
+      (each [_ lint (ipairs lints)]
+        (when (. server.configuration.lints lint.name)
+          (case (lint.impl ...)
+            diagnostic
+            (table.insert file.diagnostics
+              (wrap (doto diagnostic
+                          (tset :code lint.name))))))))
+    (icollect [diagnostic (coroutine.wrap #(run lints.other server file)) &into file.diagnostics]
+      (wrap diagnostic))
+    (each [symbol definition (pairs file.definitions)]
+      (when (. file.lexical symbol)
+        (run lints.definition server file symbol definition)))
+    (each [symbol (pairs file.references)]
+      (when (. file.lexical symbol)
+        (run lints.reference server file symbol)))
+    (each [[head &as ast] (pairs file.calls)]
+      (when (and (. file.lexical ast) (not= nil head))
+        (run (if (special? head) lints.special-call lints.function-call)
+            server file ast)))
+    (each [ast macroexpanded (pairs file.macro-calls)]
+      (when (. file.lexical ast)
+        (run lints.macro-call
+             server file ast macroexpanded)))))
 
 {: add-lint-diagnostics
  :list all-lints}

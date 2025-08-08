@@ -26,7 +26,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                             :save true}
          ;; :notebookDocumentSync nil
          :completionProvider {:workDoneProgress false
-                              :resolveProvider server.can-do-good-completions?
+                              :resolveProvider server.client-capable-of-good-completions?
                               :triggerCharacters ["(" "[" "{"
                                                   ;; The LSP spec claims that "characters that make up identifiers don't need to be listed here"
                                                   ;; > https://github.com/microsoft/language-server-protocol/blob/4a4ff53db00d8c5e57630ff364dedf1918cbb612/_specifications/lsp/3.18/language/completion.md?plain=1#L205
@@ -51,7 +51,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :documentFormattingProvider {:workDoneProgress false}
          ;; :documentRangeFormattingProvider nil
          ;; :documentOnTypeFormattingProvider nil
-         :renameProvider {:workDoneProgress false}}]
+         :renameProvider {:workDoneProgress false}
          ;; :foldingRangeProvider nil
          ;; :executeCommandProvider nil
          ;; :selectionRangeProvider nil
@@ -62,8 +62,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :typeHierarchyProvider nil
          ;; :inlineValueProvider nil
          ;; :inlayHintProvider nil
-         ;; ;; this is for PULL diagnostics, but fennel-ls currently does PUSH diagnostics
-         ;; :diagnosticProvider {:workDoneProgress false}})
+         :diagnosticProvider {:workDoneProgress false}}]
          ;; :workspaceSymbolProvider nil
          ;; :workspace {:workspaceFolders nil
          ;;             :fileOperations {:didCreate nil
@@ -79,7 +78,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/definition [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (analyzer.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol server file byte)
       (symbol [parent])
       (let [search-target (if (. file.require-calls parent) parent symbol)]
         (analyzer.search server file search-target {:stop-early? true} {: byte}))
@@ -95,7 +94,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                           :textDocument {: uri}}]
   (let [this-file (files.get-by-uri server uri)
         byte (utils.position->byte this-file.text position server.position-encoding)]
-    (match-try (analyzer.find-symbol this-file.ast byte)
+    (match-try (analyzer.find-symbol server this-file byte)
       symbol
       (analyzer.find-nearest-definition server this-file symbol byte)
       {: referenced-by :file {:uri this-file.uri &as file} : binding}
@@ -113,7 +112,7 @@ Every time the client sends a message, it gets handled by a function in the corr
                                                              include-declaration?}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (analyzer.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol server file byte)
       symbol
       (analyzer.find-nearest-definition server file symbol byte)
       {: referenced-by : file : binding}
@@ -146,7 +145,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/hover [server _send {: position :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (analyzer.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol server file byte)
       (symbol parents) (analyzer.search server file symbol {} {: byte})
       {:indeterminate nil &as result}
       (let [opts {:macroexpansion (case-try parents
@@ -166,7 +165,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ requests.textDocument/rename [server _send {: position :textDocument {: uri} :newName new-name}]
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text position server.position-encoding)]
-    (case-try (analyzer.find-symbol file.ast byte)
+    (case-try (analyzer.find-symbol server file byte)
       symbol
       (analyzer.find-nearest-definition server file symbol symbol.bytestart)
       ;; TODO we are assuming that every reference is in the same file
@@ -206,7 +205,8 @@ Every time the client sends a message, it gets handled by a function in the corr
   (let [file (files.get-by-uri server uri)
         byte (utils.position->byte file.text range.start server.position-encoding)
         results []]
-    (case-try (analyzer.find-symbol file.ast byte)
+    (lint.add-lint-diagnostics server file)
+    (case-try (analyzer.find-symbol server file byte)
       (symbol_ [[symbol_ &as parent]]) file.macro-calls
       {parent expansion} (table.insert results
                            {:title "Expand macro"
@@ -216,16 +216,25 @@ Every time the client sends a message, it gets handled by a function in the corr
       (if (overlap? diagnostic.range range)
         (message.diagnostic->code-action server file diagnostic :quickfix)))))
 
+(λ requests.textDocument/diagnostic [server _send {:textDocument {: uri}}]
+  (let [file (files.get-by-uri server uri)]
+    (lint.add-lint-diagnostics server file)
+    {:kind "full"
+     :items file.diagnostics}))
+
+(fn push-diagnostics [server file send]
+  (when (not server.client-capable-of-pull-diagnostics?)
+    (lint.add-lint-diagnostics server file)
+    (send (message.diagnostics file))))
+
 (λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
   (local file (files.get-by-uri server uri))
   (files.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))
-  (lint.add-lint-diagnostics server file)
-  (send (message.diagnostics file)))
+  (push-diagnostics server file send))
 
 (λ notifications.textDocument/didOpen [server send {:textDocument {: text : uri}}]
   (local file (files.set-uri-contents server uri text))
-  (lint.add-lint-diagnostics server file)
-  (send (message.diagnostics file))
+  (push-diagnostics server file send)
   (set file.open? true))
 
 (λ notifications.textDocument/didSave [server _send {:textDocument {: uri}}]

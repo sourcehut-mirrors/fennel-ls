@@ -209,9 +209,9 @@ fntype is one of fn or λ or lambda"
                    metadata (?. kinds metadata.fls/itemKind))
                  (if (name:find "%.") kinds.Field kinds.Value))]
     {:label name
-     :documentation (when (not server.can-do-good-completions?) (hover-format server name definition))
+     :documentation (when (not server.client-capable-of-good-completions?) (hover-format server name definition))
      :sortText (sort-text name kind)
-     :textEdit (when (not server.can-do-good-completions?) {:newText name : range})
+     :textEdit (when (not server.client-capable-of-good-completions?) {:newText name : range})
      : kind}))
 
 {: signature-help-format

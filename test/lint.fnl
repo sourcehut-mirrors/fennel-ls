@@ -22,7 +22,8 @@
          i))))
 
 (fn check [file-contents expected ?unexpected]
-  (let [{: diagnostics} (create-client file-contents)]
+  (let [{: uri : client} (create-client file-contents)
+        [{:result {:items diagnostics}}] (client:diagnostic uri)]
     (each [_ e (ipairs (or ?unexpected []))]
       (let [i (find diagnostics e)]
         (faith.= nil i (.. "Lint matching " (view e) "\n"
@@ -38,7 +39,8 @@
         (table.remove diagnostics i)))))
 
 (fn assert-ok [file-contents]
-  (let [{: diagnostics} (create-client file-contents)]
+  (let [{: uri : client} (create-client file-contents)
+        [{:result {:items diagnostics}}] (client:diagnostic uri)]
     (faith.= nil (next diagnostics) (view diagnostics))))
 
 (fn test-unused []

@@ -75,6 +75,14 @@
       :textDocument {:uri file}
       : newName})))
 
+(fn diagnostic [self file ?previousResultId]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :textDocument/diagnostic
+     (let [params {:textDocument {:uri file}}]
+       (when ?previousResultId
+         (set params.previousResultId ?previousResultId))
+       params))))
+
 (fn code-action [self file range]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/codeAction
@@ -100,6 +108,7 @@
              : signature-help
              : rename
              : code-action
+             : diagnostic
              : did-save}})
 
 {: client-mt

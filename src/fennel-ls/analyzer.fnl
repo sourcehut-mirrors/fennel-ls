@@ -42,6 +42,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (local {: get-ast-info &as utils} (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
+(local compiler (require :fennel-ls.compiler))
 
 (var search-multival nil) ;; all of the search functions are mutually recursive
 
@@ -142,6 +143,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
             (when (= :string (type mod))
               (let [newfile (files.get-by-module server mod file.macro-file?)]
                 (when newfile
+                  (compiler.compile server newfile)
                   (let [newitem (. newfile.ast (length newfile.ast))]
                     (when (= (length stack) 1)
                       (set opts.searched-through-require-with-stack-size-1 true))
@@ -267,9 +269,10 @@ initialization-opts: {:stack ?list[ast]
              byte
              (+ 1 (get-ast-info ?ast :byteend))))))
 
-(λ find-symbol [ast byte]
+(λ find-symbol [server file byte]
   "tries to find a sym, and a list of all of its parents/grandparents"
-  (local parents [ast])
+  (compiler.compile server file)
+  (local parents [file.ast])
   (λ recurse [ast]
     (if
       (sym? ast)
@@ -292,40 +295,34 @@ initialization-opts: {:stack ?list[ast]
                 (contains? value byte)
                 (recurse value)))))))
   (values
-    (accumulate [result nil _ top-level-form (ipairs ast) &until result]
+    (accumulate [result nil _ top-level-form (ipairs file.ast) &until result]
       (if (contains? top-level-form byte)
         (recurse top-level-form)))
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 
-(λ find-nearest-call [_server file byte]
+(λ find-nearest-call [server file byte]
   "Find the nearest call
 
 returns the called symbol and the number of the argument closest to byte"
-  (λ find-list [[call & parents]]
-    (if (. file.calls call)
-        call
-        (next parents)
-        (find-list parents)))
+  (case-try (find-symbol server file byte)
+    (_symbol parents) (accumulate [result nil _ v (ipairs parents) &until result]
+                        (if (. file.calls v)
+                          v))
+    [callee &as call] (values callee ;; TODO: special handling for binding forms so we can point to the
+                                     ;; individual arguments in an each or accumulate call.
+                                     ;; Also need to split them up in formatter.fnl
+                                     (faccumulate [index nil
+                                                   i (length call) 1 -1 &until index]
+                                       (if (contains? (. call i) byte)
+                                           ; -2 because this is the 3rd element of the list, but
+                                           ; the 2nd argument to the call, and LSP is 0-indexed
+                                           (- i 2)
+                                           (past? (. call i) byte)
+                                           ; this means we are either at the end of the list or
+                                           ; inserting between two arguments
+                                           (- i 1))))
 
-  (λ arg-index [call byte]
-    ;; TODO: special handling for binding forms so we can point to the
-    ;; individual arguments in an each or accumulate call.
-    ;; Also need to split them up in formatter.fnl
-    (faccumulate [index nil
-                  i (length call) 1 -1 &until index]
-      (if (contains? (. call i) byte)
-          ; -2 because this is the 3rd element of the list, but
-          ; the 2nd argument to the call, and LSP is 0-indexed
-          (- i 2)
-          (past? (. call i) byte)
-          ; this means we are either at the end of the list or
-          ; inserting between two arguments
-          (- i 1))))
-
-  (case-try (find-symbol file.ast byte)
-    (_symbol parents) (find-list parents)
-    [callee &as call] (values callee (arg-index call byte))
     (catch _ nil)))
 
 (λ find-definition [server file symbol ?byte]

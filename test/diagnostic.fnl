@@ -21,7 +21,8 @@
       i)))
 
 (fn check [file-contents expected unexpected ?opts]
-  (let [{: diagnostics} (create-client file-contents nil ?opts)]
+  (let [{: uri : client} (create-client file-contents nil ?opts)
+        [{:result {:items diagnostics}}] (client:diagnostic uri)]
     (each [_ e (ipairs unexpected)]
       (let [i (find diagnostics e)]
         (faith.= nil i (.. "Lint matching " (view e) "\n"

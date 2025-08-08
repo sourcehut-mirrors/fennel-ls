@@ -62,12 +62,12 @@ identifiers are declared / referenced in which places."
         position (utils.pos->position file.text line byte server.position-encoding)]
     {:start position :end position}))
 
-(λ compile [{:configuration {: macro-path} :root-uri ?root-uri &as server} file]
+(λ do-compile [{:configuration {: macro-path} :root-uri ?root-uri &as server} file]
   "Compile the file, and record all the useful information from the compiler into the file object"
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
         definitions   {} ; symbol -> binding
-        diagnostics   {} ; [diagnostic]
+        compile-diagnostics {} ; [diagnostic]
         references    {} ; symbol -> references
         macro-refs    {} ; symbol -> macro
         scopes        {} ; ast -> scope
@@ -307,7 +307,7 @@ identifiers are declared / referenced in which places."
     (λ on-compile-error [_ msg ast call-me-to-reset-the-compiler]
       (let [range (or (message.ast->range server file ast)
                       message.unknown-range)]
-        (table.insert diagnostics
+        (table.insert compile-diagnostics
           {:range range
            :message msg
            :severity message.severity.ERROR
@@ -321,7 +321,7 @@ identifiers are declared / referenced in which places."
     (λ on-parse-error [msg _filename line byte _source call-me-to-reset-the-compiler]
       (let [line (if (= line "?") 1 line)
             range (line+byte->range server file line byte)]
-        (table.insert diagnostics
+        (table.insert compile-diagnostics
           {:range range
            :message msg
            :severity message.severity.ERROR
@@ -334,7 +334,7 @@ identifiers are declared / referenced in which places."
 
     (λ warn [msg ?ast _file ?line ?col]
       (let [range (or (message.ast->range server file ?ast) (line+byte->range server file (or ?line 1) (or ?col 0)))]
-        (table.insert diagnostics
+        (table.insert compile-diagnostics
           {:range range
            :message msg
            :severity message.severity.WARN
@@ -380,7 +380,7 @@ identifiers are declared / referenced in which places."
                             (if (os.getenv :DEV)
                               (error (.. "\nYou have crashed fennel-ls (or the fennel " component ") with the following message\n:" err
                                          "\n\n^^^ the error message above here is the root problem\n\n"))
-                              (table.insert diagnostics
+                              (table.insert compile-diagnostics
                                 {:range (line+byte->range server file 1 1)
                                  :message (.. "unrecoverable " component " error: " err)}))))
 
@@ -434,7 +434,7 @@ identifiers are declared / referenced in which places."
                                     (fn hook []
                                       (debug.sethook nil nil)
                                       (if _G.jit (_G.jit.on))
-                                      (table.insert diagnostics
+                                      (table.insert compile-diagnostics
                                         {:range message.unknown-range
                                          :message "instruction limit reached"
                                          :severity message.severity.ERROR})
@@ -459,11 +459,15 @@ identifiers are declared / referenced in which places."
       (set file.scopes scopes)
       (set file.definitions definitions)
       (set file.definitions-by-scope definitions-by-scope)
-      (set file.diagnostics diagnostics)
+      (set file.compile-errors compile-diagnostics)
       (set file.references references)
       (set file.require-calls require-calls)
       (set file.allowed-globals allowed-globals)
       (set file.macro-refs macro-refs)
       (set file.macro-calls macro-calls))))
+
+(fn compile [server file]
+  (when (not file.ast)
+    (do-compile server file)))
 
 {: compile}

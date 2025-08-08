@@ -25,8 +25,9 @@ actually recover the original completion. If the client supports both
 CompletionClientCapabilites.completionList.itemDefaults.editRange and
 CompletionClientCapabilites.completionList.itemDefaults.data, then we can ask
 the client to forward information to the resolve request by setting the `data`
-to {: uri : byte}. When this capability exists, `server.can-do-good-completions?`
-is set to true and we report that we support completionItem/resolve."
+to {: uri : byte}. When this capability exists,
+`server.client-capable-of-good-completions?` is set to true and we report that
+we support completionItem/resolve."
 
 (local fennel (require :fennel))
 (local {:metadata METADATA} (require :fennel.compiler))
@@ -49,7 +50,7 @@ is set to true and we report that we support completionItem/resolve."
         file {:text (.. (file.text:sub 1 (- byte 1)) "|" (file.text:sub byte)) :uri file.uri}
         _ (compiler.compile server file)
         ;; find what ast objects are under the cursor
-        (symbol parents) (analyzer.find-symbol file.ast byte)
+        (symbol parents) (analyzer.find-symbol server file byte)
         ;; check what context I'm in
         in-call-position? (or (and (fennel.list? (. parents 1))
                                    (= symbol (. parents 1 1)))
@@ -136,7 +137,7 @@ is set to true and we report that we support completionItem/resolve."
 
     (fn binding-completions []
       "completions when you're writing a destructure pattern. We suggest identifiers which are unknown"
-      (each [_ {: message} (ipairs file.diagnostics)]
+      (each [_ {: message} (ipairs file.compile-errors)]
         (case (message:match "unknown identifier: ([a-zA-Z0-9_-]+)")
           identifier (add-completion! identifier {} :Variable))))
 
@@ -145,8 +146,8 @@ is set to true and we report that we support completionItem/resolve."
           (binding-completions)
           (expression-completions)))
 
-    (if server.can-do-good-completions?
-      {:itemDefaults {:editRange (if server.can-do-insert-replace-completions?
+    (if server.client-capable-of-good-completions?
+      {:itemDefaults {:editRange (if server.client-capable-of-insert-replace-completions?
                                      {:insert {:start range.start :end position}
                                       :replace range}
                                      range)
@@ -157,7 +158,7 @@ is set to true and we report that we support completionItem/resolve."
 (fn completionItem/resolve [server _send completion-item]
   (let [{: uri : byte} completion-item.data
         file (files.get-by-uri server uri)
-        (_symbol parents) (analyzer.find-symbol file.ast byte)
+        (_symbol parents) (analyzer.find-symbol server file byte)
         scope (or (. file.scopes _symbol)
                   (accumulate [?find nil _ parent (ipairs parents) &until ?find]
                     (. file.scopes parent))

@@ -3,7 +3,6 @@ This module has high level helpers for creating/getting \"file\" objects."
 
 (local searcher (require :fennel-ls.searcher))
 (local utils (require :fennel-ls.utils))
-(local {: compile} (require :fennel-ls.compiler))
 
 (λ read-file [server uri]
   ;; preload is here so that tests can inject files
@@ -23,7 +22,6 @@ This module has high level helpers for creating/getting \"file\" objects."
   (or (. server.files uri)
       (case (read-file server uri)
         file (do
-               (compile server file)
                (tset server.files uri file)
                file))))
 
@@ -44,21 +42,9 @@ This module has high level helpers for creating/getting \"file\" objects."
           (get-by-uri server uri))))))
 
 (λ set-uri-contents [server uri text]
-  (case (. server.files uri)
-    ;; modify existing file
-    file
-    (do
-      (when (not= text file.text)
-        (set file.text text)
-        (compile server file))
-      file)
-
-    ;; create new file
-    nil
-    (let [file {: uri : text}]
-      (tset server.files uri file)
-      (compile server file)
-      file)))
+  (let [file {: uri : text}]
+    (tset server.files uri file)
+    file))
 
 (λ flush-uri [server uri]
   "get rid of data about a file, in case it changed in some way"

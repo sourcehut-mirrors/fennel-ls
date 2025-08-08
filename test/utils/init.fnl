@@ -89,10 +89,10 @@
                                  : params})
           _     (each [k v (pairs (or ?config []))]
                   (tset server.configuration k v))
-          [{:params {: diagnostics}}] (client:open-file! uri text)]
+          ?diagnostics (?. (client:open-file! uri text) 1 :params :diagnostics)]
         {: client
          : server
-         : diagnostics
+         :diagnostics ?diagnostics
          : cursor
          : locations
          : highlights

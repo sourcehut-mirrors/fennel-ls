@@ -19,7 +19,7 @@
 (fn test-find-symbol []
   (let [{: server : uri} (create-client "(match [1 2 4] [1 2 sym-one] sym-one)")
         file (. server.files uri)
-        (symbol parents) (analyzer.find-symbol file.ast 23)]
+        (symbol parents) (analyzer.find-symbol server file 23)]
     (faith.= symbol (fennel.sym :sym-one))
     (faith.=
       "[[1 2 sym-one] (match [1 2 4] [1 2 sym-one] sym-one) [(match [1 2 4] [1 2 sym-one] sym-one)]]"
@@ -28,7 +28,7 @@
 
   (let [{: server : uri} (create-client "(match [1 2 4] [1 2 sym-one] sym-one)")
         file (. server.files uri)
-        (symbol parents) (analyzer.find-symbol file.ast 18)]
+        (symbol parents) (analyzer.find-symbol server file 18)]
     (faith.= symbol nil)
     (faith.=
       "[[1 2 sym-one] (match [1 2 4] [1 2 sym-one] sym-one) [(match [1 2 4] [1 2 sym-one] sym-one)]]"
