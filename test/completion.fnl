@@ -116,6 +116,13 @@
                           (+ number-of-x 1)
                           number-of-x))))
          [])
+  (check "(let [f| 10] foo foo foo"
+         (fn [completions]
+           (faith.= 1 (accumulate [number-of-foo 0 _ completion (ipairs completions.items)]
+                        (if (= completion.label :foo)
+                          (+ number-of-foo 1)
+                          number-of-foo))))
+         [])
   ;; completions of fields (nested)
   (check "(local x {:y {:z {:a {:b 1}}}}) ; deep tables
           (local m {}) ; split modules

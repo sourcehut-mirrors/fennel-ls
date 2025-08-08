@@ -381,6 +381,22 @@
   (assert-ok "(and true (or false true))") ; different operators
   nil)
 
+(fn test-zero-indexed []
+  (let [add-opts #{:main.fnl $ :flsproject.fnl "{:lints {:zero-indexed true}}"}]
+    (check (add-opts "(local x {})
+                      (. x 0)")
+           [{:code "zero-indexed"
+             :message "indexing a table with 0; did you forget that Lua is 1-indexed?"}])
+    (check (add-opts "(. math 0)")
+           [{:code "zero-indexed"
+             :message "indexing a table with 0; did you forget that Lua is 1-indexed?"}])
+    (assert-ok (add-opts "(. math 1)"))
+    (assert-ok (add-opts "(. arg 0)"))
+    (assert-ok (add-opts "(. math :0)")))
+  nil)
+
+
+
 {: test-unused
  : test-ampersand
  : test-unknown-module-field
@@ -397,4 +413,5 @@
  : test-decreasing-comparison
  : test-arg-count
  : test-duplicate-keys
- : test-nested-associative-operator}
+ : test-nested-associative-operator
+ : test-zero-indexed}

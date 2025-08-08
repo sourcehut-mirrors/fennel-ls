@@ -137,9 +137,12 @@ we support completionItem/resolve."
 
     (fn binding-completions []
       "completions when you're writing a destructure pattern. We suggest identifiers which are unknown"
-      (each [_ {: message} (ipairs file.compile-errors)]
-        (case (message:match "unknown identifier: ([a-zA-Z0-9_-]+)")
-          identifier (add-completion! identifier {} :Variable))))
+      (let [seen {}]
+        (each [_ {: message} (ipairs file.compile-errors)]
+          (case (message:match "unknown identifier: ([a-zA-Z0-9_-]+)")
+            (where identifier (not (. seen identifier)))
+            (do (tset seen identifier true)
+                (add-completion! identifier {} :Variable))))))
 
     (when symbol
       (if (. file.definitions symbol)
