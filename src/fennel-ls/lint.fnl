@@ -120,9 +120,8 @@ You can read more about how to add lints in docs/linting.md"
                                        &until reference]
                             (or (= ref.ref-type :read)
                                 (= ref.ref-type :mutate)))))
-               {:range (message.ast->range server file symbol)
+               {:ast symbol
                 :message (.. "unused definition: " symname)
-                :severity message.severity.WARN
                 :fix #{:title (.. "Replace " symname " with _" symname)
                        :changes [{:range (message.ast->range server file symbol)
                                   :newText (.. "_" symname)}]}})))})
@@ -142,9 +141,8 @@ You can read more about how to add lints in docs/linting.md"
              ;; this doesn't necessarily have to come thru require; it works
              ;; for built-in modules too
              opts.searched-through-require-with-stack-size-1)
-        {:range (message.ast->range server file symbol)
-         :message (.. "unknown field: " (tostring symbol))
-         :severity message.severity.WARN})))
+        {:ast symbol
+         :message (.. "unknown field: " (tostring symbol))})))
 
 (add-lint :unknown-module-field
   {:what-it-does
@@ -205,16 +203,15 @@ You can read more about how to add lints in docs/linting.md"
     ```"
    :since "0.1.0"
    :type :special-call
-   :impl (fn [server file ast]
+   :impl (fn [_server _file ast]
            "a call to the : builtin that could just be a multisym"
             (let [object (. ast 2)
                   method (. ast 3)]
               (if (and (sym? (. ast 1) ":")
                        (sym? object)
                        (utils.valid-sym-field? method))
-                {:range (message.ast->range server file ast)
-                 :message (.. "unnecessary : call: use (" (tostring object) ":" method ")")
-                 :severity message.severity.WARN})))})
+                {: ast
+                 :message (.. "unnecessary : call: use (" (tostring object) ":" method ")")})))})
 
 (add-lint :unnecessary-tset
   {:what-it-does
@@ -241,9 +238,8 @@ You can read more about how to add lints in docs/linting.md"
              (if (and (sym? (. ast 1) "tset")
                       (sym? (. ast 2))
                       all-rewritable?)
-                 {:range (message.ast->range server file ast)
+                 {: ast
                   :message "unnecessary tset"
-                  :severity message.severity.WARN
                   :fix #{:title "Replace tset with set"
                          :changes [{:range (message.ast->range server file ast)
                                     :newText (string.format "(set %s.%s %s)"
@@ -275,9 +271,8 @@ You can read more about how to add lints in docs/linting.md"
            (if (and (sym? (. ast 1))
                     (. redundant-wrappers (tostring (. ast 1)))
                     (= (length ast) 2))
-               {:range (message.ast->range server file ast)
+               {: ast
                 :message (.. "unnecessary unary " (tostring (. ast 1)))
-                :severity message.severity.WARN
                 :fix #{:title "Unwrap the expression"
                        :changes [{:range (message.ast->range server file ast)
                                   :newText (view (. ast 2))}]}}))})
@@ -307,9 +302,8 @@ You can read more about how to add lints in docs/linting.md"
              (if (and (. implicit-do-forms (tostring (. ast 1)))
                       (list? last-body)
                       (sym? (. last-body 1) :do))
-                 {:range (message.ast->range server file last-body)
+                 {:ast last-body
                   :message "redundant do"
-                  :severity message.severity.WARN
                   :fix #{:title "Unwrap the expression"
                          :changes [{:range (message.ast->range server file last-body)
                                     :newText (table.concat
@@ -351,7 +345,7 @@ You can read more about how to add lints in docs/linting.md"
                       (or (sym? (. last 1) :unpack)
                           (sym? (. last 1) :_G.unpack)
                           (sym? (. last 1) :table.unpack)))
-                 {:range (message.ast->range server file last)
+                 {:ast last
                   :message (.. "faulty unpack call: " (tostring op)
                                " isn't variadic at runtime."
                                (if (sym? op "..")
@@ -360,7 +354,6 @@ You can read more about how to add lints in docs/linting.md"
                                        ") instead of (.. (unpack " unpackme "))"))
                                  (.. " Use a loop when you have a dynamic number of "
                                      "arguments to (" (tostring op) ")")))
-                  :severity message.severity.WARN
                   :fix (if (and (= (length last) 2)
                                 (sym? op ".."))
                            #{:title "Replace with a call to table.concat"
@@ -386,14 +379,13 @@ You can read more about how to add lints in docs/linting.md"
     ```"
    :since "0.1.0"
    :type :definition
-   :impl (fn [server file symbol definition]
+   :impl (fn [_server _file symbol definition]
            (if (and definition.var? (not definition.var-set))
                ;; we can't provide a quickfix for this because the hooks don't give us
                ;; the full AST of the call to var; just the LHS/RHS
-               {:range (message.ast->range server file symbol)
+               {:ast symbol
                 :message (.. "var is never set: " (tostring symbol)
-                             " Consider using (local) instead of (var)")
-                :severity message.severity.WARN}))})
+                             " Consider using (local) instead of (var)")}))})
 
 (add-lint :op-with-no-arguments
   {:what-it-does
@@ -426,9 +418,8 @@ You can read more about how to add lints in docs/linting.md"
              (if (and (op? op)
                       (= 1 (length ast))
                       (not= nil identity))
-                 {:range (message.ast->range server file ast)
+                 {: ast
                   :message (.. "write " (view identity) " instead of (" (tostring op) ")")
-                  :severity message.severity.WARN
                   :fix #{:title (.. "Replace (" (tostring op) ") with " (view identity))
                          :changes [{:range (message.ast->range server file ast)
                                     :newText (view identity)}]}})))})
@@ -457,9 +448,8 @@ You can read more about how to add lints in docs/linting.md"
    :impl (fn [server file ast]
            (let [op (. ast 1)]
              (if (or (sym? op :>) (sym? op :>=))
-                 {:range (message.ast->range server file ast)
+                 {: ast
                   :message "Use increasing operator instead of decreasing"
-                  :severity message.severity.WARN
                   :fix #{:title "Reverse the comparison"
                          :changes [{:range (message.ast->range server file ast)
                                     :newText (let [new (if (sym? op :>=) (sym :<=) (sym :<))
@@ -503,9 +493,8 @@ You can read more about how to add lints in docs/linting.md"
                       (sym? (. ast 1) :match)
                       (not (faccumulate [ref false i 3 (length ast) 2 &until ref]
                              (match-reference? (. ast i) references))))
-             {:range (message.ast->range server file (. ast 1))
+             {:ast (. ast 1)
               :message "no pinned patterns; use case instead of match"
-              :severity message.severity.WARN
               :fix #{:title "Replace match with case"
                      :changes [{:range (message.ast->range server file (. ast 1))
                                 :newText "case"}]}}))})
@@ -561,10 +550,9 @@ You can read more about how to add lints in docs/linting.md"
                             (sym? (. arg 1) :unpack)
                             (sym? (. arg 1) :_G.unpack)
                             (sym? (. arg 1) :table.unpack)))
-                 {:range (message.ast->range server file arg)
+                 {:ast arg
                   :message (.. "bad " (tostring (. arg 1))
-                               " call: only the first value of the multival will be used")
-                  :severity message.severity.WARN}))))})
+                               " call: only the first value of the multival will be used")}))))})
 
 (add-lint :empty-let
   {:what-it-does
@@ -592,9 +580,8 @@ You can read more about how to add lints in docs/linting.md"
                     (sym? let* :let)
                     (fennel.sequence? binding)
                     (= 0 (length binding)))
-             {:range (message.ast->range server file binding)
+             {:ast binding
               :message "use do instead of let with no bindings"
-              :severity message.severity.WARN
               :fix #{:title "Replace (let [] ...) with (do ...)"
                      :changes [(let [{: start} (message.ast->range server file let*)
                                      {: end} (message.ast->range server file binding)]
@@ -664,9 +651,8 @@ You can read more about how to add lints in docs/linting.md"
                        min-params (- min-params (if method-call? 1 0))]
                    (if (and (< number-of-args min-params)
                             (not passes-extra-args))
-                       {:range (message.ast->range server file ast)
-                        :message (.. (view (. ast 1)) " expects at least " min-params " argument(s); found " number-of-args)
-                        :severity message.severity.WARN})))))})
+                       {: ast
+                        :message (.. (view (. ast 1)) " expects at least " min-params " argument(s); found " number-of-args)})))))})
 
 (add-lint :too-many-arguments
   {:what-it-does
@@ -727,8 +713,7 @@ You can read more about how to add lints in docs/linting.md"
                         :message (if (= max-params -1)
                                      ;; this is when you call a 0 argument function using a `:`
                                      (.. (: (view (. ast 1)) :gsub ":" ".") " expects 0 arguments; found 1")
-                                     (.. (view (. ast 1)) " expects at most " max-params " argument(s); found " number-of-args))
-                        :severity message.severity.WARN}))))))})
+                                     (.. (view (. ast 1)) " expects at most " max-params " argument(s); found " number-of-args))}))))))})
 
 (add-lint :duplicate-table-keys
   {:what-it-does
@@ -750,7 +735,7 @@ You can read more about how to add lints in docs/linting.md"
     ```"
    :since :0.2.2-dev
    :type :other
-   :impl (fn [server file]
+   :impl (fn [_server file]
            (let [seen []]
              (each [ast (pairs file.lexical)]
                (when (table? ast)
@@ -764,17 +749,12 @@ You can read more about how to add lints in docs/linting.md"
                      (when (. keys dkey)
                        (coroutine.yield
                          {:code :duplicate-table-keys ; TODO we should fix `other` type lints so the code isn't necessary
-                          :range (message.ast->range server file ast)
-                          :message (.. "key " (tostring (. keys dkey)) " appears more than once")
-                          :severity message.severity.WARN}))
+                          : ast
+                          :message (.. "key " (tostring (. keys dkey)) " appears more than once")}))
                      (each [k (pairs seen)]
                        (set (. seen k) nil))))))))})
 
-(fn zero-indexed [server file [callee tbl key &as ast]]
-  (if (and (sym? callee ".") (= 0 key) (not (sym? tbl :arg)))
-      {:range (message.ast->range server file ast)
-       :message "indexing a table with 0; did you forget that Lua is 1-indexed?"
-       :severity message.severity.WARN}))
+
 
 (add-lint :zero-indexed
   {:what-it-does "Checks for accidentally treating tables as zero-indexed."
@@ -785,7 +765,11 @@ You can read more about how to add lints in docs/linting.md"
     ```"
    :since "0.2.2-dev"
    :type :special-call
-   :impl zero-indexed})
+   :disabled true
+   :impl (fn [_server _file [callee tbl key &as ast]]
+           (if (and (sym? callee ".") (= 0 key) (not (sym? tbl :arg)))
+               {:message "indexing a table with 0; did you forget that Lua is 1-indexed?"
+                : ast}))})
 
 (add-lint :invalid-flsproject-settings
   {:what-it-does
@@ -813,8 +797,7 @@ You can read more about how to add lints in docs/linting.md"
                                                              :range (or (message.ast->range server file $2)
                                                                         (message.ast->range server file $3)
                                                                         message.unknown-range)
-                                                             :message $
-                                                             :severity message.severity.WARN}))))
+                                                             :message $}))))
            nil)})
 
 (add-lint :nested-associative-operator
@@ -850,7 +833,6 @@ You can read more about how to add lints in docs/linting.md"
                    (when (and (list? arg) (= op (. arg 1)))
                      {:range (message.ast->range server file arg)
                       :message (.. "nested " op-str " can be collapsed")
-                      :severity message.severity.WARN
                       :fix #(let [new-form (list (. ast 1))]
                               (for [j 2 (length ast)]
                                 (let [item (. ast j)]
@@ -866,11 +848,17 @@ You can read more about how to add lints in docs/linting.md"
 (local lint-mt {:__tojson (fn [{: self} state] (dkjson.encode self state))
                 :__index #(. $1 :self $2)})
 
-(fn wrap [self]
+(fn normalize [{: fix &as diagnostic} ?lint server file]
   ;; hide `fix` field from the client
-  (let [fix self.fix]
-    (set self.fix nil)
-    (setmetatable {: self : fix} lint-mt)))
+  (set diagnostic.fix nil)
+  (when ?lint
+    (set diagnostic.code ?lint.name))
+  (when (= diagnostic.severity nil)
+    (set diagnostic.severity message.severity.WARN))
+  (when (and (= nil diagnostic.range) diagnostic.ast)
+    (set diagnostic.range (message.ast->range server file diagnostic.ast))
+    (set diagnostic.ast nil))
+  (setmetatable {:self diagnostic : fix} lint-mt))
 
 (λ add-lint-diagnostics [server file]
   (when (not file.diagnostics)
@@ -881,11 +869,9 @@ You can read more about how to add lints in docs/linting.md"
         (when (. server.configuration.lints lint.name)
           (case (lint.impl ...)
             diagnostic
-            (table.insert file.diagnostics
-              (wrap (doto diagnostic
-                          (tset :code lint.name))))))))
+            (table.insert file.diagnostics (normalize diagnostic lint server file))))))
     (icollect [diagnostic (coroutine.wrap #(run lints.other server file)) &into file.diagnostics]
-      (wrap diagnostic))
+      (normalize diagnostic nil server file))
     (each [symbol definition (pairs file.definitions)]
       (when (. file.lexical symbol)
         (run lints.definition server file symbol definition)))

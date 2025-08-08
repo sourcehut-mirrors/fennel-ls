@@ -11,6 +11,8 @@
 * New lint `invalid-flsproject-settings` checks your `flsproject.fnl` file as you edit it
 * Renamed lint `unnecessary-do-values` to `unnecessary-unary` and made it apply to many more forms
 * New lint `nested-associative-operator` checks for nested operations that could be flattened (eg. `(+ 1 2 (+ 3 4) 5)`)
+* New lint `zero-indexed` checks for `(. tbl 0)` operations.
+    * Disabled by default because 0 *can* be a valid table key in some cases.
 
 ### Changes
 * Updated to dkjson 2.8
