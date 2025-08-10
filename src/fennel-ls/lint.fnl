@@ -277,6 +277,33 @@ You can read more about how to add lints in docs/linting.md"
                        :changes [{:range (message.ast->range server file ast)
                                   :newText (view (. ast 2))}]}}))})
 
+(add-lint :empty-do
+  {:what-it-does
+   "Warns about `do` with no body."
+   :why-care?
+   "Using `do` with no body has no effect."
+   :example
+   "```fnl
+    (do)
+    ```
+
+    Instead, use:
+    ```fnl
+    ;; nothing
+    ```"
+   :since "0.2.2-dev"
+   :type :special-call
+   :impl (fn [server file ast]
+           (case ast
+             (where [do* & body]
+                    (sym? do* :do)
+                    (not (next body)))
+             {: ast
+              :message "remove do with no body"
+              :fix #{:title "Remove (do)"
+                     :changes [{:range (message.ast->range server file ast)
+                                :newText ""}]}}))})
+
 (add-lint :redundant-do
   {:what-it-does
    "Identifies redundant `do` blocks within implicit do forms like `fn`, `let`, etc."

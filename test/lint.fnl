@@ -222,6 +222,17 @@
                    :end {:character 8 :line 0}}}])
   nil)
 
+(fn test-empty-do []
+  ;; good do
+  (assert-ok "(do (print 1) 2)")
+  ;; unnecessary one
+  (check "(do (do) 1 2)"
+         [{:code :empty-do
+           :message "remove do with no body"
+           :range {:start {:character 4 :line 0}
+                   :end {:character 8 :line 0}}}])
+  nil)
+
 (fn test-redundant-do []
   ;; good do
   (assert-ok "(case 134 x (do (print :x x) 11))")
@@ -403,6 +414,7 @@
  : test-unnecessary-method
  : test-unnecessary-tset
  : test-unnecessary-unary
+ : test-empty-do
  : test-redundant-do
  : test-unset-var
  : test-match-should-case
