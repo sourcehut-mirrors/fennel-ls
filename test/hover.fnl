@@ -111,6 +111,9 @@ except that it sets a new message handler `msgh`.")
   (check "(λ foo| [{:list [a b c] :table {: d : e : f}}]
             :body)"
          "```fnl\n(foo {:list [a b c] :table {: d : e : f}})\n```")
+
+  (check "(local x| print)" #($:find "print"))
+  (check "(local x| (print))" nil)
   nil)
 
 (fn test-multisym []
