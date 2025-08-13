@@ -152,7 +152,9 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (if (= multival 1)
           (let [[_ & rest] call]
             (search-val server file (. call 2) (stack-add-split! stack rest) opts)))
-        ;; TODO assume-function-name analyze-metatable
+        ;; TODO we should probably handle everything that *evaluates to* setmetatable
+        ;; not just symbols *named* setmetatable
+        ;; This isn't a builtin/macro; it might be shadowed/reassigned/aliased
         :setmetatable
         (search-val server file (. call 2) stack opts)
 
@@ -174,6 +176,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
               (search-multival server file (. definition (length definition)) stack multival opts)
               result_ {:indeterminate true}
               _ (case (docs.get-builtin server (tostring (. call 1)))
+                  ;; TODO support return types in metadata
                   {:metadata metadata_} {:indeterminate true})))))))
 
 (set search-multival
