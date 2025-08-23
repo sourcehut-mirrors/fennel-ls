@@ -209,12 +209,9 @@ initialization-opts: {:stack ?list[ast]
   ;; and the stack has ["baz" "bar"]. "bar" is at the "top"/"end" of the stack as the next key to search.
   (if (sym? ast)
     ;; when your search starts as a symbol, there's lots of special interesting things to consider
-    (let [stack
-          (if initialization-opts.stack
-              initialization-opts.stack
-              (let [?byte initialization-opts.byte
-                    split (utils.multi-sym-split ast (if ?byte (- ?byte ast.bytestart)))]
-                (stack-add-split! [] split)))]
+    (let [stack (let [?byte initialization-opts.byte
+                      split (utils.multi-sym-split ast (if ?byte (- ?byte ast.bytestart)))]
+                  (stack-add-split! (or initialization-opts.stack []) split))]
       (case (docs.get-builtin server (utils.multi-sym-base ast))
         document (search-document server document stack opts)
         _ (case (. file.macro-refs ast)

@@ -124,6 +124,13 @@
   (check "package.loaded.mymodule io.stderr.write"
          []
          [{:code :unknown-module-field}])
+  ;; regression test
+  (check {:numbers.fnl "{:field [1 2 3]}"
+          :main.fnl "(local n (require :numbers))
+                     (local [one two three] n.field)
+                     (print one two three)"}
+         []
+         [{:code :unknown-module-field}])
   nil)
 
 (fn test-unnecessary-method []
