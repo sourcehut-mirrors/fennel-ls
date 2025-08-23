@@ -132,10 +132,10 @@ You can read more about how to add lints in docs/linting.md"
   (accumulate [in? false call (pairs calls) &until in?]
     (and (sym? (. call 1) :or) (utils.find call symbol))))
 
-(fn unknown-module-field [server file symbol ?ast ?stack]
+(fn unknown-module-field [server file symbol]
   "if ?ast is a module field that isn't known, return a diagnostic"
   (let [opts {}
-        item (analyzer.search server file ?ast opts {:stack ?stack})]
+        item (analyzer.search server file symbol opts {})]
     (if (and (not item)
              (not (in-or? file.calls symbol))
              ;; this doesn't necessarily have to come thru require; it works
@@ -174,16 +174,16 @@ You can read more about how to add lints in docs/linting.md"
    :since "0.1.0"
    :type :reference
    :impl (fn [server file symbol]
-           ;; only multisyms, like `my-module.field`
+           ;; references, like `my-module.field`
+           ;; we only need to check multisyms, ie ones doing indexing
            (if (. (utils.multi-sym-split symbol) 2)
-               (unknown-module-field server file symbol symbol)))}
+               (unknown-module-field server file symbol)))}
   {:type :definition
    :impl (fn [server file symbol definition]
            ;; definitions, like `(local {: field} (require :my-module))`
-           (if definition.keys
-               (unknown-module-field server file symbol definition.definition
-                                    (fcollect [i (length definition.keys) 1 -1]
-                                      (. definition.keys i)))))})
+           ;; we only need to check ones with keys, ie ones doing indexing
+           (when definition.keys
+             (unknown-module-field server file symbol)))})
 
 (add-lint :unnecessary-method
   {:what-it-does
