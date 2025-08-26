@@ -13,7 +13,7 @@
            (when (fennel.table? definition.definition)
              (each [key value (pairs definition.definition)]
                (when (or (= (type key) :string) (= (type key) :number))
-                 (let [value (analyzer.search server definition.file value [] {})]
+                 (let [value (analyzer.search server definition.file value {} {})]
                    (if value
                        (coroutine.yield key value)
                       definition.fields)))))
