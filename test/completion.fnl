@@ -274,7 +274,7 @@
 
 (fn test-compiler-env []
   (check ";; fennel-ls: macro-file\n("
-      [:sym :sym? :list :quote :icollect :math]
+      [:sym :sym? :list :quote :icollect :math :ipairs]
       [:os])
   ;; TODO #73
   ; (check "(macro foo [] (|"

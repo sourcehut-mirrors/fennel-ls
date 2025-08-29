@@ -24,6 +24,9 @@ identifiers are declared / referenced in which places."
     (icollect [k (pairs compiler-env)] k)))
 (set compiler-env._G._FENNEL_LS true)
 
+;; FIXME: this is a workaround for https://dev.fennel-lang.org/ticket/51#ticket
+(set-forcibly! compiler-env (collect [k v ((. (getmetatable compiler-env) :__pairs) compiler-env)] k v))
+
 (local nil* (sym :nil))
 
 (fn scope? [candidate]

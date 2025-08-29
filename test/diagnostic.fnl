@@ -168,12 +168,32 @@
          [{:message "unknown field: math.atan2"}]
          {:lua-version "lua5.3"}))
 
+(fn test-macro-environment []
+  (check {:main.fnl "(macro not-any [subject & vals]
+                       \"Returns `true` if `subject` is not equal to any of the remaining values.\"
+                       (let [conds# (icollect [_ v# (ipairs vals)]
+                                      `(not= ,subject ,v#))]
+                         `(and ,(unpack conds#))))"}
+         []
+         [{}])
+  (check {:main.fnl ";; fennel-ls: macro-file
+                     (fn not-any [subject & vals]
+                       \"Returns `true` if `subject` is not equal to any of the remaining values.\"
+                       (let [conds# (icollect [_ v# (ipairs vals)]
+                                      `(not= ,subject ,v#))]
+                         `(and ,(unpack conds#))))
+                     {: not-any}"}
+         []
+         [{}])
+  nil)
+
 (fn test-warnings []
   (check "(print \"hello\"table)"
          [{:message "expected whitespace before token"}]
          []))
 
 {: test-lua-versions
+ : test-macro-environment
  : test-compile-error
  : test-parse-error
  : test-macro-error
