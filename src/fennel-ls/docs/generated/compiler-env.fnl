@@ -30,7 +30,7 @@ The ast arg should be unmodified so that its first element is the form called."}
                         :fnl/arglist ["symbol"]}}
  :list {:metadata {:fls/fntype "fn"
                    :fls/itemKind "Function"
-                   :fnl/arglist [...]
+                   :fnl/arglist ["..."]
                    :fnl/docstring "Create a new list. Lists are a compile-time construct in Fennel; they are
 represented as tables with a special marker metatable. They only come from
 the parser, and they represent code which comes from reading a paren form;
@@ -52,7 +52,7 @@ Returns nil if passed something other than a multi-sym."}}
  :pack {}
  :sequence {:metadata {:fls/fntype "fn"
                        :fls/itemKind "Function"
-                       :fnl/arglist [...]
+                       :fnl/arglist ["..."]
                        :fnl/docstring "Create a new sequence. Sequences are tables that come from the parser when
 it encounters a form with square brackets. They are treated as regular tables
 except when certain macros need to look for binding forms, etc specifically."}}

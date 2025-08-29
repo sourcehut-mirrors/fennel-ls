@@ -347,6 +347,7 @@
                  :message "obj.field expects 0 arguments; found 1"}])
     (assert-ok (add-opts "(let [foo 10] (fn [] foo))"))
     (assert-ok (add-opts "(fn [])"))
+    (assert-ok (add-opts ";; fennel-ls: macro-file\n(list 1 2 3 4)"))
     nil))
 
 (fn test-duplicate-keys []

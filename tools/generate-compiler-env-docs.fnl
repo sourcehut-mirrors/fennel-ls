@@ -1,6 +1,7 @@
 (local fennel (require :fennel))
 
 (local files (require :fennel-ls.files))
+(local compiler (require :fennel-ls.compiler))
 (local analyzer (require :fennel-ls.analyzer))
 (local navigate (require :fennel-ls.navigate))
 (local docs (require :fennel-ls.docs))
@@ -21,11 +22,13 @@
 (set server.root-uri "file://.")
 
 (local file (files.get-by-uri server uri))
+(compiler.compile server file)
 (local result (analyzer.search server file (. file.ast (length file.ast)) {} {}))
 
 ;; convert results into a doc file
 
 (tset (getmetatable (fennel.sym "x")) :__fennelview #(fennel.view (. $ 1)))
+(tset (getmetatable (fennel.varg)) :__fennelview #"\"...\"")
 (fn into-doc [result]
   (if (= (type result.definition) :string)
     {:definition result.definition}
