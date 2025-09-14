@@ -25,7 +25,7 @@ In general, this involves:
         id))))
 
 (λ handle-response [_server _send _id _result]
-  ;; I don't care about responses yet
+  ;; fennel-ls doesn't care about responses yet
   nil)
 
 (λ handle-bad-response [_server _send _id err]
@@ -38,7 +38,7 @@ In general, this involves:
     callback (callback server send ?params)))
     ;; Silent error for unknown notifications
 
-(λ handle [server send msg]
+(λ handle [server send batch]
   "Figures out what to do with a message.
 This can involve updating the state of the server, and/or sending messages to the
 server.
@@ -46,27 +46,28 @@ server.
 Takes:
 * `server`, which is the state of the server,
 * `send`, which is a callback for sending responses, and
-* `msg`, which is the message to receive."
-  (case (values msg (type msg))
-    {:jsonrpc "2.0" : id : method :params ?params}
-    (handle-request server send id method ?params)
-    {:jsonrpc "2.0" : method :params ?params}
-    (handle-notification server send method ?params)
-    {:jsonrpc "2.0" : id : result}
-    (handle-response server send id result)
-    {:jsonrpc "2.0" : id :error err}
-    (handle-bad-response server send id err)
-    (str :string)
-    (send (message.create-error :ParseError str))
-    _
-    (send (message.create-error :BadMessage nil msg.id)))
-  (while (next server.queue)
-    (send (table.remove server.queue 1))))
+* `msgs`, which is a list of incoming messages."
+  (each [_ msg (ipairs batch)]
+    (case (values msg (type msg))
+      {:jsonrpc "2.0" : id : method :params ?params}
+      (handle-request server send id method ?params)
+      {:jsonrpc "2.0" : method :params ?params}
+      (handle-notification server send method ?params)
+      {:jsonrpc "2.0" : id : result}
+      (handle-response server send id result)
+      {:jsonrpc "2.0" : id :error err}
+      (handle-bad-response server send id err)
+      (str :string)
+      (send (message.create-error :ParseError str))
+      _
+      (send (message.create-error :BadMessage nil msg.id)))
+    (while (next server.queue)
+      (send (table.remove server.queue 1)))))
 
 (λ handle* [server msg]
   "handles a message, and returns all the responses in a table"
   (let [out []]
-    (handle server (partial table.insert out) msg)
+    (handle server (partial table.insert out) [msg])
     out))
 
 {: handle

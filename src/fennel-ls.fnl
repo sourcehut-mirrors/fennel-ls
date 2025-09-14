@@ -49,7 +49,7 @@
   (local server {})
   (while true
     (let [msg (json-rpc.read in)]
-      (dispatch.handle server send msg))))
+      (dispatch.handle server send [msg]))))
 
 (local {: version} (require :fennel-ls.utils))
 (local help "Usage: fennel-ls [FLAG] [FILES]
