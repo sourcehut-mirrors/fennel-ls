@@ -121,7 +121,6 @@ Every time the client sends a message, it gets handled by a function in the corr
         (when include-declaration?
           (table.insert result
             (message.range-and-uri server file binding)))
-
         ;; TODO don't include duplicates
         result)
       (catch _ nil))))
@@ -246,7 +245,7 @@ Every time the client sends a message, it gets handled by a function in the corr
 (λ notifications.textDocument/didClose [server _send {:textDocument {: uri}}]
   (local file (files.get-by-uri server uri))
   (set file.open? false)
-  (set fennel.macro-loaded [])
+  (each [k (pairs fennel.macro-loaded)] (tset fennel.macro-loaded k nil))
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
   (files.flush-uri server uri))
 

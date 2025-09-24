@@ -104,8 +104,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 
 (λ reload [server]
   ;; clear out macros from fennel
-  (each [k (pairs fennel.macro-loaded)]
-    (tset fennel.macro-loaded k nil))
+  (each [k (pairs fennel.macro-loaded)] (tset fennel.macro-loaded k nil))
   (set server.configuration
     (make-configuration
       (case-try (flsproject-path server)
