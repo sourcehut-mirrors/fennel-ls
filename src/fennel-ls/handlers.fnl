@@ -64,7 +64,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :inlayHintProvider nil
          :diagnosticProvider {:workDoneProgress false
                               :interFileDependencies true
-                              :workspaceDiagnostics true}}]
+                              :workspaceDiagnostics false}}]
          ;; :workspaceSymbolProvider nil
          ;; :workspace {:workspaceFolders nil
          ;;             :fileOperations {:didCreate nil
