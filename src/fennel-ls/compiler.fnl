@@ -70,6 +70,7 @@ identifiers are declared / referenced in which places."
   ;; The useful information being recorded:
   (let [definitions-by-scope (doto {} (setmetatable has-tables-mt))
         definitions   {} ; symbol -> binding
+        multi-binds   {}
         compile-diagnostics {} ; [diagnostic]
         references    {} ; symbol -> references
         macro-refs    {} ; symbol -> macro
@@ -140,6 +141,9 @@ identifiers are declared / referenced in which places."
       (recurse binding [] 0))
 
     (λ define [?definition binding scope ?opts]
+      ;; just storing lists for now; can add others if a lint needs them
+      (when (list? binding)
+        (table.insert multi-binds {:left binding :right ?definition}))
       (for-each-binding-in binding ?definition
         (fn [symbol ?definition keys ?multival]
           (when (not (or (list? symbol) (multisym? symbol)))
@@ -462,6 +466,7 @@ identifiers are declared / referenced in which places."
       (set file.scopes scopes)
       (set file.definitions definitions)
       (set file.definitions-by-scope definitions-by-scope)
+      (set file.multi-binds multi-binds)
       (set file.compile-errors compile-diagnostics)
       (set file.references references)
       (set file.require-calls require-calls)

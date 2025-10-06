@@ -798,6 +798,72 @@ You can read more about how to add lints in docs/linting.md"
                {:message "indexing a table with 0; did you forget that Lua is 1-indexed?"
                 : ast}))})
 
+(add-lint :legacy-multival
+  {:what-it-does "Detects usage of legacy (paren) multival destructuring."
+   :why-care? "It's more consistent to use table destructuring."
+   :type :other
+   :example "```fnl
+(let [input \"whatever\"
+      (v1 v2) (input:match \"([aeiou]).*([aeiou])\")]
+  (print :vowels v1 v2))
+```
+
+Instead, use:
+```fnl
+(let [input \"whatever\"
+      [v1 v2] [(input:match \"([aeiou]).*([aeiou])\")]]
+  (print :vowels v1 v2))
+```"
+   :since "0.2.2-dev"
+   :disabled true
+   :impl (fn [server file]
+           (each [_  {: left : right} (ipairs file.multi-binds)]
+             (when (and (list? left) (. file.lexical left))
+               (coroutine.yield
+                {:message "Legacy multival destructure can be replaced with table destructure."
+                 :ast left
+                 :fix #{:title "Replace legacy multival destructure with table."
+                        :changes [{:range (message.ast->range server file left)
+                                   :newText (-> (tostring left)
+                                                (: :gsub "^%(" "[")
+                                                (: :gsub "%)$" "]"))}
+                                  {:range (message.ast->range server file right)
+                                   :newText (.. "[" (tostring right) "]")}]}}))))})
+
+(fn match-call? [[callee &as ast]]
+  (and (list? ast)
+       (case (tostring callee)
+         :case true :match true :case-try true :match-try true)))
+
+(add-lint :legacy-multival-case
+  {:what-it-does "Detects usage of legacy (paren) multival destructuring in pattern match."
+   :why-care? "It's more consistent to use table destructuring."
+   :type :macro-call
+   :since "0.2.2-dev"
+   :disabled true
+   :example "```fnl
+(case (input:match \"([aeiou]).*([aeiou])\")
+  (v1 v2) (print \"Two vowels:\" v1 v2)
+  _ (print \"Less than two\"))
+```
+
+Instead, use:
+(case [(input:match \"([aeiou]).*([aeiou])\")]
+  [v1 v2] (print \"Two vowels:\" v1 v2)
+  _ (print \"Less than two\"))
+"
+   :impl (fn [_server _file ast]
+           (if (match-call? ast)
+             (faccumulate [r nil i 3 (length ast) 2 &until r]
+               (if (and (list? (. ast i))
+                        (not (sym? (. ast i 1) :catch))
+                        (not (sym? (. ast i 1) :where)))
+                   ;; would be nice to get fixes here but it needs to be smart
+                   ;; about case (fix val+every pattern) vs case-try (fix
+                   ;; pattern and previous body)
+                   {:message "Legacy multival destructure can be replaced with table destructure."
+                    :ast (. ast i)}))))})
+
 (add-lint :invalid-flsproject-settings
   {:what-it-does
    "Checks if the flsproject file's settings are valid."

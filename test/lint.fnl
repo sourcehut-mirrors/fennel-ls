@@ -38,10 +38,17 @@
                                                                 :escape-newlines? true})))
         (table.remove diagnostics i)))))
 
+(macro check-form [lints form expected ?unexpected]
+  `(check {:main.fnl ,(view form) :flsproject.fnl ,(view {: lints})}
+          ,expected ,?unexpected))
+
 (fn assert-ok [file-contents]
   (let [{: uri : client} (create-client file-contents)
         [{:result {:items diagnostics}}] (client:diagnostic uri)]
     (faith.= nil (next diagnostics) (view diagnostics))))
+
+(macro assert-ok-form [lints form]
+  `(assert-ok {:main.fnl ,(view form) :flsproject.fnl ,(view {: lints})}))
 
 (fn test-unused []
   (check "(local x 10)"
@@ -414,7 +421,19 @@
     (assert-ok (add-opts "(. math :0)")))
   nil)
 
-
+(fn test-legacy-multival []
+  (check-form {:legacy-multival true}
+              (let [(x y z) (table.unpack [10 9 8])] (+ x y z))
+              [{:message "Legacy multival destructure can be replaced with table destructure."
+                :range {:end {:character 13 :line 0} :start {:character 6 :line 0}}}])
+  (check-form {:legacy-multival-case true}
+              (case (table.unpack [9 0 3]) (n x) (print :yes n x))
+              [{:message "Legacy multival destructure can be replaced with table destructure."}])
+  (assert-ok-form {:legacy-multival-case true}
+                  (case-try (values 1 2 3)
+                    nil (print :lol)
+                    (where (or a [a])) (print (+ a 3))
+                    (catch (x) x))))
 
 {: test-unused
  : test-ampersand
@@ -434,4 +453,5 @@
  : test-arg-count
  : test-duplicate-keys
  : test-nested-associative-operator
- : test-zero-indexed}
+ : test-zero-indexed
+ : test-legacy-multival}
