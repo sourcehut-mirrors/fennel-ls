@@ -18,10 +18,10 @@
         encoding (or ?encoding default-encoding)]
     (while
       (case
-        (case (values (text:find "|") (text:find "=="))
-          (where (| ==) (< | ==)) [| "|"]
-          (_ ==) [== "=="]
-          (| _) [| "|"])
+        (case [(text:find "|") (text:find "==")]
+          (where [| ==] (< | ==)) [| "|"]
+          [_ ==] [== "=="]
+          [| _] [| "|"])
         [i "|"]
         (do
           (set text (.. (text:sub 1 (- i 1)) (text:sub (+ i 1))))
@@ -44,9 +44,9 @@
 (fn create-client [file-contents ?opts ?config]
   ;; TODO big function, split up
   (let [opts (or ?opts {})
-        (provide-root-uri file-contents) (if (= (type file-contents) :table)
-                                           (values true file-contents)
-                                           (values false {:main.fnl file-contents}))
+        [provide-root-uri file-contents] (if (= (type file-contents) :table)
+                                             [true file-contents]
+                                             [false {:main.fnl file-contents}])
 
         server {:preload (if provide-root-uri {})}
         client (doto {: server :prev-id 1}

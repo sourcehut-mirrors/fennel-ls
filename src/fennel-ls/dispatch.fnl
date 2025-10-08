@@ -14,9 +14,9 @@ In general, this involves:
   ;; The return value of the request is sent back to the server.
   (case (. handlers.requests method)
     callback
-    (case (callback server send ?params)
-      (nil err) (send (message.create-error :InternalError err id))
-      ?response (send (message.create-response id ?response)))
+    (case [(callback server send ?params)]
+      [nil err] (send (message.create-error :InternalError err id))
+      [?response] (send (message.create-response id ?response)))
     nil
     (send
       (message.create-error
@@ -48,16 +48,16 @@ Takes:
 * `send`, which is a callback for sending responses, and
 * `msgs`, which is a list of incoming messages."
   (each [_ msg (ipairs batch)]
-    (case (values msg (type msg))
-      {:jsonrpc "2.0" : id : method :params ?params}
+    (case [msg (type msg)]
+      [{:jsonrpc "2.0" : id : method :params ?params}]
       (handle-request server send id method ?params)
-      {:jsonrpc "2.0" : method :params ?params}
+      [{:jsonrpc "2.0" : method :params ?params}]
       (handle-notification server send method ?params)
-      {:jsonrpc "2.0" : id : result}
+      [{:jsonrpc "2.0" : id : result}]
       (handle-response server send id result)
-      {:jsonrpc "2.0" : id :error err}
+      [{:jsonrpc "2.0" : id :error err}]
       (handle-bad-response server send id err)
-      (str :string)
+      [str :string]
       (send (message.create-error :ParseError str))
       _
       (send (message.create-error :BadMessage nil msg.id)))

@@ -50,7 +50,7 @@ we support completionItem/resolve."
         file {:text (.. (file.text:sub 1 (- byte 1)) "|" (file.text:sub byte)) :uri file.uri}
         _ (compiler.compile server file)
         ;; find what ast objects are under the cursor
-        (symbol parents) (analyzer.find-symbol server file byte)
+        [symbol parents] [(analyzer.find-symbol server file byte)]
         ;; check what context I'm in
         in-call-position? (or (and (fennel.list? (. parents 1))
                                    (= symbol (. parents 1 1)))
@@ -161,7 +161,7 @@ we support completionItem/resolve."
 (fn completionItem/resolve [server _send completion-item]
   (let [{: uri : byte} completion-item.data
         file (files.get-by-uri server uri)
-        (_symbol parents) (analyzer.find-symbol server file byte)
+        [_symbol parents] [(analyzer.find-symbol server file byte)]
         scope (or (. file.scopes _symbol)
                   (accumulate [?find nil _ parent (ipairs parents) &until ?find]
                     (. file.scopes parent))

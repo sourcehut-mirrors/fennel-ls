@@ -39,7 +39,7 @@ These functions are all pure functions, which makes me happy."
     (var o8 0)
     (var o16 0)
     (while (< o8 unit8)
-      (let [(a8 a16) (utf (str:byte (+ 1 o8)))]
+      (let [[a8 a16] [(utf (str:byte (+ 1 o8)))]]
         (set o8 (+ o8 a8))
         (set o16 (+ o16 a16))))
     (if (= o8 unit8)
@@ -52,7 +52,7 @@ These functions are all pure functions, which makes me happy."
   (var o8 0)
   (var o16 0)
   (while (< o16 unit16)
-    (let [(a8 a16) (utf (str:byte (+ 1 o8)))]
+    (let [[a8 a16] [(utf (str:byte (+ 1 o8)))]]
       (set o8 (+ o8 a8))
       (set o16 (+ o16 a16))))
   (if (= o16 unit16)
@@ -218,7 +218,7 @@ WARNING: this is only used in the test code, not in the real language server"
        (not (str:find "[^!#$%&*+/0-9<=>?A-Z\\^_a-z|\128-\255-]"))))
 
 (fn find [t x ?k]
-  (match (next t ?k) (k x) k (k y_) (find t x k)))
+  (match [(next t ?k)] [k x] k [k y_] (find t x k)))
 
 {: version
  : uri->path

@@ -95,9 +95,9 @@ LSP json objects."
 
 (λ multisym->range [server file ast n]
   (let [spl (utils.multi-sym-split ast)]
-    (case (values (utils.get-ast-info ast :bytestart)
-                  (utils.get-ast-info ast :byteend))
-      (bytestart byteend)
+    (case [(utils.get-ast-info ast :bytestart)
+           (utils.get-ast-info ast :byteend)]
+      [bytestart byteend]
       (let [bytesubstart (faccumulate [b bytestart
                                        i 1 (- n 1)]
                            (+ b (length (. spl i)) 1))
