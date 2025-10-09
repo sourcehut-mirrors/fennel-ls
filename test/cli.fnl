@@ -1,19 +1,35 @@
 (local faith (require :faith))
 
-;; TODO refactor fennel-ls.check to avoid running end-to-end
-;; (but keep/write at least some end-to-end tests)
-(fn test-lint []
-  (let [input-file-name (os.tmpname)]
-    (doto (io.open input-file-name :w)
-      (: :write "(local x 1)")
+;; alas, no io.popen2
+(macro with-temp-form [[filename form
+                        out cmd] & body]
+  `(let [,filename (os.tmpname)]
+    (doto (assert (io.open ,filename :w))
+      (: :write ,(view form))
       (: :close))
-    (let [output-file (io.popen (.. "./fennel-ls --lint "
-                                    input-file-name)
-                                :r)
-          contents (output-file:read :*a)]
-      (os.remove input-file-name)
-      (faith.= (.. input-file-name ":1:7: warning: unused definition: x\n")
-               contents))
+    (let [pipe# (io.popen (.. ,cmd " " ,filename))
+          ,out (pipe#:read :*a)]
+      ,body
+      (os.remove ,filename))
     nil))
 
-{: test-lint}
+(fn test-lint []
+  (with-temp-form [f (local x 1)
+                   out "./fennel-ls --lint"]
+    (faith.= (.. f ":1:7: warning: unused definition: x\n") out)))
+
+(fn test-fix []
+  (with-temp-form [f (local x 1)
+                   out "./fennel-ls --fix --yes"]
+    (faith.= "(local _x 1)" (with-open [file (assert (io.open f))]
+                              (file:read :*a)) out))
+  (with-temp-form [f [(let [(a b) (values 1 (+ 2))] (+ a b))
+                      [(do (print "done doing all the fun things we did!"))]]
+                   out "./fennel-ls --fix --yes"]
+    (faith.= "[(let [[a b] [(values 1 2)]] (+ a b))
+ [(print \"done doing all the fun things we did!\")]]"
+             (with-open [file (assert (io.open f))]
+               (file:read :*a)) out)))
+
+{: test-lint
+ : test-fix}

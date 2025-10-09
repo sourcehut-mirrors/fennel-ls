@@ -131,3 +131,11 @@ fennel-ls --lint my-file.fnl f2.fnl # prints diagnostics for the files given
 
 This will analyze the given files and print out all compiler errors and lints,
 without launching a server. A successful exit code indicates no problems found.
+
+You can also automatically apply fixes from lints that have them:
+
+```sh
+fennel-ls --fix my-file.fnl f2.fnl # applies fixes
+my-file.fnl:3:6: warning: unnecessary unary +
+Apply fix? [Y/n] Unwrap the expression
+```

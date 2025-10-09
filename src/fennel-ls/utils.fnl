@@ -139,9 +139,7 @@ These functions are all pure functions, which makes me happy."
       text)))
 
 (λ apply-edits [initial-text edits encoding]
-  "Takes a list of Language-Server-Protocol `TextEdit` or `AnnotatedTextEdit` and applies them to a piece of text.
-
-WARNING: this is only used in the test code, not in the real language server"
+  "Takes a list of Language-Server-Protocol `TextEdit` or `AnnotatedTextEdit` and applies them to a piece of text."
   (accumulate
     [contents initial-text
      _ edit (ipairs edits)]

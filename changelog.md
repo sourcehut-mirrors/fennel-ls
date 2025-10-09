@@ -1,6 +1,8 @@
 # Changelog
 
 ### Features
+* Add `--fix` command-line argument to automatically apply lint fixes
+* Add `:legacy-multival` and `legacy-multival-case` lints, disabled by default
 * Code action "Expand macro" lets you see what a macro expands to
 * Macro expansion is shown when hovering over a macro
 * Added support for pull diagnostics, which should help with out of date lints
