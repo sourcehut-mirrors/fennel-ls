@@ -165,9 +165,13 @@ These functions are all pure functions, which makes me happy."
     (let [offset (or ?offset (length symbol))
           next-separator (or (symbol:find ".[.:]" offset)
                              (length symbol))
-          symbol (symbol:sub 1 next-separator)]
-      (icollect [word (: (.. symbol ".") :gmatch "(.-)[.:]")]
-        word))))
+          symbol (symbol:sub 1 next-separator)
+          parts (icollect [word (symbol:gmatch "[^.:]+")]
+                  word)]
+      (if (symbol:match "[.:]+$")
+          (tset parts (length parts)
+                (.. (. parts (length parts)) (symbol:match "[.:]+$"))))
+      parts)))
 
 (fn multi-sym-base [symbol]
   (local symbol (tostring symbol))

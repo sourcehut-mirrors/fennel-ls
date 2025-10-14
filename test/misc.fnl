@@ -14,6 +14,11 @@
   (faith.= ["is" "equal"] (utils.multi-sym-split "is.equal" 5))
   (faith.= ["a" "b" "c" "d" "e" "f"] (utils.multi-sym-split "a.b.c.d.e.f"))
   (faith.= ["obj" "bar"] (utils.multi-sym-split (fennel.sym "obj.bar")))
+  (faith.= ["a."] (utils.multi-sym-split (fennel.sym "a.")))
+  (faith.= [".."] (utils.multi-sym-split (fennel.sym "..")))
+  (faith.= ["?."] (utils.multi-sym-split (fennel.sym "?.")))
+  (faith.= ["b:"] (utils.multi-sym-split (fennel.sym "b:")))
+  (faith.= ["b" "a."] (utils.multi-sym-split (fennel.sym "b:a.")))
   nil)
 
 (fn test-find-symbol []
@@ -34,6 +39,11 @@
       "[[1 2 sym-one] (match [1 2 4] [1 2 sym-one] sym-one) [(match [1 2 4] [1 2 sym-one] sym-one)]]"
       (fennel.view parents {:one-line? true})
       "bad parents"))
+
+  (let [{: server : uri} (create-client "(local a. 1) (print a.)")
+        file (. server.files uri)
+        [symbol _parents] [(analyzer.find-symbol server file 21)]]
+    (faith.= symbol (fennel.sym "a.")))
   nil)
 
 (fn test-failure []

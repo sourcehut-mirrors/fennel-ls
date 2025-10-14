@@ -282,6 +282,15 @@
   ;     [:os])
   nil)
 
+;; ensure that we get completions for both the symbol and the table fields
+(fn test-sym-ending-in-delimiter []
+  (check "(local a {:b 1 :c 2})
+          (local a. 3)
+          (set a.|"
+    ["a." "a.b" "a.c"]
+    [])
+  nil)
+
 ;; ;; Future tests / features
 ;; ;; Scope Ordering Rules
 ;; (it "does not suggest locals past the suggestion location when a symbol is partially typed")
@@ -308,4 +317,5 @@
  : test-module
  : test-destructure
  : test-no-completion
- : test-compiler-env}
+ : test-compiler-env
+ : test-sym-ending-in-delimiter}
