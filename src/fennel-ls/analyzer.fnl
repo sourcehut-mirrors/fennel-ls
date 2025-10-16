@@ -38,7 +38,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 {:binding z :definition y}, referring to the `(local z y)` binding.
 "
 
-(local {: sym? : list? : sequence? : varg?} (require :fennel))
+(local {: sym? : multi-sym? : list? : sequence? : varg?} (require :fennel))
 (local {: get-ast-info &as utils} (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
 (local docs (require :fennel-ls.docs))
@@ -301,6 +301,29 @@ initialization-opts: {:stack ?list[ast]
     (fcollect [i 1 (length parents)]
       (. parents (- (length parents) i -1)))))
 
+(λ find-document-symbols [server file]
+  "Find all the symbols defined in the file
+
+returns a sequential table of tables containing each symbol and its definition."
+  (compiler.compile server file)
+  (let [symbols []]
+    (each [symbol definition (pairs file.definitions)]
+      (when (and (or (sym? symbol) (multi-sym? symbol))
+                 definition.binding
+                 (. file.lexical symbol) ; exclude gensyms
+                 (not (= (tostring symbol) "_")))
+        (table.insert symbols {: symbol : definition}))
+      ; definitions doesn't have multi-syms so we get them out of fields
+      (when definition.fields
+        (each [_field-name field-definition (pairs definition.fields)]
+          (when (and field-definition.binding
+                     (or (sym? field-definition.binding)
+                         (multi-sym? field-definition.binding)))
+            (table.insert symbols
+              {:symbol field-definition.binding
+               :definition field-definition})))))
+    symbols))
+
 (λ find-nearest-call [server file byte]
   "Find the nearest call
 
@@ -334,6 +357,7 @@ returns the called symbol and the number of the argument closest to byte"
       (search server file symbol {:stop-early? true} {:byte ?byte})))
 
 {: find-symbol
+ : find-document-symbols
  : find-nearest-call
  : find-nearest-definition
  : find-definition

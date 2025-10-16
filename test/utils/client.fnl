@@ -60,6 +60,11 @@
      {: position
       :textDocument {:uri file}})))
 
+(fn document-symbol [self file]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :textDocument/documentSymbol
+     {:textDocument {:uri file}})))
+
 (fn signature-help [self file position]
   (dispatch.handle*
     self.server
@@ -105,6 +110,7 @@
              : hover
              : references
              : document-highlight
+             : document-symbol
              : signature-help
              : rename
              : code-action

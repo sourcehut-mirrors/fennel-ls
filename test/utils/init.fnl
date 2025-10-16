@@ -104,7 +104,24 @@
 (fn position-past-end-of-text [text ?encoding]
   (utils.byte->position text (+ (length text) 1) (or ?encoding default-encoding)))
 
+(fn range-comparator [a b]
+  (or (< a.range.start.line b.range.start.line)
+      (and (= a.range.start.line b.range.start.line)
+           (or (< a.range.start.character b.range.start.character)
+               (and (= a.range.start.character b.range.start.character)
+                    (or (< a.range.end.line b.range.end.line)
+                        (and (= a.range.end.line b.range.end.line)
+                             (or (< a.range.end.character b.range.end.character)
+                                 (= a.range.end.character b.range.end.character)))))))))
+
+(fn location-comparator [a b]
+  (or (< a.uri b.uri)
+      (and (= a.uri b.uri)
+           (range-comparator a b))))
+
 {: create-client
  : position-past-end-of-text
  : parse-markup
+ : range-comparator
+ : location-comparator
  : NIL}

@@ -43,6 +43,12 @@ LSP json objects."
         :WARN :warning
         _ (string.lower k))))
 
+(local symbol-kind
+  {:File 1 :Module 2 :Namespace 3 :Package 4 :Class 5 :Method 6 :Property 7
+   :Field 8 :Constructor 9 :Enum 10 :Interface 11 :Function 12 :Variable 13
+   :Constant 14 :String 15 :Number 16 :Boolean 17 :Array 18 :Object 19 :Key 20
+   :Null 21 :EnumMember 22 :Struct 23 :Event 24 :Operator 25 :TypeParameter 26})
+
 (λ create-error [code message ?id ?data]
   {:jsonrpc "2.0"
    :id ?id
@@ -124,6 +130,35 @@ LSP json objects."
     {:type (. severity msg-type)
      : message}))
 
+(λ definition->symbol-kind [definition]
+  (let [def definition.definition]
+    (if (fennel.list? def)
+      (let [head (. def 1)]
+        (if (or (fennel.sym? head :fn)
+                (fennel.sym? head :lambda)
+                (fennel.sym? head :λ))
+          symbol-kind.Function
+          symbol-kind.Variable))
+      symbol-kind.Variable)))
+
+(λ document-symbol-format [server file symbols]
+  (let [symbols (icollect [_ {: symbol : definition} (ipairs symbols)]
+                 (let [name (tostring symbol)
+                       kind (definition->symbol-kind definition)
+                       range (ast->range server file definition.binding)]
+                   (when range
+                     {: name
+                      : kind
+                      : range
+                      :selectionRange range})))]
+    ; the spec doesn't define an order, and not all clients sort the results
+    (table.sort symbols
+      (fn [a b]
+        (or (< a.range.start.line b.range.start.line)
+            (and (= a.range.start.line b.range.start.line)
+                 (< a.range.start.character b.range.start.character)))))
+    symbols))
+
 {: create-notification
  : create-request
  : create-response
@@ -137,4 +172,6 @@ LSP json objects."
  : severity
  : severity->string
  : show-message
- : unknown-range}
+ : unknown-range
+ : document-symbol-format
+ : symbol-kind}

@@ -1,6 +1,7 @@
 # Changelog
 
 ### Features
+* Add `documentSymbol` support, for jumping to symbols definitions in the current document
 * Add `--fix` command-line argument to automatically apply lint fixes
 * Add `:legacy-multival` and `legacy-multival-case` lints, disabled by default
 * Code action "Expand macro" lets you see what a macro expands to

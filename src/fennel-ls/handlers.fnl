@@ -43,7 +43,7 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :implementationProvider nil
          :referencesProvider {:workDoneProgress false}
          :documentHighlightProvider {:workDoneProgress false}
-         ;; :documentSymbolProvider nil
+         :documentSymbolProvider {:workDoneProgress false}
          :codeActionProvider {:workDoneProgress false}
          ;; :codeLensProvider nil
          ;; :documentLinkProvider nil
@@ -158,6 +158,11 @@ Every time the client sends a message, it gets handled by a function in the corr
         {:contents (formatter.hover-format server (tostring symbol) result opts)
          :range (message.ast->range server file symbol)})
       (catch _ nil))))
+
+(λ requests.textDocument/documentSymbol [server _send {:textDocument {: uri}}]
+  (let [file (files.get-by-uri server uri)
+        symbols (analyzer.find-document-symbols server file)]
+    (message.document-symbol-format server file symbols)))
 
 (set {:textDocument/completion requests.textDocument/completion
       :completionItem/resolve requests.completionItem/resolve}

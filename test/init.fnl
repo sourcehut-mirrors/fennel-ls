@@ -22,6 +22,7 @@
        :test.completion
        :test.references
        :test.document-highlight
+       :test.document-symbol
        :test.signature-help
        :test.lint
        :test.code-action
