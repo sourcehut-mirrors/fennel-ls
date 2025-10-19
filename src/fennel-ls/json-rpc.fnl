@@ -19,16 +19,15 @@ on the empty table to tell dkjson to serialize as {}."
 
 (λ read-header [in ?header]
   "Reads the header of a JSON-RPC message"
-  (let [header (or ?header {})]
-    (case (in:read)
-      nil nil ;; I've hit end of stream, return nil instead of a header
-      line (case (line:match "^(.-)\r?$") ;; strip trailing \r
-             "" header ;; base case. empty line marks end of header
-             line (let [(k v) (line:match "^(.-): (.-)$")]
-                    (if (not (and k v))
-                      (error (.. "fennel-ls encountered a malformed json-rpc header: \"" line "\"")))
-                    (tset header k v)
-                    (read-header in header))))))
+  (let [header (or ?header {})
+        line (assert (in:read) "EOF")]
+    (case (line:match "^(.-)\r?$") ;; strip trailing \r
+      "" header ;; base case. empty line marks end of header
+      line (let [(k v) (line:match "^(.-): (.-)$")]
+             (if (not (and k v))
+                 (error (.. "fennel-ls encountered a malformed json-rpc header: \"" line "\"")))
+             (tset header k v)
+             (read-header in header)))))
 
 (λ read-n [in len ?buffer]
   "read a string of exactly `len` characters from the `in` stream.

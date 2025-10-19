@@ -9,7 +9,7 @@
   (let [out (stringio.open "Content-Length: 29\r\n\r\n{\"my json content\":\"is cool\"}Content-Length: 29\r\n\r\n{\"my json content\":\"is neat\"}")]
     (faith.= {"my json content" "is cool"} (json-rpc.read out))
     (faith.= {"my json content" "is neat"} (json-rpc.read out))
-    (faith.= nil (json-rpc.read out)))
+    (faith.error "EOF" #(json-rpc.read out)))
 
   (let [out (stringio.open "Content-Length: 9\r\n\r\n{{{{{}}}}")]
     (faith.= :string (type (json-rpc.read out)) "json-rpc returns a table on successful read, and a string on unsuccessful read. It's jank and should probably be replaced with an ok, err system")))

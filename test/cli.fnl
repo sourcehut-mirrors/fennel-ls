@@ -26,7 +26,7 @@
   (with-temp-form [f [(let [(a b) (values 1 (+ 2))] (+ a b))
                       [(do (print "done doing all the fun things we did!"))]]
                    out "./fennel-ls --fix --yes"]
-    (faith.= "[(let [[a b] [(values 1 2)]] (+ a b))
+    (faith.= "[(let [(a b) (values 1 2)] (+ a b))
  [(print \"done doing all the fun things we did!\")]]"
              (with-open [file (assert (io.open f))]
                (file:read :*a)) out)))
