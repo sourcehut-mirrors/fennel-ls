@@ -281,13 +281,13 @@ initialization-opts: {:stack ?list[ast]
         (table.insert parents ast)
         (if
           (or (sequence? ast) (list? ast))
-          (accumulate [result nil
+          (accumulate [(result _parent) nil
                        _ child (ipairs ast)
                        &until result]
             (if (contains? child byte)
                 (recurse child)))
           (and (not (sym? ast)) (not (varg? ast)))
-          (accumulate [result nil
+          (accumulate [(result _parent) nil
                        key value (pairs ast)
                        &until result]
             (if (contains? key byte)

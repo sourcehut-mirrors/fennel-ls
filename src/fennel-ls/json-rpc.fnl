@@ -24,7 +24,7 @@ on the empty table to tell dkjson to serialize as {}."
       nil nil ;; I've hit end of stream, return nil instead of a header
       line (case (line:match "^(.-)\r?$") ;; strip trailing \r
              "" header ;; base case. empty line marks end of header
-             line (let [[k v] [(line:match "^(.-): (.-)$")]]
+             line (let [(k v) (line:match "^(.-): (.-)$")]
                     (if (not (and k v))
                       (error (.. "fennel-ls encountered a malformed json-rpc header: \"" line "\"")))
                     (tset header k v)
@@ -49,9 +49,10 @@ If there aren't enough bytes, return nil"
 (λ read [in]
   "Reads and parses a JSON-RPC message from the input stream
 Returns a table with the message if it succeeded, or a string with the parse error if it fails."
-  (let [[?result _?err-pos ?err] [(-?>> (read-header in)
-                                        (read-content in)
-                                        decode)]]
+  (let [(?result _?err-pos ?err)
+        (-?>> (read-header in)
+          (read-content in)
+          decode)]
     (or ?result ?err)))
 
 (λ write [out msg]
