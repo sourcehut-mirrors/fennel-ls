@@ -291,7 +291,7 @@ You can read more about how to add lints in docs/linting.md"
     ```fnl
     ;; nothing
     ```"
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :type :special-call
    :impl (fn [server file ast]
            (case ast
@@ -599,7 +599,7 @@ You can read more about how to add lints in docs/linting.md"
       (print \"hello\")
       (print \"world\"))
     ```"
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :type :special-call
    :impl (fn [server file ast]
            (case ast
@@ -642,7 +642,7 @@ You can read more about how to add lints in docs/linting.md"
     accurate if the code follows Fennel conventions. Also this lint is very new and
     may have issues, so I'd like to let people try it on their own terms before
     enabling it by default."
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :type [:function-call :special-call :macro-call]
    :disabled true
    :impl (fn [server file ast]
@@ -707,7 +707,7 @@ You can read more about how to add lints in docs/linting.md"
                 \" is less than y=\"
                 (tostring y))) ; fixed parens
     ```"
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :type [:function-call :special-call :macro-call]
    :impl (fn [server file ast]
              (case (analyzer.search server file (. ast 1) {} {})
@@ -759,7 +759,7 @@ You can read more about how to add lints in docs/linting.md"
     {:name \"Bob\"
      :age 25}
     ```"
-   :since :0.2.2-dev
+   :since "0.2.2"
    :type :other
    :impl (fn [_server file]
            (let [seen []]
@@ -789,7 +789,7 @@ You can read more about how to add lints in docs/linting.md"
    "```fnl
     (print (. inputs 0))
     ```"
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :type :special-call
    :disabled true
    :impl (fn [_server _file [callee tbl key &as ast]]
@@ -813,7 +813,7 @@ Instead, use:
       [v1 v2] [(input:match \"([aeiou]).*([aeiou])\")]]
   (print :vowels v1 v2))
 ```"
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :disabled true
    :impl (fn [server file]
            (each [_  {: left : right} (ipairs file.multi-binds)]
@@ -838,7 +838,7 @@ Instead, use:
   {:what-it-does "Detects usage of legacy (paren) multival destructuring in pattern match."
    :why-care? "It's more consistent to use table destructuring."
    :type :macro-call
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :disabled true
    :example "```fnl
 (case (input:match \"([aeiou]).*([aeiou])\")
@@ -876,7 +876,7 @@ Instead, use:
     ```fnl
     {:macro-path \"macros/?.mfnl\"}
     ```"
-   :since :0.2.2-dev
+   :since "0.2.2"
    :type :other
    :impl (fn [server file]
            (let [config-module :fennel-ls.config
@@ -911,7 +911,7 @@ Instead, use:
     (+ a b c d)
     (or x y z)
     ```"
-   :since "0.2.2-dev"
+   :since "0.2.2"
    :type :special-call
    :impl (fn [server file ast]
            (let [op (. ast 1)]

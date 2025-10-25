@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.2.2 / 2025-10-25
+
 ### Features
 * Add `documentSymbol` support, for jumping to symbols definitions in the current document
 * Add `--fix` command-line argument to automatically apply lint fixes

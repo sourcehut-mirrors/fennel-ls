@@ -16,7 +16,8 @@
 
 (fn test-release-version-number-is-right []
   (let [commit-message (-> (io.popen "git show -s --format='%s'")
-                           (: :read "*a"))
+                           (: :read "*a")
+                           (: :match "[^\n]*"))
         version (commit-message:match "^Release (.*)")
         version-from-utils utils.version
         version-from-changelog (-> (io.open "changelog.md")
