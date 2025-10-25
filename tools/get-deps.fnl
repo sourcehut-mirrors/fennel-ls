@@ -1,11 +1,11 @@
 (local {: sh} (require :tools.util))
 
-(fn git-clone [location url tag]
-  (if tag
-    (sh :git :clone :-c :advice.detachedHead=false :--depth=1 :--branch tag url location)
+(fn git-clone [location url ?tag]
+  (if ?tag
+    (sh :git :clone :-c :advice.detachedHead=false :--depth=1 :--branch ?tag url location)
     (sh :git :clone :-c :advice.detachedHead=false :--depth=1 url location)))
 
-;; TODO: currently you have to run make clean after changing any of these
+;; Vendored Dependency Versions
 (local fennel-version "1.5.3")
 (local faith-version "0.2.0")
 (local penlight-version "1.14.0")
@@ -16,6 +16,7 @@
 
 
 (fn get-fennel []
+  "downloads and builds fennel"
   (sh :mkdir :-p "build/")
   (when (not (io.open "build/fennel/fennel"))
     (git-clone "build/fennel"
@@ -24,23 +25,26 @@
     (sh :make :-C "build/fennel")))
 
 (fn get-faith []
+  "downloads faith"
   (when (not (io.open "build/faith/faith.fnl"))
     (git-clone "build/faith" "https://git.sr.ht/~technomancy/faith" faith-version)))
 
 ;; we clone all of penlight, but only stringio.lua will be installed
 (fn get-penlight-stringio []
+  "downloads penlight"
   (when (not (io.open "build/penlight/lua/pl/stringio.lua"))
     (git-clone "build/penlight" "https://github.com/lunarmodules/Penlight" penlight-version)))
 
 ;; get dkjson
 (fn get-dkjson []
+  "downloads and verifies dkjson"
   (when (not (io.open "build/dkjson.lua"))
     (sh :curl (.. "http://dkolf.de/dkjson-lua/dkjson-" dkjson-version ".lua") [:>] "build/dkjson.lua")
     (assert (sh :echo dkjson-md5sum [:|] :md5sum "--check" "--status"))
     (assert (sh :echo dkjson-sha1sum [:|] :sha1sum "--check" "--status"))))
 
-(fn install []
-  ;; installing just means copying to the "deps" folder
+(fn prepare-deps []
+  ;; "preparing" dependencies just means copying to the "deps" folder
   (sh :mkdir :-p "deps/")
   (sh :cp "build/fennel/fennel" ".")
   (sh :cp "build/fennel/fennel.lua" "deps/")
@@ -55,10 +59,10 @@
   (get-faith)
   (get-penlight-stringio)
   (get-dkjson)
-  (install))
+  (prepare-deps))
 
 {: get-fennel
  : get-faith
  : get-penlight-stringio
  : get-dkjson
- : install}
+ : prepare-deps}

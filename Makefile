@@ -117,8 +117,8 @@ clean:
 
 # Steps to release a new fennel-ls version
 
-# 0. run `make test` and `make selflint`, and/or check builds.sr.ht to ensure things are working.
-# 1. Ensure fennel and dkjson are up to date with `make check-deps`
+# 0. run `make test`, and/or check builds.sr.ht to ensure things are working.
+# 1. Update versions in tools/get-deps.fnl and run `make check-deps`.
 # 2. Ensure lua documentation is up to date with `make check-docs`.
 #    (occasionally, lua devs fix typos or change wording of their reference)
 # 3. Remove "-dev" suffix in version src/fennel-ls/utils.fnl, and in :since fields in src/fennel-ls/lint.fnl
