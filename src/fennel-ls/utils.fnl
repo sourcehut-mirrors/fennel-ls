@@ -5,7 +5,7 @@ These functions are all pure functions, which makes me happy."
 
 (local fennel (require :fennel))
 
-(local version "0.2.2")
+(local version "0.2.3-dev")
 
 (λ next-line [str ?from]
   "Find the start of the next line from a given byte offset, or from the start of the string."
