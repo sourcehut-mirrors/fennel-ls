@@ -4,6 +4,7 @@
 (local lint (require :fennel-ls.lint))
 (local utils (require :fennel-ls.utils))
 (local files (require :fennel-ls.files))
+(local config (require :fennel-ls.config))
 (local {: severity->string &as message} (require :fennel-ls.message))
 
 (fn print-diagnostic [filename {:message msg : range : severity}]
@@ -17,16 +18,12 @@
             msg)))
 
 (fn initialize [server]
-  (let [params {:id 1
-                :jsonrpc "2.0"
-                :method "initialize"
-                :params {:capabilities {:general {:positionEncodings [:utf-8]}}
-                         :clientInfo {:name "fennel-ls"}
-                         :rootUri "file://."}}]
-    (each [_ response (ipairs (dispatch.handle* server params))]
-      (case response
-        {:method "window/showMessage" :params {: message}}
-        (print "WARN:" message)))))
+  (let [params {:capabilities {:general {:positionEncodings [:utf-8]}}
+                :clientInfo {:name "fennel-ls"}
+                :rootUri "file://."}]
+    (config.initialize server params)
+    (each [{: message} (ipairs server.queue)]
+      (print "WARN:" message))))
 
 (λ lint-files [filenames]
   "non-interactive mode that gets executed from CLI with --lint.
