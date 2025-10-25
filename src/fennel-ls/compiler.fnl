@@ -356,7 +356,7 @@ identifiers are declared / referenced in which places."
                               extra-global))
           plugin
           {:name "fennel-ls"
-           :versions ["1.4.1" "1.4.2" "1.5.0" "1.5.1" "1.5.3" "1.5.4"]
+           :versions ["1.4.1" "1.4.2" "1.5.0" "1.5.1" "1.5.3" "1.5.4" "1.6.0"]
            : symbol-to-expression
            : call
            : destructure

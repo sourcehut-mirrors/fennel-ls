@@ -17,7 +17,7 @@
         [{: result}] (client:signature-help uri cursor)]
     (check-signature expected result)))
 
-(local fn-signature "(fn name? args docstring? ...)")
+(local fn-signature "(fn ?name args ?docstring ...)")
 (local fn-params [{:label [4 9]}
                   {:label [10 14]}
                   {:label [15 25]}
@@ -186,9 +186,9 @@
           :parameters fn-params}))
 
 (fn test-binding-form []
-  (local each-signature "(each [key value (iterator)] ...)")
-  (local each-params [{:label [6 28]}
-                      {:label [29 32]}])
+  (local each-signature "(each [vals... iterator] ...)")
+  (local each-params [{:label [6 24]}
+                      {:label [25 28]}])
 
   (check "(each |)"
          {:signature each-signature

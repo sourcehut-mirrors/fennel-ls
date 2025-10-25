@@ -21,6 +21,7 @@
     * Disabled by default because 0 *can* be a valid table key in some cases.
 
 ### Changes
+* Updated to fennel 1.6.0
 * Updated to dkjson 2.8
 
 ### Bug Fixes

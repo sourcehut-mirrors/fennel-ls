@@ -6,7 +6,7 @@
     (sh :git :clone :-c :advice.detachedHead=false :--depth=1 url location)))
 
 ;; Vendored Dependency Versions
-(local fennel-version "1.5.3")
+(local fennel-version "1.6.0")
 (local faith-version "0.2.0")
 (local penlight-version "1.14.0")
 (local dkjson-version "2.8")

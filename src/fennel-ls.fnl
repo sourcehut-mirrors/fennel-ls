@@ -94,8 +94,7 @@ Run fennel-ls, the Fennel language server and linter.
   (case arg
     (where (or ["-h"] ["--help"])) (print help)
     (where (or ["-v"] ["--version"])) (print version)
-    ;; (where (or ["-l" & filenames] ["--lint" & filenames])) (lint filenames) ;; compile error in fennel <= 1.5.4
-    (where [--lint & filenames] (or (= --lint "--lint") (= --lint "-l"))) (lint-files filenames)
+    (where (or ["-l" & filenames] ["--lint" & filenames])) (lint-files filenames)
     (where (or ["--server"] [nil])) (main-loop (io.input)
                                                (io.output))
     ["--fix" "-y" & filenames] (fix-files filenames true)

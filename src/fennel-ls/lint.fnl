@@ -659,9 +659,8 @@ You can read more about how to add lints in docs/linting.md"
                        ;; exception: (/ a b) only needs 1 argument
                        min-params (if (= result (docs.get-builtin server :-)) 1
                                       (= result (docs.get-builtin server :/)) 1
-                                      ;; TODO Fennel 1.5.4+ has `fn`'s arglist fixed
-                                      ;; exception: fn only needs one argument
-                                      (= result (docs.get-builtin server :fn)) 1
+                                      (= result (docs.get-builtin server :fn)) (if (table? (. ast 2)) 1 2)
+                                      ;; TODO: collect arglist is still broken upstream
                                       (= result (docs.get-builtin server :collect)) 2
                                       (or (accumulate [last-required-param nil
                                                        i arg (ipairs signature)
