@@ -234,9 +234,9 @@ Every time the client sends a message, it gets handled by a function in the corr
     (send (message.diagnostics file))))
 
 (λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
-  (local file (files.get-by-uri server uri))
-  (files.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))
-  (push-diagnostics server file send))
+  (let [file (files.get-by-uri server uri)
+        file (files.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))]
+    (push-diagnostics server file send)))
 
 (λ notifications.textDocument/didOpen [server send {:textDocument {: text : uri}}]
   (local file (files.set-uri-contents server uri text))

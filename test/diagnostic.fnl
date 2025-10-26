@@ -192,10 +192,28 @@
          [{:message "expected whitespace before token"}]
          []))
 
+(fn test-after-edit []
+  (let [{: uri : client : locations}
+        (create-client "(fn abc [] (+ a====))
+                        {: abc}"
+                       ;; wants push notifications
+                       {:capabilities {:textDocument {:publishDiagnostics true}}})
+        [{:params {: diagnostics}}] (client:change-text! uri [{:range (. locations 1 :range) :text " b"}])]
+    (faith.= diagnostics [{:code "compiler-error"
+                           :message "unknown identifier: a"
+                           :range {:end {:character 15 :line 0} :start {:character 14 :line 0}}
+                           :severity 1}
+                          {:code "compiler-error"
+                           :message "unknown identifier: b"
+                           :range {:end {:character 17 :line 0} :start {:character 16 :line 0}}
+                           :severity 1}])
+    nil))
+
 {: test-lua-versions
  : test-macro-environment
  : test-compile-error
  : test-parse-error
  : test-macro-error
  : test-multiple-errors
- : test-warnings}
+ : test-warnings
+ : test-after-edit}

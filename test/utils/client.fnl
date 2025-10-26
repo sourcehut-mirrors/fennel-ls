@@ -24,6 +24,15 @@
 (fn pretend-this-file-exists! [self name text]
   (tset self.server.preload name text))
 
+(fn change-text! [self name contentChanges]
+  (dispatch.handle* self.server
+    (message.create-notification :textDocument/didChange
+      {: contentChanges
+       :textDocument
+       {:uri name
+        :languageId "fennel"
+        :version 2}})))
+
 (fn completion [self file position]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/completion
@@ -103,6 +112,7 @@
 
 (local client-mt
   {:__index {: open-file!
+             : change-text!
              : pretend-this-file-exists!
              : completion
              : completion-item-resolve
