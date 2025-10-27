@@ -23,7 +23,8 @@
         version-from-changelog (-> (io.open "changelog.md")
                                    (: :read "*a")
                                    (: :match "## ([%d.-]*) /.*"))]
-    (if version
+    (if (= "" commit-message) nil
+      version
       (do ;; Release checks
         (faith.= version version-from-utils "update `utils.version`")
         (faith.= version version-from-changelog "update `changelog.md`"))
