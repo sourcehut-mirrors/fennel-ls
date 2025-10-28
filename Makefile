@@ -64,11 +64,10 @@ docs-love2d:
 	@echo "https://wiki.fennel-lang.org/LanguageServer"
 	@exit 1
 
-build/fennel-ls.1:
+build/fennel-ls.1: docs/manual.md
 	mkdir -p build/
 	echo ".TH FENNEL-LS 1" > $@
 	pandoc --title-prefix=fennel-ls -t man docs/manual.md >> $@
-	echo ".SH LICENSE\nCopyright © 2023-2025, Released under the MIT/X11 license" >> $@
 
 deps:
 	$(FENNEL) $(FENNELFLAGS) tools/get-deps.fnl

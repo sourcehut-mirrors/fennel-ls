@@ -1,9 +1,29 @@
-# Fennel Language Server Manual
+## NAME
+
+fennel-ls - Intelligent editing features for fennel files.
+
+## SYNOPSIS
+
+**fennel-ls** [**-\-lint** _filename_] | [**-\-fix** _filename_] | [**-\-help**]
+
+## DESCRIPTION
 
 This document has information on how to configure and use fennel-ls after you
 [installed it](installation.md).
 
-## Quick start
+## OPTIONS
+
+**-\-lint** _filename [...filename]_
+Prints diagnostics for the files given. A successful exit code
+indicates no problems were found.
+
+**fennel-ls** **-\-fix** [-y] [_filename_] [...]
+
+Run suggested fixes from linters on files.
+
+**-\-help** Display usage summary.
+
+With no arguments, it waits for Language Server Protocol messages on stdin.
 
 fennel-ls can be used with no configuration beyond connecting it to your text
 editor, but if you are using external libraries you will need to add them to
@@ -31,7 +51,7 @@ errors:
 The rest of this document provides additional details on the configuration and
 usage of fennel-ls.
 
-## Configuration
+## CONFIGURATION
 
 fennel-ls can be configured by creating a file named `flsproject.fnl` in the
 root of your project.
@@ -92,7 +112,7 @@ to indicate where the project root is located.
   > fennel-ls respects the XDG convention, so if you changed `$XDG_DATA_HOME`
   > the files will be loaded from the location you specified.
 
-## Usage
+## USAGE
 
 Fennel-ls *cannot* tell the difference between a regular file and a macro file.
 You can ask fennel-ls to **treat your file as a macro file** if the first line
@@ -100,7 +120,7 @@ exactly matches `;; fennel-ls: macro-file`. Expect this to change at some point
 in the future when I come up with a better way to specify which files are meant
 to be macro files.
 
-## Features
+## FEATURES
 
 | Feature         | Locals | Fields | Builtin Globals | Across Files | Builtins | Macros | User globals |
 | --------------- | ------ | ------ | --------------- | ------------ | -------- | ------ | ------------ |
@@ -121,21 +141,6 @@ purposes, it's recommended to put an underscore at the end. For example:
   [a_ a_] (print "First two elements are equal"))
 ```
 
-## CLI Usage
+## LICENSE
 
-fennel-ls can be used as a linter from the command line:
-
-```sh
-fennel-ls --lint my-file.fnl f2.fnl # prints diagnostics for the files given
-```
-
-This will analyze the given files and print out all compiler errors and lints,
-without launching a server. A successful exit code indicates no problems found.
-
-You can also automatically apply fixes from lints that have them:
-
-```sh
-fennel-ls --fix my-file.fnl f2.fnl # applies fixes
-my-file.fnl:3:6: warning: unnecessary unary +
-Apply fix? [Y/n] Unwrap the expression
-```
+Copyright © 2023-2025, Released under the MIT/X11 license
