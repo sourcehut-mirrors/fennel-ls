@@ -139,15 +139,16 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
             (search-multival server file (. call (+ len 1)) stack (+ multival (- len) 1) opts)))
         (where (or :require :include))
         (let [mod (. call 2)]
-          (if (= multival 1)
-            (when (= :string (type mod))
-              (let [newfile (files.get-by-module server mod file.macro-file?)]
-                (when newfile
-                  (compiler.compile server newfile)
-                  (let [newitem (. newfile.ast (length newfile.ast))]
-                    (when (= (length stack) 1)
-                      (set opts.searched-through-require-with-stack-size-1 true))
-                    (search-val server newfile newitem stack opts)))))))
+          (when (and (= multival 1) (= :string (type mod)))
+            (when (= (length stack) 1)
+              (set opts.searched-through-require-with-stack-size-1 true))
+            (case (files.get-by-module server mod file.macro-file?)
+              newfile (do
+                        (compiler.compile server newfile)
+                        (let [newitem (. newfile.ast (length newfile.ast))]
+                          (search-val server newfile newitem stack opts)))
+              _ (if opts.searched-through-require-with-stack-size-1
+                  {:indeterminate true}))))
         "."
         (if (= multival 1)
           (let [[_ & rest] call]

@@ -435,6 +435,15 @@
                     (where (or a [a])) (print (+ a 3))
                     (catch (x) x))))
 
+(fn test-re-export-module []
+  (check {:utils.fnl
+          "{:mod (require :module)}"
+          :main.fnl
+          "(local {: mod} (require :utils))"}
+         []
+         [{:code :unknown-module-field :message "unknown field: mod"}])
+  nil)
+
 {: test-unused
  : test-ampersand
  : test-unknown-module-field
@@ -454,4 +463,5 @@
  : test-duplicate-keys
  : test-nested-associative-operator
  : test-zero-indexed
- : test-legacy-multival}
+ : test-legacy-multival
+ : test-re-export-module}
