@@ -155,7 +155,8 @@ we support completionItem/resolve."
                                       :replace range}
                                      range)
                       :data {: uri : byte}}
-       :items results}
+       :items results
+       :isIncomplete false}
       results)))
 
 (fn completionItem/resolve [server _send completion-item]
