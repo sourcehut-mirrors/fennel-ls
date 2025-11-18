@@ -1,10 +1,12 @@
 (local faith (require :faith))
 (local {: view} (require :fennel))
 (local {: create-client} (require :test.utils))
+(local {: null} (require :dkjson))
 
 (λ check-signature [expected response]
-  (case response
-    {:signatures [{:label signature : parameters}]}
+  (match [expected response]
+    [null null] nil
+    [_ {:signatures [{:label signature : parameters}]}]
     (do
       (faith.= expected.signature signature)
       (faith.= expected.activeParameter response.activeParameter)
@@ -249,6 +251,10 @@
           :activeParameter 0
           :parameters let-params}))
 
+(fn test-not-a-function []
+  (check "(local x []) (x |)"
+         null))
+
 {: test-fn-definition
  : test-local-function
  : test-literals
@@ -258,4 +264,5 @@
  : test-destructuring-arg
  : test-binding-form
  : test-indirect-definition
- : test-destructuring-binding}
+ : test-destructuring-binding
+ : test-not-a-function}

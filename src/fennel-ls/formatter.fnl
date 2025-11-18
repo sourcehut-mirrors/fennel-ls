@@ -126,11 +126,8 @@ fntype is one of fn or λ or lambda"
                {:label signature
                 :documentation docstring
                 :parameters parameters}
-               (catch _ {:parameters []
-                         :label (.. "ERROR: don't know how to format "
-                                  (view doc-or-definition {:one-line? true :depth 3}))
-                         :documentation (code-block
-                                           (view doc-or-definition {:depth 3}))})))))
+               (catch _ nil)))))
+
 (λ get-stub [server name definition ?short]
   "gets a string representation of this object"
   (or (case definition.definition
