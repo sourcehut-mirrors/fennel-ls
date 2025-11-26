@@ -113,7 +113,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
                          (if ok? result))
         ;; fall back to relative path if server root-uri didn't find it
         (catch _ (case-try (io.open "flsproject.fnl")
-                   f (let [[ok? _err result] [(pcall (fennel.parser f))]]
+                   f (let [[ok? _err result] [(pcall (fennel.parser (f:read :*all)))]]
                        (f:close)
                        (if ok? result)))))
       ;; according to the spec it is valid to send showMessage during initialization
