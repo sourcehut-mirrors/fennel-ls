@@ -2,7 +2,7 @@
 (local windows (= "\\" (package.config:sub 1 1)))
 
 (fn percent-encode [str]
-  (pick-values 1 (str:gsub "[^0-9a-zA-Z/._~-]" #(string.format "%%%02X" $))))
+  (pick-values 1 (str:gsub "[^0-9a-zA-Z/._~-]" #(string.format "%%%02X" (string.byte $)))))
 
 (fn percent-decode [str]
   (pick-values 1 (str:gsub "%%(%x%x)" #(string.char (tonumber $ 16)))))
