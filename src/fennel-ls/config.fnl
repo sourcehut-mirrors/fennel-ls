@@ -111,7 +111,11 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
         path (files.read-file server path)
         {: text : uri} (let [[ok? _err result] [(pcall (fennel.parser text uri))]]
                          (if ok? result))
-        (catch _ nil))
+        ;; fall back to relative path if server root-uri didn't find it
+        (catch _ (case-try (io.open "flsproject.fnl")
+                   f (let [[ok? _err result] [(pcall (fennel.parser f))]]
+                       (f:close)
+                       (if ok? result)))))
       ;; according to the spec it is valid to send showMessage during initialization
       ;; but eglot will only flash the message briefly before replacing it with
       ;; another message, and probably other clients will do similarly. so queue
