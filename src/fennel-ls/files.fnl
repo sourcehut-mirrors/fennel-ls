@@ -2,7 +2,7 @@
 This module has high level helpers for creating/getting \"file\" objects."
 
 (local searcher (require :fennel-ls.searcher))
-(local utils (require :fennel-ls.utils))
+(local {: uri->path} (require :fennel-ls.uri))
 
 (λ read-file [server uri]
   ;; preload is here so that tests can inject files
@@ -11,10 +11,10 @@ This module has high level helpers for creating/getting \"file\" objects."
     _ (case uri
         :stdin (let [text (io.read :*a)]
                  {: uri : text})
-        _ (case (io.open (utils.uri->path uri) "r")
+        _ (case (io.open (uri->path uri) "r")
             file (let [text (file:read :*a)]
                    (when (not text)
-                     (error (.. "could not read file:" (utils.uri->path uri))))
+                     (error (.. "could not read file:" (uri->path uri))))
                    (file:close)
                    {: uri : text})))))
 

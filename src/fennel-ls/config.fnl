@@ -14,6 +14,7 @@ to server.configuration. Every other use case should be read-only."
 (local lint (require :fennel-ls.lint))
 (local message (require :fennel-ls.message))
 (local {: view &as fennel} (require :fennel))
+(local {: path->uri : uri->path} (require :fennel-ls.uri))
 
 (local option-mt {})
 (fn option [default-value ?validate]
@@ -98,9 +99,9 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 
 (fn flsproject-path [server]
   (-?> server.root-uri
-       utils.uri->path
+       uri->path
        (utils.path-join "flsproject.fnl")
-       utils.path->uri))
+       path->uri))
 
 (λ reload [server]
   ;; clear out macros from fennel

@@ -3,8 +3,6 @@ A collection of utility functions. Many of these convert data between a
 Language-Server-Protocol representation and a Lua representation.
 These functions are all pure functions, which makes me happy."
 
-(local fennel (require :fennel))
-
 (local version "0.2.3-dev")
 
 (λ next-line [str ?from]
@@ -96,25 +94,10 @@ These functions are all pure functions, which makes me happy."
       :utf-16 (+ pos (unit16->byte (str:sub pos) character))
       _ (error (.. "unknown encoding: " encoding)))))
 
-(λ startswith [str pre]
-  (let [len (length pre)]
-    (= (str:sub 1 len) pre)))
-
 (λ endswith [str post]
   (let [len (length post)]
     (or (= post "")
         (= post (str:sub (- len))))))
-
-(λ uri->path [uri]
-  "Strips the \"file://\" prefix from a uri to turn it into a path. Throws an error if it is not a path uri"
-  (local prefix "file://")
-  (when (not (startswith uri prefix))
-    (error (.. "encountered URI " (fennel.view uri) " that does not start with \"file://\"")))
-  (string.sub uri (+ (length prefix) 1)))
-
-(λ path->uri [path]
-  "Prepents the \"file://\" prefix to a path to turn it into a uri"
-  (.. "file://" path))
 
 (λ replace [text start-position end-position replacement encoding]
   "Replaces a range of text with a replacement, using the protocol's definition of range."
@@ -223,8 +206,6 @@ These functions are all pure functions, which makes me happy."
   (match (next t ?k) (k x) k (k y_) (find t x k)))
 
 {: version
- : uri->path
- : path->uri
  : pos->position
  : byte->position
  : byte->character

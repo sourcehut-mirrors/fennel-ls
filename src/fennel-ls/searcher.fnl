@@ -4,11 +4,10 @@ for using the name of a module and find the corresponding URI.
 I suspect this file may be gone after a bit of refactoring."
 
 (local {: absolute-path?
-        : uri->path
-        : path->uri
         : path-sep
         : path-join} (require :fennel-ls.utils))
-
+(local {: uri->path
+        : path->uri} (require :fennel-ls.uri))
 (λ add-workspaces-to-path [path ?workspaces]
   "Make every relative path be relative to every workspace."
   (let [result []]
