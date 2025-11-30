@@ -109,6 +109,9 @@ check-docs:
 	diff -r src/fennel-ls/docs/generated old-docs
 	rm -rf old-docs
 
+release:
+	$(FENNEL) $(FENNELFLAGS) tools/release.fnl
+
 ci: testall selflint
 
 clean:

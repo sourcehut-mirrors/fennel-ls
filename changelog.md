@@ -1,5 +1,11 @@
 # Changelog
 
+### Bug Fixes
+* Diagnostics are now up to date, instead of being one change behind
+* There was an issue with spaces in file paths
+* There was an issue with file paths on Windows
+* Signature help doesn't show up when calling non-functions
+
 ## 0.2.2 / 2025-10-25
 
 ### Features

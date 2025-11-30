@@ -65,4 +65,8 @@
  : get-faith
  : get-penlight-stringio
  : get-dkjson
- : prepare-deps}
+ : prepare-deps
+ :versions {:fennel fennel-version
+            :faith faith-version
+            :penlight penlight-version
+            :dkjson dkjson-version}}
