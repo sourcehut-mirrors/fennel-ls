@@ -3,7 +3,7 @@ A collection of utility functions. Many of these convert data between a
 Language-Server-Protocol representation and a Lua representation.
 These functions are all pure functions, which makes me happy."
 
-(local version "0.2.3")
+(local version "0.2.4-dev")
 
 (λ next-line [str ?from]
   "Find the start of the next line from a given byte offset, or from the start of the string."
