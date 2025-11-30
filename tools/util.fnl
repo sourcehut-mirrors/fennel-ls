@@ -13,7 +13,7 @@
                         (.. "'"
                             (-> arg
                                 (string.gsub "'" "'\\''")
-                                (string.gsub "\n" "'\\n'"))
+                                (string.gsub "\n" "'$'\\n''"))
                             "'")))
                   " ")]
     (io.stderr:write "running command: " command "\n")
