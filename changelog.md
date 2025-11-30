@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.2.3 / 2025-11-30
+
 ### Bug Fixes
 * Diagnostics are now up to date, instead of being one change behind
 * There was an issue with spaces in file paths
