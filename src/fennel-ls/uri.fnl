@@ -1,26 +1,30 @@
 (local {: view} (require :fennel))
 (local windows (= "\\" (package.config:sub 1 1)))
 
-(fn percent-encode [str]
-  (pick-values 1 (str:gsub "[^0-9a-zA-Z/._~-]" #(string.format "%%%02X" (string.byte $)))))
+(fn is-windows? [?opts]
+  (case (?. ?opts :windows)
+    override override
+    _ windows))
 
-(fn percent-decode [str]
-  (pick-values 1 (str:gsub "%%(%x%x)" #(string.char (tonumber $ 16)))))
+(local encode1 #(string.format "%%%02X" (string.byte $)))
+(fn percent-encode [str] (pick-values 1 (str:gsub "[^0-9a-zA-Z/._~-]" encode1)))
 
-(fn path->uri [path]
-  (if windows
+(local decode1 #(string.char (tonumber $ 16)))
+(fn percent-decode [str] (pick-values 1 (str:gsub "%%(%x%x)" decode1)))
+
+(fn path->uri [path ?opts]
+  (if (is-windows? ?opts)
     (.. "file:///" (percent-encode (path:gsub "\\" "/")))
     (.. "file://" (percent-encode path))))
 
-(fn uri->path [uri]
-  (let [scheme (if windows "^file:///(.*)$"
-                           "^file://(.*)$")
-        p (uri:match scheme)]
-    (when (not p)
-      (error (.. "encountered non-file URI: " (view uri))))
-    (if windows
-        (: (percent-decode p) :gsub "/" "\\")
-        (percent-decode p))))
+(fn uri->path [uri ?opts]
+  (if (is-windows? ?opts)
+    (case (uri:match "^file:///(.*)$")
+      p (: (percent-decode p) :gsub "/" "\\")
+      _ (error (.. "encountered non-file URI: " (view uri))))
+    (case (uri:match "^file://(.*)$")
+      p (percent-decode p)
+      _ (error (.. "encountered non-file URI: " (view uri))))))
 
 {: path->uri
  : uri->path}

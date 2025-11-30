@@ -14,6 +14,7 @@
   _ (faith.run
       [:test.json-rpc
        :test.string-processing
+       :test.uri
        :test.capabilities
        :test.settings
        :test.diagnostic
