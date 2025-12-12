@@ -715,11 +715,16 @@ You can read more about how to add lints in docs/linting.md"
                (case (?. (navigate.getmetadata server result) :fnl/arglist)
                  signature
                  (let [number-of-args (- (length ast) 1)
-                       infinite-params? (accumulate [vararg nil
-                                                      _ arg (ipairs signature)
-                                                      &until vararg]
-                                          (let [s (tostring arg)]
-                                            (or (= s "...") (= s "&"))))
+                       infinite-params?
+                       (or ;; assert propagates extra args when 1st val is true 
+                           ;; this is necessary for forcing an error on e.g. a
+                           ;; fn wrapped in pcall
+                           (= result (docs.get-global server nil :assert))
+                           (accumulate [vararg nil
+                                        _ arg (ipairs signature)
+                                        &until vararg]
+                             (let [s (tostring arg)]
+                               (or (= s "...") (= s "&")))))
                        ;; exception: (table.insert table item) can take a third argument
                        max-params (if (= result (. (docs.get-global server nil :table) :fields :insert))
                                       3

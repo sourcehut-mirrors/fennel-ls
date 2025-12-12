@@ -355,6 +355,7 @@
     (assert-ok (add-opts "(let [foo 10] (fn [] foo))"))
     (assert-ok (add-opts "(fn [])"))
     (assert-ok (add-opts ";; fennel-ls: macro-file\n(list 1 2 3 4)"))
+    (assert-ok (add-opts "(assert 1 2 3 4 5)"))
     nil))
 
 (fn test-duplicate-keys []
