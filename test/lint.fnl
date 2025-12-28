@@ -138,6 +138,12 @@
                      (print one two three)"}
          []
          [{:code :unknown-module-field}])
+  ;; yet another regression test
+  (check {:module.fnl "{:field false}"
+          :main.fnl "(let [module (require :module)]
+module.field)"}
+         []
+         [{:code :unknown-module-field}])
   nil)
 
 (fn test-unnecessary-method []

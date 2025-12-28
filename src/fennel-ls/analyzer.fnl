@@ -122,9 +122,9 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
     (search-reference server file (. file.references symbol) (stack-add-multisym! stack symbol) opts)))
 
 (λ search-table [server file tbl stack opts]
-  (if (. tbl (. stack (length stack)))
-      (search-val server file (. tbl (table.remove stack)) stack opts)
-      nil)) ;; BASE CASE Give up
+  (let [key (table.remove stack)]
+    (case (. tbl key)
+      ast (search-val server file ast stack opts))))
 
 (λ search-list [server file call stack multival opts]
   (let [head (. call 1)]
