@@ -202,6 +202,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 opts: {:searched-through-require-with-stack-size-1 ?true
        :stop-early? bool}
 initialization-opts: {:stack ?list[ast]
+                      :stack ?list[string]
                       :byte ?integer}
   "
   (assert (= (type initialization-opts) :table))
@@ -211,7 +212,8 @@ initialization-opts: {:stack ?list[ast]
   (if (sym? ast)
     ;; when your search starts as a symbol, there's lots of special interesting things to consider
     (let [stack (let [?byte initialization-opts.byte
-                      split (utils.multi-sym-split ast (if ?byte (- ?byte ast.bytestart)))]
+                      split (or initialization-opts.split
+                                (utils.multi-sym-split ast (if ?byte (- ?byte ast.bytestart))))]
                   (stack-add-split! (or initialization-opts.stack []) split))]
       (case (docs.get-builtin server (utils.multi-sym-base ast))
         document (search-document server document stack opts)

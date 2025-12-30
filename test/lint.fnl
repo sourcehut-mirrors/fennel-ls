@@ -144,6 +144,12 @@
 module.field)"}
          []
          [{:code :unknown-module-field}])
+  ;; should trigger lint
+  (check {:empty.fnl "{}"
+          :main.fnl "(local e (require :empty))
+                     (print e.a.b.c.d.e.f)"}
+         [{:code :unknown-module-field}]
+         [])
   nil)
 
 (fn test-unnecessary-method []

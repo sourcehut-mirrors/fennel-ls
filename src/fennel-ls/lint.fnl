@@ -132,17 +132,27 @@ You can read more about how to add lints in docs/linting.md"
   (accumulate [in? false call (pairs calls) &until in?]
     (and (sym? (. call 1) :or) (utils.find call symbol))))
 
-(fn unknown-module-field [server file symbol]
-  "if ?ast is a module field that isn't known, return a diagnostic"
+(fn unknown-module-field-helper [server file symbol split]
+  "if `symbol` is a module field that isn't known, return a diagnostic"
   (let [opts {}
-        item (analyzer.search server file symbol opts {})]
+        item (analyzer.search server file symbol opts {: split})]
     (if (and (not item)
              (not (in-or? file.calls symbol))
              ;; this doesn't necessarily have to come thru require; it works
              ;; for built-in modules too
              opts.searched-through-require-with-stack-size-1)
         {:ast symbol
-         :message (.. "unknown field: " (tostring symbol))})))
+         :message (.. "unknown field: " (tostring symbol))}
+        (not= nil (. split 2))
+        (do
+          ;; try again for each access in the symbol
+          (table.remove split)
+          (unknown-module-field-helper server file symbol split)))))
+
+(fn unknown-module-field [server file symbol]
+  "if `symbol` is a module field that isn't known, return a diagnostic"
+  (let [split (utils.multi-sym-split symbol)]
+    (unknown-module-field-helper server file symbol split)))
 
 (add-lint :unknown-module-field
   {:what-it-does
