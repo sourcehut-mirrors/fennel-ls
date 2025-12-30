@@ -142,7 +142,7 @@ You can read more about how to add lints in docs/linting.md"
              ;; for built-in modules too
              opts.searched-through-require-with-stack-size-1)
         {:ast symbol
-         :message (.. "unknown field: " (tostring symbol))}
+         :message (.. "unknown field: " (table.concat split "."))}
         (not= nil (. split 2))
         (do
           ;; try again for each access in the symbol

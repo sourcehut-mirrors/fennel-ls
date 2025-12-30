@@ -148,7 +148,8 @@ module.field)"}
   (check {:empty.fnl "{}"
           :main.fnl "(local e (require :empty))
                      (print e.a.b.c.d.e.f)"}
-         [{:code :unknown-module-field}]
+         [{:code :unknown-module-field
+           :message "unknown field: e.a"}]
          [])
   nil)
 
