@@ -112,16 +112,16 @@
          [{:code :unknown-module-field :message "unknown field: table.insert2"}]
          [{:code :unknown-module-field :message "unknown field: table.insert"}])
   ;; if you explicitly write "_G", it should turn off this test.
-  ;; Hardcoded at the top of analyzer.fnl/search-document.
+  ;; Hardcoded into the lint
   (check "_G.insert2"
          []
          [{:code :unknown-module-field}])
-  ;; we don't care about nested
+  ;; we ~~don't~~ do! care about more than modules now
   (check {:requireme.fnl "{:field []}"
           :main.fnl "(local {: field} (require :requireme))
                      field.unknown"}
-         []
-         [{:code :unknown-module-field}])
+         [{:code :unknown-module-field}]
+         [])
   ;; specials are OK too
   (check {:unpacker.fnl "(local unpack (or table.unpack _G.unpack)) {: unpack}"
           :main.fnl "(local u (require :unpacker))

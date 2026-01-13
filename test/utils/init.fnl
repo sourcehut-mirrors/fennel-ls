@@ -14,7 +14,7 @@
 (fn parse-markup [text ?encoding]
   "find the | character, which represents the cursor position"
   (var text text)
-  (let [result {:ranges []}
+  (let [result {:ranges [] :cursor nil text nil}
         encoding (or ?encoding default-encoding)]
     (while
       (case
@@ -49,8 +49,7 @@
                                            (values false {:main.fnl file-contents}))
 
         server {:preload (if provide-root-uri {})}
-        client (doto {: server :prev-id 1}
-                     (setmetatable client-mt))
+        client (setmetatable {: server :prev-id 1} client-mt)
         locations []
         highlights []]
     ;; NOT main.fnl

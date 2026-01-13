@@ -134,13 +134,12 @@ You can read more about how to add lints in docs/linting.md"
 
 (fn unknown-module-field-helper [server file symbol split]
   "if `symbol` is a module field that isn't known, return a diagnostic"
-  (let [opts {}
+  (let [opts {:searched-through-setmetatable nil :stop-early? true}
         item (analyzer.search server file symbol opts {: split})]
-    (if (and (not item)
-             (not (in-or? file.calls symbol))
-             ;; this doesn't necessarily have to come thru require; it works
-             ;; for built-in modules too
-             opts.searched-through-require-with-stack-size-1)
+    (if (and item
+             item.unknown-field
+             (not opts.searched-through-setmetatable)
+             (not (in-or? file.calls symbol)))
         {:ast symbol
          :message (.. "unknown field: " (tostring symbol))}
         (not= nil (. split 2))
@@ -152,7 +151,14 @@ You can read more about how to add lints in docs/linting.md"
 (fn unknown-module-field [server file symbol]
   "if `symbol` is a module field that isn't known, return a diagnostic"
   (let [split (utils.multi-sym-split symbol)]
-    (unknown-module-field-helper server file symbol split)))
+    (when (not= (. split 1) :_G)
+      (case (?. file.references symbol :ref-type)
+        :read nil
+        :write (table.remove split)
+        :mutate (table.remove split)
+        nil nil
+        _ (error (.. "unknown ref type" _)))
+      (unknown-module-field-helper server file symbol split))))
 
 (add-lint :unknown-module-field
   {:what-it-does

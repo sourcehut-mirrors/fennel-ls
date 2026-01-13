@@ -181,7 +181,7 @@ identifiers are declared / referenced in which places."
         [ref field nil] ;; TODO more powerful function name metadata
         (find-definition ref scope)
         target
-        (do
+        (when (fennel.table? target.definition)
           (set target.fields (or target.fields {}))
           (tset target.fields field
             {:binding multisym
@@ -209,7 +209,7 @@ identifiers are declared / referenced in which places."
           _ []))
       (each [_ argument (ipairs args)]
         (if (not (sym? argument :&))
-          (define nil* argument scope)))) ;; TODO  for now, function arguments are set to nil
+          (define nil argument scope)))) ;; TODO  for now, function arguments are set to nil
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
@@ -217,14 +217,14 @@ identifiers are declared / referenced in which places."
 
     (λ compile-for [ast scope binding]
       (tset scopes ast scope)
-      (define nil* binding scope))
+      (define nil binding scope))
 
     (λ compile-each [ast scope bindings]
       (tset scopes ast scope)
       (each [_ binding (ipairs bindings)]
         (if (and (sym? binding)
                  (not (. scope.gensyms (tostring binding))))
-          (define nil* binding scope))))
+          (define nil binding scope))))
 
     (λ compile-fn [ast scope]
       (tset scopes ast scope)
@@ -250,6 +250,8 @@ identifiers are declared / referenced in which places."
           ;; fennel expands multisym calls into the `:` special, so we need to reference the symbol while we still can
           (where method-call (= (type method-call) :string) (method-call:find ":"))
           (reference head scope :read)
+          (where :set (multisym? (. ast 2)) (not= nil (. ast 3)))
+          (add-field (. ast 3) (. ast 2) scope)
           ;; NOTE this should be removed once fennel makes if statements work like normal
           (where :if)
           (let [len (length ast)]
