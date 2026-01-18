@@ -47,8 +47,7 @@
         (provide-root-uri file-contents) (if (= (type file-contents) :table)
                                            (values true file-contents)
                                            (values false {:main.fnl file-contents}))
-
-        server {:preload (if provide-root-uri {})}
+        server {:preload (if provide-root-uri {}) :configuration nil :position-encoding nil :files nil}
         client (setmetatable {: server :prev-id 1} client-mt)
         locations []
         highlights []]

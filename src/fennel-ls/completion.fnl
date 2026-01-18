@@ -47,7 +47,7 @@ we support completionItem/resolve."
         ;; find where the cursor is
         byte (utils.position->byte file.text position server.position-encoding)
         ;; create a brand new file
-        file {:text (.. (file.text:sub 1 (- byte 1)) "|" (file.text:sub byte)) :uri file.uri}
+        file {:text (.. (file.text:sub 1 (- byte 1)) "|" (file.text:sub byte)) :uri file.uri :calls nil :scopes nil :allowed-globals nil :macro-file? nil :compile-errors nil :definitions nil}
         _ (compiler.compile server file)
         ;; find what ast objects are under the cursor
         (symbol parents) (analyzer.find-symbol server file byte)

@@ -189,7 +189,7 @@ Every time the client sends a message, it gets handled by a function in the corr
         (table.sort usages
           #(> (utils.position->byte file.text $1.range.start :utf-8)
               (utils.position->byte file.text $2.range.start :utf-8)))
-        (var prev {})
+        (var prev {:line nil :character nil})
         (let [usages-dedup (icollect [_ edit (ipairs usages)]
                              (when (or (not= edit.range.start.line prev.line)
                                        (not= edit.range.start.character prev.character))
