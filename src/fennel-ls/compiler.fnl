@@ -457,6 +457,14 @@ identifiers are declared / referenced in which places."
       (each [_ cmd (ipairs defer)]
         (cmd))
 
+      (set file.module
+        (let [module (. ast (length ast))
+              module (if (sym? module)
+                       (?. references module :target :definition)
+                       module)]
+          (if (table? module)
+            module)))
+
       ;; TODO make this construct an object instead of mutating the file
       (set file.macro-file? macro-file?)
       (set file.ast ast)

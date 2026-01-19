@@ -97,12 +97,12 @@
   nil)
 
 (fn test-unknown-module-field []
-  (check {:the-guy-they-tell-you-not-to-worry-about.fnl
+  (check {:my-module.fnl
           "(local M {:a 1})
            (fn M.b [] 2)
            M"
           :main.fnl
-          "(local {: a : c &as guy} (require :the-guy-they-tell-you-not-to-worry-about))
+          "(local {: a : c &as guy} (require :my-module))
            (print guy.b guy.d)"}
          [{:code :unknown-module-field :message "unknown field: c"}
           {:code :unknown-module-field :message "unknown field: guy.d"}]
@@ -144,13 +144,24 @@
 module.field)"}
          []
          [{:code :unknown-module-field}])
-  ;; should trigger lint
+  ;; should report depth
+  (check {:empty.fnl "{}"
+          :main.fnl "(local c (require :empty))
+                     (local a {:b {: c}})
+                     (print a.b.c.d.e.f)"}
+         [{:code :unknown-module-field
+           :message "unknown field: a.b.c.d"}]
+         [])
   (check {:empty.fnl "{}"
           :main.fnl "(local e (require :empty))
                      (print e.a.b.c.d.e.f)"}
          [{:code :unknown-module-field
            :message "unknown field: e.a"}]
          [])
+  ;; module declared early, checking within same file
+  (check "(local m {}) (fn m.method []) (m.mehtod) m"
+         [{:code :unknown-module-field :message "unknown field: m.mehtod"}]
+         [{:code :unknown-module-field :message "unknown field: m.method"}])
   nil)
 
 (fn test-unnecessary-method []

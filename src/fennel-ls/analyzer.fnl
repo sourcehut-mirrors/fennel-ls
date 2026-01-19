@@ -64,15 +64,14 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   (stack-add-split! stack (utils.multi-sym-split symbol)))
 
 (λ search-document [server document stack opts]
-  (when (not= (tostring (?. document :binding)) :_G)
-    (set opts.searched-through-require-with-stack-size-1 true))
   (if (= 0 (length stack))
     document
-    (and document.fields
-         (. document.fields (. stack (length stack))))
+    (and document.fields (. document.fields (. stack (length stack))))
     (search-document server (. document.fields (table.remove stack)) stack opts)
-    (not document.fields)
-    {:indeterminate true}))
+    {:indeterminate true
+     :module-field (and document.fields
+                     (not= (?. document :binding) :_G)
+                     (= 1 (length stack)))}))
 
 (λ search-val [server file ?ast stack opts]
   "searches for the definition of the ast, adjusted to 1 value"
@@ -124,7 +123,10 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
 (λ search-table [server file tbl stack opts]
   (let [key (table.remove stack)]
     (case (. tbl key)
-      ast (search-val server file ast stack opts))))
+      ast (search-val server file ast stack opts)
+      nil {:indeterminate true
+           :module-field (and (= (length stack) 0)
+                              (= tbl file.module))})))
 
 (λ search-list [server file call stack multival opts]
   (let [head (. call 1)]
@@ -140,15 +142,12 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
         (where (or :require :include))
         (let [mod (. call 2)]
           (when (and (= multival 1) (= :string (type mod)))
-            (when (= (length stack) 1)
-              (set opts.searched-through-require-with-stack-size-1 true))
             (case (files.get-by-module server mod file.macro-file?)
               newfile (do
                         (compiler.compile server newfile)
                         (let [newitem (. newfile.ast (length newfile.ast))]
                           (search-val server newfile newitem stack opts)))
-              _ (if opts.searched-through-require-with-stack-size-1
-                  {:indeterminate true}))))
+              _ {:indeterminate true})))
         "."
         (if (= multival 1)
           (let [[_ & rest] call]
@@ -199,8 +198,7 @@ find the definition `10`, but if `opts.stop-early?` is set, it would find
   "Find the definition of an ast.
    the options are getting out of hand.
 
-opts: {:searched-through-require-with-stack-size-1 ?true
-       :stop-early? bool}
+opts: {:stop-early? bool}
 initialization-opts: {:stack ?list[ast]
                       :stack ?list[string]
                       :byte ?integer}

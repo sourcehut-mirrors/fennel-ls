@@ -136,11 +136,12 @@ You can read more about how to add lints in docs/linting.md"
   "if `symbol` is a module field that isn't known, return a diagnostic"
   (let [opts {}
         item (analyzer.search server file symbol opts {: split})]
-    (if (and (not item)
-             (not (in-or? file.calls symbol))
+    (if (and item
+             item.indeterminate
+             item.module-field
+             (not (in-or? file.calls symbol)))
              ;; this doesn't necessarily have to come thru require; it works
              ;; for built-in modules too
-             opts.searched-through-require-with-stack-size-1)
         {:ast symbol
          :message (.. "unknown field: " (table.concat split "."))}
         (not= nil (. split 2))
