@@ -89,6 +89,12 @@
       :textDocument {:uri file}
       : newName})))
 
+(fn prepare-rename [self file position]
+  (dispatch.handle* self.server
+    (message.create-request (next-id! self) :textDocument/prepareRename
+     {: position
+      :textDocument {:uri file}})))
+
 (fn diagnostic [self file ?previousResultId]
   (dispatch.handle* self.server
     (message.create-request (next-id! self) :textDocument/diagnostic
@@ -123,6 +129,7 @@
              : document-symbol
              : signature-help
              : rename
+             : prepare-rename
              : code-action
              : diagnostic
              : did-save}})

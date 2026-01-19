@@ -51,7 +51,8 @@ Every time the client sends a message, it gets handled by a function in the corr
          ;; :documentFormattingProvider {:workDoneProgress false}
          ;; :documentRangeFormattingProvider nil
          ;; :documentOnTypeFormattingProvider nil
-         :renameProvider {:workDoneProgress false}
+         :renameProvider {:workDoneProgress false
+                          :prepareProvider true}
          ;; :foldingRangeProvider nil
          ;; :executeCommandProvider nil
          ;; :selectionRangeProvider nil
@@ -196,6 +197,18 @@ Every time the client sends a message, it gets handled by a function in the corr
                                (set prev edit.range.start)
                                edit))]
           {:changes {file.uri usages-dedup}}))
+      (catch _ nil))))
+
+(λ requests.textDocument/prepareRename [server send_ {: position :textDocument {: uri}}]
+  (let [file (files.get-by-uri server uri)
+        byte (utils.position->byte file.text position server.position-encoding)]
+    (case-try (analyzer.find-symbol server file byte)
+      symbol
+      (analyzer.find-nearest-definition server file symbol symbol.bytestart)
+      ;; TODO we are assuming that every reference is in the same file
+      {:referenced-by x1_ : file :binding x2_}
+      (let [range (message.multisym->range server file symbol 1)]
+        {: range})
       (catch _ nil))))
 
 (fn pos<= [pos-1 pos-2]
