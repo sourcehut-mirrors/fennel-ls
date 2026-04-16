@@ -126,17 +126,18 @@ clean:
 # 3. Remove "-dev" suffix in version src/fennel-ls/utils.fnl, and in :since fields in src/fennel-ls/lint.fnl
 # 4. Add the version to changelog.md
 # 5. Create a commit titled "Release 0.2.2"
-# 6. git tag --sign --annotate 0.2.2
-#     * For the tag's message, copy the relevant part of the changelog
+#     * For the commit's message, copy the relevant part of the changelog
 #       git doesn't accept #'s at the start of the line,
 #       so you need to use ='s instead. For example:
 #         """
-#         = 0.2.2 =
-# 
+#         = 0.2.2 / yyyy-mm-dd =
+#
 #         == Bug Fixes ==
 #         * my cool bug fix 1
 #         * my cool bug fix 2
 #         """
+# 6. git tag --sign --annotate 0.2.2
+#     * use the same message as the release commit
 # 7. `git push origin 0.2.2`
 # 8. Bump version at the top of src/fennel-ls/utils.fnl, and add "-dev",
 #    in a commit titled "change version to 0.2.3-dev"

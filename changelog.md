@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.4 / 2026-04-15
+
+### Features
+* "prepareRename" spec is now supported -- slightly better rename flow
+* module field checking enhanced
+
+### Bug Fixes
+* a field being explicitly set to `false` was counted as a "missing" field, and it no longer is
+* signature of assert adjusted to not warn when using undocumented 3+ arguments
+
+### Unchanged
+* Still no docs for Lua 5.5. The new manual has an indented bullet list,
+  which unfortunately confuses my html->md ad-hoc converter.
+
 ## 0.2.3 / 2025-11-30
 
 ### Bug Fixes
