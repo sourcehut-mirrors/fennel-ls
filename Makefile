@@ -138,7 +138,7 @@ clean:
 #         """
 # 6. git tag --sign --annotate 0.2.2
 #     * use the same message as the release commit
-# 7. `git push origin 0.2.2`
+# 7. `git push origin && git push origin 0.2.2`
 # 8. Bump version at the top of src/fennel-ls/utils.fnl, and add "-dev",
 #    in a commit titled "change version to 0.2.3-dev"
 # 9. XeroOl needs to publish a new version on LuaRocks.
