@@ -54,17 +54,12 @@ This code tells eglot to connect fennel-ls to your fennel-mode buffers.
 
 ### Neovim
 
-If you're using neovim+lspconfig, use this snippet:
-```lua
-require("lspconfig").fennel_ls.setup({})
-```
+Install the [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) plugin
+and then enable fennel-ls (note that this uses an underscore `_` instead of a
+dash `-` in the `fennel_ls` name).
 
-If you're also using mason and you want to install fennel-ls that way, you can
-use mason-lspconfig to ensure fennel-ls is installed:
 ```lua
-require("mason-lspconfig").setup {
-    ensure_installed = {"fennel_ls"}
-}
+vim.lsp.enable('fennel_ls')
 ```
 
 ### Sublime Text
@@ -95,7 +90,7 @@ the location of fennel-ls on the $PATH is visible to Sublime Text.
 
 ### Helix
 
-Make sure `fennel_ls` is available in your `$PATH` and then add this to your
+Make sure `fennel-ls` is available in your `$PATH` and then add this to your
 `~/.config/helix/languages.toml` file:
 
 ```toml
