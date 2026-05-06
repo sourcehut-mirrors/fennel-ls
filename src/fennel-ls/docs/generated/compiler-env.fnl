@@ -136,7 +136,7 @@ When given a second string argument, will check that the sym's name matches it."
    :fnl/docstring
    "Checks if an object is the varg symbol. Returns the object if is."}}
  :version
- {:definition "1.6.0"}
+ {:definition "1.6.1"}
  :view
  {:metadata
   {:fls/fntype
