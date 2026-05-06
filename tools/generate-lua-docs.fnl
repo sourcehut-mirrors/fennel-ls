@@ -3,7 +3,7 @@
 (local fennel (require :fennel))
 (local util (require :tools.util))
 
-(local index-pattern "<h2>.%.1 &ndash; <a name=\".%.1\">Basic Functions.-\n")
+(local index-pattern "<h2>.%.. &ndash; <a name=\".%..\">Basic Functions.-\n")
 
 (fn parse-html [html]
   "splits the lua manual into the relevant sections"
@@ -80,11 +80,14 @@
                 (: :gsub "<pre>\n?([^<]-)\n?</pre>" "```lua\n%1\n```")
                 ;; list items to indented * thingies
                 (: :gsub "<li>([^<]+)</li>"
-                   #(.. "* " (: ($:match "^\n*(.-)\n*$") :gsub "\n" "\n  ")))
-                (: :gsub "</?ul>" ""))
+                   #(.. "* " (: ($:match "^\n*(.-)\n*$") :gsub "\n([^\n])" "\n  %1")))
+                (: :gsub "</?ul>" "")
+                ;; nested lists
+                (: :gsub "<li>([^<]+)</li>"
+                   #(.. "* " (: ($:match "^\n*(.-)\n*$") :gsub "\n([^\n])" "\n  %1"))))
         ;; check to ensure that all the tags have been defeated
-        tag (str:match "<[^>]+>[^>]+>")]
-    (when tag (error (.. "unhandled tag:" tag "\n" str)))
+        tag (str:match "<[^>]+>")]
+    (when tag (error (.. "unhandled tag (" tag ") in\n" str)))
     (-> str
         ;; trim whitespace
         (: :match "^%s*(.-)%s*$")
@@ -213,7 +216,7 @@
     {: docs : file-fields : last-update : version}))
 
 (fn render [{: docs : file-fields : last-update : version}]
-  (.. ";; Lua " version " last updated " last-update "\n"
+  (.. ";; " version " last updated " last-update "\n"
       (fennel.view (fennel.list (fennel.sym :local) (fennel.sym :docs) docs)) "\n"
       (fennel.view (fennel.list (fennel.sym :local) (fennel.sym :file-fields) file-fields)) "\n"
       "(set docs._G.fields docs)\n"

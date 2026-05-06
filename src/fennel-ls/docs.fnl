@@ -31,6 +31,7 @@ Handles grabbing the documentation from sources other than fennel code;
         :lua5.2 (require :fennel-ls.docs.generated.lua52)
         :lua5.3 (require :fennel-ls.docs.generated.lua53)
         :lua5.4 (require :fennel-ls.docs.generated.lua54)
+        :lua5.5 (require :fennel-ls.docs.generated.lua55)
         :union {}})
 
 ;; aliases
@@ -38,9 +39,10 @@ Handles grabbing the documentation from sources other than fennel code;
 (set lua-versions.lua52 (. lua-versions "lua5.2"))
 (set lua-versions.lua53 (. lua-versions "lua5.3"))
 (set lua-versions.lua54 (. lua-versions "lua5.4"))
+(set lua-versions.lua55 (. lua-versions "lua5.5"))
 
 (fn get-lua-version [version]
-  (or (. lua-versions version) lua-versions.lua54))
+  (or (. lua-versions version) lua-versions.lua55))
 
 ;; work around a mistake in Lua's own manual
 (set lua-versions.lua51.package.fields.config
@@ -58,7 +60,7 @@ Handles grabbing the documentation from sources other than fennel code;
 
 (set lua-versions.intersection
      (collect [k v (pairs lua-versions.lua51)]
-       (if (. lua-versions.lua54 k) (values k v))))
+       (if (. lua-versions.lua55 k) (values k v))))
 
 (local libraries {})
 

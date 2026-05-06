@@ -44,6 +44,7 @@ docs: src/fennel-ls/docs/generated/lua51.fnl \
 	src/fennel-ls/docs/generated/lua52.fnl \
 	src/fennel-ls/docs/generated/lua53.fnl \
 	src/fennel-ls/docs/generated/lua54.fnl \
+	src/fennel-ls/docs/generated/lua55.fnl \
 	src/fennel-ls/docs/generated/compiler-env.fnl
 
 src/fennel-ls/docs/generated/lua%.fnl: $(TOOLS)
