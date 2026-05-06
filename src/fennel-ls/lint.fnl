@@ -777,7 +777,7 @@ You can read more about how to add lints in docs/linting.md"
     ```"
    :since "0.2.2"
    :type :other
-   :impl (fn [_server file]
+   :impl (fn [_server file emit-lint]
            (let [seen []]
              (each [ast (pairs file.lexical)]
                (when (table? ast)
@@ -789,9 +789,8 @@ You can read more about how to add lints in docs/linting.md"
                                 (do (set (. seen v) i)
                                   (+ i 1)))]
                      (when (. keys dkey)
-                       (coroutine.yield
-                         {:code :duplicate-table-keys ; TODO we should fix `other` type lints so the code isn't necessary
-                          : ast
+                       (emit-lint
+                         {: ast
                           :message (.. "key " (tostring (. keys dkey)) " appears more than once")}))
                      (each [k (pairs seen)]
                        (set (. seen k) nil))))))))})
@@ -831,19 +830,19 @@ Instead, use:
 ```"
    :since "0.2.2"
    :disabled true
-   :impl (fn [server file]
+   :impl (fn [server file emit-lint]
            (each [_  {: left : right} (ipairs file.multi-binds)]
              (when (and (list? left) (. file.lexical left))
-               (coroutine.yield
-                {:message "Legacy multival destructure can be replaced with table destructure."
-                 :ast left
-                 :fix #{:title "Replace legacy multival destructure with table."
-                        :changes [{:range (message.ast->range server file left)
-                                   :newText (-> (tostring left)
-                                                (: :gsub "^%(" "[")
-                                                (: :gsub "%)$" "]"))}
-                                  {:range (message.ast->range server file right)
-                                   :newText (.. "[" (tostring right) "]")}]}}))))})
+               (emit-lint
+                 {:message "Legacy multival destructure can be replaced with table destructure."
+                  :ast left
+                  :fix #{:title "Replace legacy multival destructure with table."
+                         :changes [{:range (message.ast->range server file left)
+                                    :newText (-> (tostring left)
+                                                 (: :gsub "^%(" "[")
+                                                 (: :gsub "%)$" "]"))}
+                                   {:range (message.ast->range server file right)
+                                    :newText (.. "[" (tostring right) "]")}]}}))))})
 
 (fn match-call? [[callee &as ast]]
   (and (list? ast)
@@ -894,18 +893,17 @@ Instead, use:
     ```"
    :since "0.2.2"
    :type :other
-   :impl (fn [server file]
+   :impl (fn [server file emit-lint]
            (let [config-module :fennel-ls.config
                  config (require config-module)]
              (when (and (= file.uri (config.flsproject-path server))
                         (not (. file.diagnostics 1)))
                ;; circular dependency! don't tell anyone ^_^
                (config.make-configuration (. file.ast 1)
-                                          #(coroutine.yield {:code :invalid-flsproject-settings
-                                                             :range (or (message.ast->range server file $2)
-                                                                        (message.ast->range server file $3)
-                                                                        message.unknown-range)
-                                                             :message $}))))
+                                          #(emit-lint {:range (or (message.ast->range server file $2)
+                                                                  (message.ast->range server file $3)
+                                                                  message.unknown-range)
+                                                       :message $}))))
            nil)})
 
 (add-lint :nested-associative-operator
@@ -972,14 +970,16 @@ Instead, use:
   (when (not file.diagnostics)
     (compiler.compile server file)
     (set file.diagnostics file.compile-errors)
-    (fn run [lints ...]
-      (each [_ lint (ipairs lints)]
+    (var current-lint nil)
+    (fn run [lint-group ...]
+      (each [_ lint (ipairs lint-group)]
         (when (. server.configuration.lints lint.name)
+          (set current-lint lint)
           (case (lint.impl ...)
             diagnostic
             (table.insert file.diagnostics (normalize diagnostic lint server file))))))
-    (icollect [diagnostic (coroutine.wrap #(run lints.other server file)) &into file.diagnostics]
-      (normalize diagnostic nil server file))
+    (run lints.other server file
+         #(table.insert file.diagnostics (normalize $ current-lint server file)))
     (each [symbol definition (pairs file.definitions)]
       (when (. file.lexical symbol)
         (run lints.definition server file symbol definition)))
