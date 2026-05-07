@@ -241,19 +241,18 @@ Every time the client sends a message, it gets handled by a function in the corr
     {:kind "full"
      :items file.diagnostics}))
 
-(fn push-diagnostics [server file send]
+(fn push-diagnostics [server file]
   (when (not server.client-capable-of-pull-diagnostics?)
-    (lint.add-lint-diagnostics server file)
-    (send (message.diagnostics file))))
+    (tset server.files-pending-lint file.uri true)))
 
-(λ notifications.textDocument/didChange [server send {: contentChanges :textDocument {: uri}}]
+(λ notifications.textDocument/didChange [server _send {: contentChanges :textDocument {: uri}}]
   (let [file (files.get-by-uri server uri)
         file (files.set-uri-contents server uri (utils.apply-changes file.text contentChanges server.position-encoding))]
-    (push-diagnostics server file send)))
+    (push-diagnostics server file)))
 
-(λ notifications.textDocument/didOpen [server send {:textDocument {: text : uri}}]
+(λ notifications.textDocument/didOpen [server _send {:textDocument {: text : uri}}]
   (local file (files.set-uri-contents server uri text))
-  (push-diagnostics server file send)
+  (push-diagnostics server file)
   (set file.open? true))
 
 (λ notifications.textDocument/didSave [server _send {:textDocument {: uri}}]
@@ -267,7 +266,8 @@ Every time the client sends a message, it gets handled by a function in the corr
   (set file.open? false)
   (each [k (pairs fennel.macro-loaded)] (tset fennel.macro-loaded k nil))
   ;; TODO only reload from disk if we didn't get a didSave, instead of always
-  (files.flush-uri server uri))
+  (files.flush-uri server uri)
+  (tset server.files-pending-lint uri nil))
 
 (λ requests.shutdown [_server _send]
   "The server still needs to respond to this request, so the program can't close yet. Just wait until notifications.exit"

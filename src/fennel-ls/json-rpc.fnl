@@ -37,13 +37,13 @@ If there aren't enough bytes, return nil"
     (table.concat buffer)
     (case (in:read len)
       content
-      (read-n in
-              (- len (length content))
-              (doto buffer (table.insert content))))))
+      (do (table.insert buffer content)
+          (read-n in (- len (length content)) buffer)))))
 
 (λ read-content [in header]
   "Reads the content of a JSON-RPC message given the header"
-  (read-n in (tonumber header.Content-Length)))
+  (let [n (assert (tonumber header.Content-Length) "fennel-ls: I expected a Content-Length header")]
+    (read-n in n)))
 
 (λ read [in]
   "Reads and parses a JSON-RPC message from the input stream
@@ -54,6 +54,24 @@ Returns a table with the message if it succeeded, or a string with the parse err
           decode)]
     (or ?result ?err)))
 
+(var stdin-ready? nil)
+
+(λ try-read [in]
+  "If a message is available, get it, otherwise return nil without blocking"
+  (set stdin-ready?
+       (or stdin-ready?
+         ;; lua-posix
+         (case (pcall require :posix)
+           (true posix) #(= 1 (posix.rpoll 0 0)))
+         ;; unix + bash (slow)
+         (if (and (package.config:find "^/")
+                  (case (os.execute "bash --version > /dev/null") (where (or 0 true)) true))
+           #(case (os.execute "bash -c 'read -t 0'") (where (or 0 true)) true))
+         ;; give up
+         #false))
+  (when (stdin-ready?)
+    (read in)))
+
 (λ write [out msg]
   "Serializes and writes a JSON-RPC message to the given output stream"
   (let [content (encode msg)
@@ -63,4 +81,5 @@ Returns a table with the message if it succeeded, or a string with the parse err
       (out:flush))))
 
 {: read
+ : try-read
  : write}

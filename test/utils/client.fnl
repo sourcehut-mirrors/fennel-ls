@@ -1,4 +1,4 @@
-(local dispatch (require :fennel-ls.dispatch))
+(local fennel-ls (require :fennel-ls.cli))
 (local message (require :fennel-ls.message))
 
 (local ROOT-PATH "/path/to/test/project")
@@ -13,7 +13,7 @@
   self.prev-id)
 
 (fn open-file! [self name text]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-notification :textDocument/didOpen
       {:textDocument
        {:uri name
@@ -25,7 +25,7 @@
   (tset self.server.preload name text))
 
 (fn change-text! [self name contentChanges]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-notification :textDocument/didChange
       {: contentChanges
        :textDocument
@@ -34,48 +34,48 @@
         :version 2}})))
 
 (fn completion [self file position]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/completion
      {: position
       :textDocument {:uri file}})))
 
 (fn completion-item-resolve [self completion-item]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :completionItem/resolve
      completion-item)))
 
 (fn definition [self file position]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/definition
       {: position
        :textDocument {:uri file}})))
 
 (fn hover [self file position]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
      (message.create-request (next-id! self) :textDocument/hover
        {: position
         :textDocument {:uri file}})))
 
 (fn references [self file position ?includeDeclaration]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/references
      {: position
       :textDocument {:uri file}
       :context {:includeDeclaration (not (not ?includeDeclaration))}})))
 
 (fn document-highlight [self file position]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/documentHighlight
      {: position
       :textDocument {:uri file}})))
 
 (fn document-symbol [self file]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/documentSymbol
      {:textDocument {:uri file}})))
 
 (fn signature-help [self file position]
-  (dispatch.handle*
+  (fennel-ls.handle-one-message
     self.server
     (message.create-request (next-id! self)
                             :textDocument/signatureHelp
@@ -83,20 +83,20 @@
                              :textDocument {:uri file}})))
 
 (fn rename [self file position newName]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/rename
      {: position
       :textDocument {:uri file}
       : newName})))
 
 (fn prepare-rename [self file position]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/prepareRename
      {: position
       :textDocument {:uri file}})))
 
 (fn diagnostic [self file ?previousResultId]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/diagnostic
      (let [params {:textDocument {:uri file}}]
        (when ?previousResultId
@@ -104,14 +104,14 @@
        params))))
 
 (fn code-action [self file range]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-request (next-id! self) :textDocument/codeAction
      {: range
       :textDocument {:uri file}
       :context {:diagnostics []}})))
 
 (fn did-save [self file]
-  (dispatch.handle* self.server
+  (fennel-ls.handle-one-message self.server
     (message.create-notification :textDocument/didSave
      {:textDocument {:uri file}})))
 

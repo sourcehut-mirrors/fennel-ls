@@ -122,6 +122,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 (λ initialize [server params]
   (set server.queue [])
   (set server.files {})
+  (set server.files-pending-lint {})
   (set server.modules {})
   (set server.macro-modules {})
   (set server.root-uri params.rootUri)

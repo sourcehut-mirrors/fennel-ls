@@ -1,5 +1,19 @@
 # Changelog
 
+### Changes
+* Updated to fennel 1.6.1
+* Updated to dkjson 2.9
+* Optionally depends on non-blocking read, by having at least one of the following:
+  * luaposix
+  * bash (the shell, not a lua module)
+
+### Features
+* Lua 5.5 documentation
+* Much more responsive:
+  * Linting is now lower priority than other requests
+  * Intermediate edits are folded together to reduce computing lints on stale state
+* Lints are slightly better organized (no more coroutine control flow)
+
 ## 0.2.4 / 2026-04-15
 
 ### Features

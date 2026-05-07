@@ -4,7 +4,7 @@
         : default-encoding} (require :test.utils.client))
 
 (local utils (require :fennel-ls.utils))
-(local dispatch (require :fennel-ls.dispatch))
+(local fennel-ls (require :fennel-ls.cli))
 
 (local NIL {})
 (fn un-nil [arg]
@@ -82,7 +82,7 @@
                   :trace "off"
                   :workspaceFolders (if provide-root-uri [{:name ROOT-PATH :uri ROOT-URI}])}
 
-          initialize-response (dispatch.handle* server
+          initialize-response (fennel-ls.handle-one-message server
                                 {:id 1
                                  :jsonrpc "2.0"
                                  :method "initialize"
