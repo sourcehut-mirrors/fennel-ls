@@ -15,11 +15,11 @@ VENDOR ?= true
 
 ifeq ($(VENDOR), true)
 	FENNEL ?= $(LUA) fennel
-	FENNELFLAGS ?= --add-package-path "deps/?.lua" --add-fennel-path "src/?.fnl;deps/?.fnl"
+	FENNELFLAGS ?= --add-macro-path "src/?.fnlm" --add-fennel-path "src/?.fnl;deps/?.fnl" --add-package-path "deps/?.lua"
 	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler,fennel.specials
 else
 	FENNEL ?= fennel
-	FENNELFLAGS ?= --add-fennel-path "src/?.fnl"
+	FENNELFLAGS ?= --add-macro-path "src/?.fnlm" --add-fennel-path "src/?.fnl"
 	REQUIRE_AS_INCLUDE_FLAGS = --require-as-include --skip-include fennel.compiler,fennel.specials,fennel,dkjson
 endif
 

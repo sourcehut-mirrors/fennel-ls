@@ -111,7 +111,7 @@ Run fennel-ls, the Fennel language server and linter.
   --help           : Display this text
   --version        : Show version")
 
-(λ main []
+(λ main [arg]
   (case arg
     (where (or ["-h"] ["--help"])) (print help)
     (where (or ["-v"] ["--version"])) (print version)

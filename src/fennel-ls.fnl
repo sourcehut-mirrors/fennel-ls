@@ -1,2 +1,2 @@
 (local {: main} (require :fennel-ls.cli))
-(main)
+(main arg)
