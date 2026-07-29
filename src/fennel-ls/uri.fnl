@@ -20,7 +20,7 @@
 (fn uri->path [uri ?opts]
   (if (is-windows? ?opts)
     (case (uri:match "^file:///(.*)$")
-      p (: (percent-decode p) :gsub "/" "\\")
+      p (pick-values 1 (: (percent-decode p) :gsub "/" "\\"))
       _ (error (.. "encountered non-file URI: " (view uri))))
     (case (uri:match "^file://(.*)$")
       p (percent-decode p)
