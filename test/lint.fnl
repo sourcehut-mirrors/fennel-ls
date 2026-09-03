@@ -460,6 +460,16 @@ module.field)"}
                     (where (or a [a])) (print (+ a 3))
                     (catch (x) x))))
 
+(fn test-operator-values []
+  (check-form {:operator-values true}
+              (fn extract-values [...] (print (. _G.mytbl ...)))
+              [{:message "multiple values calling operator; only first will be used"
+                :range {:start {:character 44 :line 0} :end {:character 47 :line 0}}}])
+  (check-form {:operator-values true}
+              (and :hello (values true false true))
+              [{:message "multiple values calling operator; only first will be used"
+                :range {:start {:character 13 :line 0} :end {:character 37 :line 0}}}]))
+
 (fn test-re-export-module []
   (check {:utils.fnl
           "{:mod (require :module)}"
@@ -489,4 +499,5 @@ module.field)"}
  : test-nested-associative-operator
  : test-zero-indexed
  : test-legacy-multival
+ : test-operator-values
  : test-re-export-module}

@@ -37,6 +37,9 @@ You can read more about how to add lints in docs/linting.md"
 (local implicit-do-forms (collect [form {: body-form?} (pairs (fennel.syntax))]
                            form body-form?))
 
+(fn call-of? [ast callee]
+  (and (list? ast) (sym? (. ast 1) callee)))
+
 
 (local lints {:definition []
               :reference []
@@ -591,6 +594,27 @@ You can read more about how to add lints in docs/linting.md"
                  {:ast arg
                   :message (.. "bad " (tostring (. arg 1))
                                " call: only the first value of the multival will be used")}))))})
+
+(add-lint :operator-values
+  {:what-it-does "Check for use of multivalues in operators that don't support them."
+   :why-care? "Operators in Fennel support a fixed number of operands that must
+               be known at compile-time. Passing `...` or `values` to an operator
+               will cause everything but the first to be ignored."
+   :example
+   "```fnl
+    (fn extract-values [...]
+      (print (. mytbl ...)))
+    ```
+
+    Instead, use a function or loop when the number of operands is unknown."
+   :since "0.2.5"
+   :type :special-call
+   :impl (fn [_server _file ast]
+           (let [last (. ast (length ast))]
+             (if (and (. ops (tostring (. ast 1)))
+                      (or (varg? last) (call-of? last :values)))
+                 {:ast last
+                  :message "multiple values calling operator; only first will be used"})))})
 
 (add-lint :empty-let
   {:what-it-does

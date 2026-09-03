@@ -6,6 +6,7 @@
 * Optionally depends on non-blocking read, by having at least one of the following:
   * luaposix
   * bash (the shell, not a lua module)
+* New lint `operator-values` for detecting multivals where they aren't supported
 
 ### Features
 * Lua 5.5 documentation
