@@ -200,6 +200,9 @@ identifiers are declared / referenced in which places."
           (add-field ast name scope)
           (define ast name scope))))
 
+    ;; using the arg sym here instead of its name triggers infinite recursion
+    (λ fn-arg [arg-name n fn-sym] {: arg-name : n : fn-sym :type :fn-arg})
+
     (λ define-function-args [ast scope]
       ;; add the definitions of function arguments to the definitions
       (local args
@@ -207,9 +210,9 @@ identifiers are declared / referenced in which places."
           (where [_fn args] (fennel.sequence? args)) args
           (where [_fn _name args] (fennel.sequence? args)) args
           _ []))
-      (each [_ argument (ipairs args)]
-        (if (not (sym? argument :&))
-          (define nil* argument scope)))) ;; TODO  for now, function arguments are set to nil
+      (each [i argument (ipairs args)]
+        (when (not (sym? argument :&))
+          (define (fn-arg (tostring argument) i (sym? (. ast 2))) argument scope))))
 
     (λ define-function [ast scope]
       ;; handle the definitions of a function
