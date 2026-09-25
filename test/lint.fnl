@@ -21,6 +21,15 @@
                          (= e.range.end.character   d.range.end.character))))
          i))))
 
+(fn expect [diagnostics file-contents expected]
+  (each [_ e (ipairs expected)]
+    (let [i (find diagnostics e)]
+      (faith.is i (.. "No lint matching " (view e) "\n"
+                      "from:    " (view file-contents) "\n"
+                      "possible matches: " (view diagnostics {:empty-as-sequence? true
+                                                              :escape-newlines? true})))
+        (table.remove diagnostics i))))
+
 (fn check [file-contents expected ?unexpected]
   (let [{: uri : client} (create-client file-contents)
         [{:result {:items diagnostics}}] (client:diagnostic uri)]
@@ -29,14 +38,7 @@
         (faith.= nil i (.. "Lint matching " (view e) "\n"
                            "from:    " (view file-contents) "\n"
                            (view (. diagnostics i) {:escape-newlines? true})))))
-
-    (each [_ e (ipairs expected)]
-      (let [i (find diagnostics e)]
-        (faith.is i (.. "No lint matching " (view e) "\n"
-                        "from:    " (view file-contents) "\n"
-                        "possible matches: " (view diagnostics {:empty-as-sequence? true
-                                                                :escape-newlines? true})))
-        (table.remove diagnostics i)))))
+    (expect diagnostics file-contents expected)))
 
 (macro check-form [lints form expected ?unexpected]
   `(check {:main.fnl ,(view form) :flsproject.fnl ,(view {: lints})}
@@ -479,6 +481,16 @@ module.field)"}
          [{:code :unknown-module-field :message "unknown field: mod"}])
   nil)
 
+(fn test-plugins []
+  (let [contents "(fn leigh []) (print leigh)"
+        {: uri : client} (create-client contents nil
+                                        {:plugins ["test/plugin.fnl"]})
+        [{:result {:items diagnostics}}] (client:diagnostic uri)]
+    (expect diagnostics contents [{:code :bad-sym
+                                   :message "I before E except after C"
+                                   :range {:start {:character 4 :line 0}
+                                           :end {:character 9 :line 0}}}])))
+
 {: test-unused
  : test-ampersand
  : test-unknown-module-field
@@ -500,4 +512,5 @@ module.field)"}
  : test-zero-indexed
  : test-legacy-multival
  : test-operator-values
- : test-re-export-module}
+ : test-re-export-module
+ : test-plugins}

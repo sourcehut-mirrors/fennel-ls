@@ -1020,4 +1020,4 @@ Instead, use:
              server file ast macroexpanded)))))
 
 {: add-lint-diagnostics
- :list all-lints}
+ :list all-lints : add-lint}

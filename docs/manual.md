@@ -65,6 +65,7 @@ to indicate where the project root is located.
  :macro-path "./?.fnlm;./?/init.fnlm;./?.fnl;./?/init-macros.fnl;./?/init.fnl;src/?.fnlm;src/?/init.fnlm;src/?.fnl;src/?/init-macros.fnl;src/?/init.fnl"
  :lua-version "lua5.4"
  :libraries {}
+ :plugins []
  :extra-globals ""
  :lints {:unused-definition true
          :unknown-module-field true
@@ -111,6 +112,9 @@ to indicate where the project root is located.
 
   > fennel-ls respects the XDG convention, so if you changed `$XDG_DATA_HOME`
   > the files will be loaded from the location you specified.
+
+- `pluigns`: List of files which will be loaded as plugins. See the
+  [linting documentation](linting.md) for details about how to write plugins.
 
 ## USAGE
 

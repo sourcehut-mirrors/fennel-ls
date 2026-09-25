@@ -3,6 +3,7 @@
         : client-mt
         : default-encoding} (require :test.utils.client))
 
+(local config (require :fennel-ls.config))
 (local utils (require :fennel-ls.utils))
 (local fennel-ls (require :fennel-ls.cli))
 
@@ -83,23 +84,22 @@
                   :workspaceFolders (if provide-root-uri [{:name ROOT-PATH :uri ROOT-URI}])}
 
           initialize-response (fennel-ls.handle-one-message server
-                                {:id 1
-                                 :jsonrpc "2.0"
-                                 :method "initialize"
-                                 : params})
-          _     (each [k v (pairs (or ?config []))]
-                  (tset server.configuration k v))
-          ?diagnostics (?. (client:open-file! uri text) 1 :params :diagnostics)]
-        {: client
-         : server
-         :diagnostics ?diagnostics
-         : cursor
-         : locations
-         : highlights
-         : text
-         : uri
-         : initialize-response
-         :encoding server.position-encoding})))
+                                                            {:id 1
+                                                             :jsonrpc "2.0"
+                                                             :method "initialize"
+                                                             : params})]
+      (when ?config
+        (config.reload server ?config))
+      {: client
+       : server
+       :diagnostics (?. (client:open-file! uri text) 1 :params :diagnostics)
+       : cursor
+       : locations
+       : highlights
+       : text
+       : uri
+       : initialize-response
+       :encoding server.position-encoding})))
 
 (fn position-past-end-of-text [text ?encoding]
   (utils.byte->position text (+ (length text) 1) (or ?encoding default-encoding)))

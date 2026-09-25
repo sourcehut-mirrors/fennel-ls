@@ -36,12 +36,45 @@ to server.configuration. Every other use case should be read-only."
             lint.name (option (not lint.disabled)))
    :libraries (option {} docs.validate-libraries)
    :compiler-instruction-limit (option -1)
+   :plugins (option [])
    :extra-globals (option "")})
 
 (fn extend-path [?root extra]
   (if (not= (type extra) :string) ?root
       ?root (.. ?root "." extra)
       extra))
+
+(fn copy [t] (collect [k v (pairs t)] k v))
+
+(fn select-keys [t ...]
+  (collect [_ k (ipairs [...])] k (. t k)))
+
+(fn safe-require [module-name]
+  (let [modules {:fennel-ls.message (require :fennel-ls.message)
+                 :fennel-ls.analyzer (require :fennel-ls.analyzer)
+                 :fennel (select-keys (require :fennel)
+                                      :sym? :list? :table? :varg? :sequence? :sym-char?
+                                      :gensym :ast-source :multi-sym? :view :sym :list)}]
+    (assert (. modules module-name) (.. "module not found: " module-name))))
+
+(fn safe-env []
+  (let [g {:table (copy table) :math (copy math) :string (copy string)
+           : pairs : ipairs : select : tostring : tonumber :bit (rawget _G :bit)
+           : pcall : xpcall : next : print : type : assert : error : _VERSION
+           :utf8 (-?> (rawget _G :utf8) (copy)) :require safe-require}]
+    (set g._G g)
+    g))
+
+(fn load-plugins [?plugins]
+  (when ?plugins
+    (each [_ plugin-path (ipairs ?plugins)]
+      (let [plugin (fennel.dofile plugin-path {:env (safe-env)})]
+        (each [name l (pairs (or plugin.lints []))]
+          (lint.add-lint name l))))
+    ;; potential lints may have changed; recalculate which are allowed
+    (set default-configuration.lints
+         (collect [_ lint (ipairs lint.list)]
+           lint.name (option (not lint.disabled))))))
 
 (fn apply-default-configuration [default ?flsproject ?parent ?name invalid]
   (if (= (getmetatable default) option-mt)
@@ -79,6 +112,7 @@ to server.configuration. Every other use case should be read-only."
       (error (.. "This is a bug with fennel-ls: default-configuration has a key that isn't a table or option: " ?name))))
 
 (λ make-configuration [?flsproject invalid]
+  (load-plugins (?. ?flsproject :plugins))
   (apply-default-configuration default-configuration ?flsproject nil nil invalid))
 
 (λ choose-position-encoding [init-params]
@@ -103,16 +137,17 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
        (utils.path-join "flsproject.fnl")
        path->uri))
 
-(λ reload [server]
+(λ reload [server ?config]
   ;; clear out macros from fennel
   (each [k (pairs fennel.macro-loaded)] (tset fennel.macro-loaded k nil))
   (set server.configuration
-    (make-configuration
-      (case-try (flsproject-path server)
-        path (files.read-file server path)
-        {: text : uri} (let [[ok? _err result] [(pcall (fennel.parser text uri))]]
-                         (if ok? result))
-        (catch _ nil))
+       (make-configuration
+        (or ?config
+            (case-try (flsproject-path server)
+              path (files.read-file server path)
+              {: text : uri} (case [(pcall (fennel.parser text uri))]
+                               [true _ result] result)
+              (catch _ nil)))
       ;; according to the spec it is valid to send showMessage during initialization
       ;; but eglot will only flash the message briefly before replacing it with
       ;; another message, and probably other clients will do similarly. so queue

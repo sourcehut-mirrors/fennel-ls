@@ -1,24 +1,50 @@
 # How to add a new lint
 
-## Creating a new lint
-Go into `src/fennel-ls/lint.fnl` and create a new call to add-lint.
+Some lints are built-in to fennel-ls, but you can also load them
+externally from plugins if you have some logic that might not make
+sense in other projects.
+
+## Creating a new built-in lint
+Go into `src/fennel-ls/lint.fnl` and create a new call to `add-lint`.
+The first argument is the name of the lint, and the second is a table
+of options. The `:what-it-does`, `:why-care?`, `:limitations`, `:example`,
+and `:since` keys are descriptive fields that should be self-explanatory.
+The `:type` and `:impl` fields are described below.
+
+## Creating a lint in a plugin
+Each plugin is a file which is referenced in the `:plugins` field of a
+project's config. This file is loaded inside a sandbox which gives you
+a safe subset of Lua's globals. You can use `require` to get a safe
+subset of `:fennel`, `:fennel-ls.analyzer`, and `:fennel-ls.message`.
+
+The function should return a table containing a `:lints` key which
+should have lint names as keys and lint tables as values. All the lint
+table fields should be the same as the argument to `add-lint`.
+
+Note that the plugin interface is highly experimental and subject to
+change in future versions of fennel-ls.
 
 ## Writing your lint
-Now, the fun part: writing your lint function.
+Before you write your lint function, you need to decide when it should
+be called. This is controlled by the `:type` field.
 
 A lint checks whether the given arguments should emit a warning, and
 what message to show. You can request that your lint is called for every
-* function-call (Every time the user calls a function)
-* special-call (Every time the user calls a special)
-* macro-call (Every time the user calls a macro)
-* definition (Every time a new variable is bound)
-* reference (Every time an identifier is referring to something in scope)
+* `:function-call` (Every time a function call is compiled)
+* `:special-call` (Every time a special call is compiled)
+* `:macro-call` (Every time a macro call is compiled)
+* `:definition` (Every time a new local is bound)
+* `:reference` (Every time an identifier refers to something in scope)
 
 More types might have been added since I wrote this document.
+
+Now, the fun part: writing your lint function. The function itself goes
+in the `:impl` field of the lint table.
 
 ### Input arguments
 All lints receive a `server` and `file`. These values are mostly useful to
 pass to other functions.
+
 * `server` is the table that represents the language server. It carries
   metadata and stuff around. You probably don't need to use it directly.
 * `file` is an object that represents a fennel source file. It has some

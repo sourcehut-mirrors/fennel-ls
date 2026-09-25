@@ -22,7 +22,7 @@
                 :clientInfo {:name "fennel-ls"}
                 :rootUri "file://."}]
     (config.initialize server params)
-    (each [{: message} (ipairs server.queue)]
+    (each [_ {:params {: message}} (ipairs server.queue)]
       (print "WARN:" message))))
 
 (λ lint-files [filenames]
