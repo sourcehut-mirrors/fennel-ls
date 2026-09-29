@@ -134,7 +134,7 @@ However, when not an option, fennel-ls will fall back to positionEncoding=\"utf-
 (fn flsproject-path [server]
   (-?> server.root-uri
        uri->path
-       (utils.path-join "flsproject.fnl")
+       (utils.path-join (or server.config-path "flsproject.fnl"))
        path->uri))
 
 (λ reload [server ?config]

@@ -25,22 +25,22 @@
     (each [_ {:params {: message}} (ipairs server.queue)]
       (print "WARN:" message))))
 
-(λ lint-files [filenames]
+(λ lint-files [server filenames]
   "non-interactive mode that gets executed from CLI with --lint.
    runs lints on each file, then formats and prints them"
-  (let [server (doto {} initialize)]
-    (var should-err? false)
-    (each [_ filename (ipairs filenames)]
-      (let [uri (case filename
-                  "-" :stdin
-                  _ (.. "file://" filename))
-            file (files.get-by-uri server uri)]
-        (lint.add-lint-diagnostics server file)
-        (each [_ diagnostic (ipairs file.diagnostics)]
-          (set should-err? true)
-          (print-diagnostic filename diagnostic))))
-    (when should-err?
-      (os.exit 1))))
+  (initialize server)
+  (var should-err? false)
+  (each [_ filename (ipairs filenames)]
+    (let [uri (case filename
+                "-" :stdin
+                _ (.. "file://" filename))
+          file (files.get-by-uri server uri)]
+      (lint.add-lint-diagnostics server file)
+      (each [_ diagnostic (ipairs file.diagnostics)]
+        (set should-err? true)
+        (print-diagnostic filename diagnostic))))
+  (when should-err?
+    (os.exit 1)))
 
 (λ apply-changes [server filename changes]
   (let [contents (with-open [f (io.open filename)] (f:read :*a))
@@ -52,26 +52,25 @@
   (io.write msg)
   (case (io.read) (where (or "" "y" "Y" "yes")) true))
 
-(λ fix-files [filenames --yes]
-  (let [server (doto {} initialize)]
-    (each [_ filename (ipairs filenames)]
-      (let [uri (case filename
-                  "-" :stdin
-                  _ (.. "file://" filename))
-            file (files.get-by-uri server uri)]
-        (lint.add-lint-diagnostics server file)
-        (case [(next file.diagnostics)]
-          [_ {: fix &as diagnostic}]
-          (let [{: title : changes} (fix)
-                query (: "Apply fix? [Y/n] %s " :format title)]
-            (print-diagnostic filename diagnostic)
-            (when (or --yes (confirm query))
-              (apply-changes server filename changes)
-              (fix-files [filename] --yes))))))))
+(λ fix-files [server filenames --yes]
+  (initialize server)
+  (each [_ filename (ipairs filenames)]
+    (let [uri (case filename
+                "-" :stdin
+                _ (.. "file://" filename))
+          file (files.get-by-uri server uri)]
+      (lint.add-lint-diagnostics server file)
+      (case [(next file.diagnostics)]
+        [_ {: fix &as diagnostic}]
+        (let [{: title : changes} (fix)
+              query (: "Apply fix? [Y/n] %s " :format title)]
+          (print-diagnostic filename diagnostic)
+          (when (or --yes (confirm query))
+            (apply-changes server filename changes)
+            (fix-files server [filename] --yes)))))))
 
-(λ main-loop [in out]
+(λ main-loop [server in out]
   (local send (partial json-rpc.write out))
-  (local server {})
   (while true
     (let [msg (json-rpc.read in)]
       (dispatch.handle server send msg)
@@ -108,22 +107,34 @@ Run fennel-ls, the Fennel language server and linter.
   --server         : Start the language server (stdio mode only)
                      optional, this is the default with no arguments
 
+  --config PATH    : Read configuration from alternate file
   --help           : Display this text
   --version        : Show version")
 
+(fn pop-flag [server flag-name args i]
+  (table.remove args i)
+  (set (. server flag-name) (table.remove args i)))
+
+(λ parse-args [args]
+  (faccumulate [server {} i (length args) 1 -1]
+    (case (. args i)
+      :--config (doto server (pop-flag :config-path args i))
+      _ server)))
+
 (λ main [arg]
-  (case arg
-    (where (or ["-h"] ["--help"])) (print help)
-    (where (or ["-v"] ["--version"])) (print version)
-    (where (or ["-l" & filenames] ["--lint" & filenames])) (lint-files filenames)
-    (where (or ["--server"] [nil])) (main-loop (io.input)
-                                               (io.output))
-    ["--fix" "-y" & filenames] (fix-files filenames true)
-    ["--fix" "--yes" & filenames] (fix-files filenames true)
-    ["--fix" & filenames] (fix-files filenames false)
-    _args (do (io.stderr:write help)
-              (io.stderr:write "\n")
-              (os.exit 1))))
+  (let [server (parse-args arg)]
+    (case arg
+      (where (or ["-h"] ["--help"])) (print help)
+      (where (or ["-v"] ["--version"])) (print version)
+      (where (or ["-l" & filenames] ["--lint" & filenames])) (lint-files server
+                                                                         filenames)
+      (where (or ["--server"] [nil])) (main-loop server (io.input) (io.output))
+      ["--fix" "-y" & filenames] (fix-files server filenames true)
+      ["--fix" "--yes" & filenames] (fix-files server filenames true)
+      ["--fix" & filenames] (fix-files server filenames false)
+      _args (do (io.stderr:write help)
+                (io.stderr:write "\n")
+                (os.exit 1)))))
 
 {: main
  : handle-one-message}
