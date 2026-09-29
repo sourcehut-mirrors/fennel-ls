@@ -10,8 +10,8 @@ $ cd fennel-ls
 $ make
 ```
 
-This build will create a `fennel-ls` executable for you using your default
-system `lua`; use `make LUA=luajit` etc to use a different Lua version.
+This build will create a `fennel-ls` executable for you using `luajit`;
+use `make LUA=lua5.4` etc to use a different Lua version.
 
 Run `make install PREFIX=$HOME` to put it in `~/bin` or `sudo make install` for
 a system wide install.

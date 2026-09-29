@@ -15,6 +15,7 @@
   * Intermediate edits are folded together to reduce computing lints on stale state
 * Lints are slightly better organized (no more coroutine control flow)
 * Add `--config` command-line argument to use a different config file
+* Support loading linters from `:plugins`
 
 ## 0.2.4 / 2026-04-15
 

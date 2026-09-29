@@ -1,4 +1,4 @@
-LUA ?= lua
+LUA ?= luajit
 # If ./fennel is present, use `lua fennel` to run the locally vendored fennel
 # otherwise
 EXE=fennel-ls
@@ -31,7 +31,7 @@ all: $(EXE) docs/lints.md
 $(EXE): $(SRC)
 	echo "#!/usr/bin/env $(LUA)" > $@
 	$(FENNEL) $(FENNELFLAGS) $(REQUIRE_AS_INCLUDE_FLAGS) \
-		--compile src/fennel-ls.fnl >> $@
+		--lambda-as-fn --compile src/fennel-ls.fnl >> $@
 	chmod 755 $@
 
 install: $(EXE) build/fennel-ls.1
