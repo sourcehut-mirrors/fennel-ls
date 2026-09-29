@@ -4,19 +4,21 @@ This module has high level helpers for creating/getting \"file\" objects."
 (local searcher (require :fennel-ls.searcher))
 (local {: uri->path} (require :fennel-ls.uri))
 
+(local file-mt {:__fennelview #"#<file>"})
+
 (λ read-file [server uri]
   ;; preload is here so that tests can inject files
   (case (?. server.preload uri)
-    preload {: uri :text preload}
+    preload (setmetatable {: uri :text preload} file-mt)
     _ (case uri
         :stdin (let [text (io.read :*a)]
-                 {: uri : text})
+                 (setmetatable {: uri : text} file-mt))
         _ (case (io.open (uri->path uri) "r")
             file (let [text (file:read :*a)]
                    (when (not text)
                      (error (.. "could not read file:" (uri->path uri))))
                    (file:close)
-                   {: uri : text})))))
+                   (setmetatable {: uri : text} file-mt))))))
 
 (λ get-by-uri [server uri]
   (or (. server.files uri)

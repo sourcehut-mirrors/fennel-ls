@@ -25,7 +25,7 @@ done, but these are the sort of enhancements I am thinking about.
 - [ ] Improved global checks
     - [ ] (or table.unpack _G.unpack) should be allowed on any Lua version
 - [ ] generate man page
-- [ ] load lints from external sources (sandboxed)
+- [X] load lints from external sources (sandboxed)
 - [X] Able to connect to a client
 - [X] Support for UTF-8 characters that aren't just plain ASCII. (especially `λ`) (perhaps just tell the IDE that I want to communicate with utf-8 offsets)
 - [ ] People have tried fennel-ls in:
@@ -127,24 +127,7 @@ done, but these are the sort of enhancements I am thinking about.
     - [ ] automatic downloading of external docsets
         - [ ] some kind of registry built-in?
 
-- [ ] discard input if there are more edits coming
-
-optional luaposix dependency for this?
-
-```
-local posix = require("posix")
-
--- Function to set non-blocking mode for a file descriptor
-local function setNonBlocking(fd)
-    local flags = posix.fcntl(fd, posix.F_GETFL, 0)
-    posix.fcntl(fd, posix.F_SETFL, flags + posix.O_NONBLOCK)
-end
-
--- Open stdin in non-blocking mode
-setNonBlocking(0)  -- 0 is the file descriptor for stdin
-
-print( io.read(0) and "Data in stdin" or "No data in stdin")
-```
+- [X] discard input if there are more edits coming
 
 fn-arg-nil: Function arguments are assumed to be nil in a function body, until there's a type system to give more information.
 

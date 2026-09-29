@@ -137,8 +137,7 @@ You can read more about how to add lints in docs/linting.md"
 
 (fn unknown-module-field-helper [server file symbol split]
   "if `symbol` is a module field that isn't known, return a diagnostic"
-  (let [opts {}
-        item (analyzer.search server file symbol opts {: split})]
+  (let [item (analyzer.search server file symbol {} {: split})]
     (if (and item
              item.indeterminate
              item.module-field
